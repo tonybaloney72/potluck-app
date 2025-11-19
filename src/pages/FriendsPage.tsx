@@ -12,8 +12,9 @@ import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { ConfirmModal } from "../components/common/ConfirmModal";
-import { FaUser, FaCheck, FaTimes, FaSearch, FaUserPlus } from "react-icons/fa";
+import { FaCheck, FaTimes, FaSearch, FaUserPlus } from "react-icons/fa";
 import { useDebounce } from "../hooks/useDebounce";
+import { FriendCard } from "../components/friends/FriendCard";
 
 export const FriendsPage = () => {
 	const dispatch = useAppDispatch();
@@ -138,59 +139,40 @@ export const FriendsPage = () => {
 								{searchResults.map(user => {
 									const status = getRelationshipStatus(user.id);
 									return (
-										<div
+										<FriendCard
 											key={user.id}
-											className='flex items-center justify-between p-4 bg-secondary border border-border rounded-lg'>
-											<div className='flex items-center gap-3'>
-												{user.avatar_url ? (
-													<img
-														src={user.avatar_url}
-														alt={user.name || "User"}
-														className='w-10 h-10 rounded-full object-cover'
-													/>
-												) : (
-													<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-														<FaUser className='w-5 h-5 text-text-primary' />
-													</div>
-												)}
-												<div>
-													<p className='font-medium text-text-primary'>
-														{user.name || "Unknown User"}
-													</p>
-													{user.location && (
-														<p className='text-sm text-text-secondary'>
-															{user.location}
-														</p>
+											profile={user}
+											actions={
+												<>
+													{status === "none" && (
+														<Button
+															className='flex items-center'
+															variant='primary'
+															onClick={() => handleSendRequest(user.id)}
+															loading={sendingRequest}
+															disabled={sendingRequest}>
+															<FaUserPlus className='w-4 h-4 mr-2' />
+															Send Request
+														</Button>
 													)}
-												</div>
-											</div>
-											{status === "none" && (
-												<Button
-													className='flex items-center'
-													variant='primary'
-													disabled={sendingRequest}
-													loading={sendingRequest}
-													onClick={() => handleSendRequest(user.id)}>
-													<FaUserPlus className='w-4 h-4 mr-2' />
-													Send Request
-												</Button>
-											)}
-											{status === "sent" && (
-												<span className='text-sm text-text-secondary'>
-													Request Sent
-												</span>
-											)}
-											{status === "pending" && (
-												<span className='text-sm text-text-secondary'>
-													Pending Request
-												</span>
-											)}
-											{status === "accepted" && (
-												<span className='text-sm text-text-secondary'>
-													Already Friends
-												</span>
-											)}
-										</div>
+													{status === "sent" && (
+														<span className='text-sm text-text-secondary'>
+															Request Sent
+														</span>
+													)}
+													{status === "pending" && (
+														<span className='text-sm text-text-secondary'>
+															Pending Request
+														</span>
+													)}
+													{status === "accepted" && (
+														<span className='text-sm text-text-secondary'>
+															Already Friends
+														</span>
+													)}
+												</>
+											}
+										/>
 									);
 								})}
 							</div>
@@ -207,50 +189,31 @@ export const FriendsPage = () => {
 					</h2>
 					<div className='space-y-3'>
 						{pendingRequests.map(friendship => (
-							<div
+							<FriendCard
 								key={friendship.id}
-								className='flex items-center justify-between p-4 bg-secondary border border-border rounded-lg'>
-								<div className='flex items-center gap-3'>
-									{/* For pending requests where friend_id === profile.id, the requester is user_id */}
-									{friendship.user?.avatar_url ? (
-										<img
-											src={friendship.user.avatar_url}
-											alt={friendship.user.name || "User"}
-											className='w-10 h-10 rounded-full object-cover'
-										/>
-									) : (
-										<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-											<FaUser className='w-5 h-5 text-text-primary' />
-										</div>
-									)}
-									<div>
-										<p className='font-medium text-text-primary'>
-											{friendship.user?.name || "Unknown User"}
-										</p>
-										<p className='text-sm text-text-secondary'>
-											Wants to be friends
-										</p>
+								profile={friendship.user}
+								subtitle='Wants to be friends'
+								actions={
+									<div className='flex gap-2'>
+										<Button
+											variant='primary'
+											onClick={() => handleAccept(friendship.id)}>
+											<FaCheck className='w-4 h-4' />
+										</Button>
+										<Button
+											variant='secondary'
+											onClick={() =>
+												handleRemove(
+													friendship.id,
+													friendship.user?.name || "Unknown User",
+													true,
+												)
+											}>
+											<FaTimes className='w-4 h-4' />
+										</Button>
 									</div>
-								</div>
-								<div className='flex gap-2'>
-									<Button
-										variant='primary'
-										onClick={() => handleAccept(friendship.id)}>
-										<FaCheck className='w-4 h-4' />
-									</Button>
-									<Button
-										variant='secondary'
-										onClick={() =>
-											handleRemove(
-												friendship.id,
-												friendship.user?.name || "Unknown User",
-												true,
-											)
-										}>
-										<FaTimes className='w-4 h-4' />
-									</Button>
-								</div>
-							</div>
+								}
+							/>
 						))}
 					</div>
 				</div>
@@ -264,39 +227,20 @@ export const FriendsPage = () => {
 					</h2>
 					<div className='space-y-3'>
 						{sentRequests.map(friendship => (
-							<div
+							<FriendCard
 								key={friendship.id}
-								className='flex items-center justify-between p-4 bg-secondary border border-border rounded-lg'>
-								<div className='flex items-center gap-3'>
-									{/* For sent requests where user_id === profile.id, the receiver is friend_id */}
-									{friendship.friend?.avatar_url ? (
-										<img
-											src={friendship.friend.avatar_url}
-											alt={friendship.friend.name || "User"}
-											className='w-10 h-10 rounded-full object-cover'
-										/>
-									) : (
-										<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-											<FaUser className='w-5 h-5 text-text-primary' />
-										</div>
-									)}
-									<div>
-										<p className='font-medium text-text-primary'>
-											{friendship.friend?.name || "Unknown User"}
-										</p>
-										<p className='text-sm text-text-secondary'>
-											Waiting for response
-										</p>
-									</div>
-								</div>
-								<Button
-									className='flex items-center gap-2'
-									variant='secondary'
-									onClick={() => handleCancel(friendship.id)}>
-									<FaTimes className='w-4 h-4 mt-0.5' />
-									Cancel Request
-								</Button>
-							</div>
+								profile={friendship.friend}
+								subtitle='Waiting for response'
+								actions={
+									<Button
+										className='flex items-center gap-2'
+										variant='secondary'
+										onClick={() => handleCancel(friendship.id)}>
+										<FaTimes className='w-4 h-4 mt-0.5' />
+										Cancel Request
+									</Button>
+								}
+							/>
 						))}
 					</div>
 				</div>
@@ -319,43 +263,22 @@ export const FriendsPage = () => {
 									? friendship.friend
 									: friendship.user;
 							return (
-								<div
+								<FriendCard
 									key={friendship.id}
-									className='flex items-center justify-between p-4 bg-secondary border border-border rounded-lg'>
-									<div className='flex items-center gap-3'>
-										{friend?.avatar_url ? (
-											<img
-												src={friend.avatar_url}
-												alt={friend.name || "User"}
-												className='w-10 h-10 rounded-full object-cover'
-											/>
-										) : (
-											<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-												<FaUser className='w-5 h-5 text-text-primary' />
-											</div>
-										)}
-										<div>
-											<p className='font-medium text-text-primary'>
-												{friend?.name || "Unknown User"}
-											</p>
-											{friend?.location && (
-												<p className='text-sm text-text-secondary'>
-													{friend.location}
-												</p>
-											)}
-										</div>
-									</div>
-									<Button
-										variant='secondary'
-										onClick={() =>
-											handleRemove(
-												friendship.id,
-												friend?.name || "Unknown User",
-											)
-										}>
-										Remove
-									</Button>
-								</div>
+									profile={friend}
+									actions={
+										<Button
+											variant='secondary'
+											onClick={() =>
+												handleRemove(
+													friendship.id,
+													friend?.name || "Unknown User",
+												)
+											}>
+											Remove
+										</Button>
+									}
+								/>
 							);
 						})}
 					</div>
