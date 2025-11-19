@@ -1,0 +1,8 @@
+export const HomePage = () => {
+	return (
+		<div className='p-8 bg-red-500'>
+			<h1 className='text-2xl font-bold'>Potluck</h1>
+			<p>Welcome to the Potluck App!</p>
+		</div>
+	);
+};

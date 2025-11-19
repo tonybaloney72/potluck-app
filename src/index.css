@@ -1,0 +1,185 @@
+@import "tailwindcss";
+@tailwind utilities;
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+[data-theme="light"] {
+	--bg-primary: #f3f4f6;
+	--bg-secondary: #ffffff;
+	--bg-tertiary: #e5e7eb;
+	--text-primary: #111827;
+	--text-secondary: #6b7280;
+	--text-tertiary: #9ca3af;
+	--accent: #3b82f6;
+	--accent-secondary: #2563eb;
+	--accent-tertiary: #60a5fa;
+	--border: #e5e7eb;
+}
+
+[data-theme="dark"] {
+	--bg-primary: #1f2937;
+	--bg-secondary: #111827;
+	--bg-tertiary: #374151;
+	--text-primary: #f9fafb;
+	--text-secondary: #d1d5db;
+	--text-tertiary: #9ca3af;
+	--accent: #60a5fa;
+	--accent-secondary: #3b82f6;
+	--accent-tertiary: #93c5fd;
+	--border: #374151;
+}
+
+html {
+	@apply bg-gray-50 text-gray-900;
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html[data-theme="dark"] {
+	@apply bg-gray-900 text-gray-50;
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Background utilities */
+@utility bg-primary {
+	background-color: var(--bg-primary);
+}
+
+@utility bg-secondary {
+	background-color: var(--bg-secondary);
+}
+
+@utility bg-tertiary {
+	background-color: var(--bg-tertiary);
+}
+
+@utility bg-text-primary {
+	background-color: var(--text-primary);
+}
+
+@utility bg-text-secondary {
+	background-color: var(--text-secondary);
+}
+
+@utility bg-text-tertiary {
+	background-color: var(--text-tertiary);
+}
+
+@utility bg-accent {
+	background-color: var(--accent);
+}
+
+@utility bg-accent-secondary {
+	background-color: var(--accent-secondary);
+}
+
+@utility bg-accent-tertiary {
+	background-color: var(--accent-tertiary);
+}
+
+@utility bg-border {
+	background-color: var(--border);
+}
+
+@utility bg-primary-gradient {
+	background: radial-gradient(
+		circle at 50% 50%,
+		var(--bg-primary),
+		var(--bg-tertiary),
+		var(--bg-secondary),
+		var(--bg-primary)
+	);
+	background-size: 200% 200%;
+	animation: gradient-shift 20s ease 1;
+}
+
+@keyframes gradient-shift {
+	0%,
+	100% {
+		background-position: 0% 0%;
+	}
+	50% {
+		background-position: 100% 100%;
+	}
+}
+
+/* Text utilities */
+@utility text-primary {
+	color: var(--text-primary);
+}
+
+@utility text-secondary {
+	color: var(--text-secondary);
+}
+
+@utility text-tertiary {
+	color: var(--text-tertiary);
+}
+
+@utility text-bg-primary {
+	color: var(--bg-primary);
+}
+
+@utility text-bg-secondary {
+	color: var(--bg-secondary);
+}
+
+@utility text-bg-tertiary {
+	color: var(--bg-tertiary);
+}
+
+@utility text-accent {
+	color: var(--accent);
+}
+
+@utility text-accent-secondary {
+	color: var(--accent-secondary);
+}
+
+@utility text-accent-tertiary {
+	color: var(--accent-tertiary);
+}
+
+@utility text-border {
+	color: var(--border);
+}
+
+/* Border utilities */
+@utility border-primary {
+	border-color: var(--bg-primary);
+}
+
+@utility border-secondary {
+	border-color: var(--bg-secondary);
+}
+
+@utility border-tertiary {
+	border-color: var(--bg-tertiary);
+}
+
+@utility border-text-primary {
+	border-color: var(--text-primary);
+}
+
+@utility border-text-secondary {
+	border-color: var(--text-secondary);
+}
+
+@utility border-text-tertiary {
+	border-color: var(--text-tertiary);
+}
+
+@utility border-accent {
+	border-color: var(--accent);
+}
+
+@utility border-accent-secondary {
+	border-color: var(--accent-secondary);
+}
+
+@utility border-accent-tertiary {
+	border-color: var(--accent-tertiary);
+}
+
+@utility border-border {
+	border-color: var(--border);
+}
