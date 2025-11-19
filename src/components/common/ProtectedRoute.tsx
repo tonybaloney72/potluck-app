@@ -12,7 +12,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 	// If we have a user, show content even if still initializing (profile loading)
 	// Only show loading if we're initializing AND don't have a user yet
 	if (initializing && !user) {
-		return <LoadingSpinner />;
+		return <LoadingSpinner fullScreen message='Loading...' />;
 	}
 
 	// If initialization is complete and no user, redirect to login
