@@ -11,6 +11,7 @@ import { searchUsers } from "../store/slices/usersSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import { ConfirmModal } from "../components/common/ConfirmModal";
 import { FaUser, FaCheck, FaTimes, FaSearch, FaUserPlus } from "react-icons/fa";
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -22,6 +23,12 @@ export const FriendsPage = () => {
 	const { searchResults, searchLoading } = useAppSelector(state => state.users);
 	const { profile } = useAppSelector(state => state.auth);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+	const [friendshipToRemove, setFriendshipToRemove] = useState<{
+		id: string;
+		friendName: string;
+		isDecliningRequest?: boolean;
+	} | null>(null);
 
 	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -41,8 +48,24 @@ export const FriendsPage = () => {
 		dispatch(acceptFriendRequest(friendshipId));
 	};
 
-	const handleRemove = (friendshipId: string) => {
-		dispatch(removeFriend(friendshipId));
+	const handleRemove = (
+		friendshipId: string,
+		friendName: string,
+		isDecliningRequest = false,
+	) => {
+		setFriendshipToRemove({
+			id: friendshipId,
+			friendName,
+			isDecliningRequest,
+		});
+		setShowRemoveConfirm(true);
+	};
+
+	const handleConfirmRemove = () => {
+		if (friendshipToRemove) {
+			dispatch(removeFriend(friendshipToRemove.id));
+			setFriendshipToRemove(null);
+		}
 	};
 
 	const handleCancel = (friendshipId: string) => {
@@ -217,7 +240,13 @@ export const FriendsPage = () => {
 									</Button>
 									<Button
 										variant='secondary'
-										onClick={() => handleRemove(friendship.id)}>
+										onClick={() =>
+											handleRemove(
+												friendship.id,
+												friendship.user?.name || "Unknown User",
+												true,
+											)
+										}>
 										<FaTimes className='w-4 h-4' />
 									</Button>
 								</div>
@@ -318,7 +347,12 @@ export const FriendsPage = () => {
 									</div>
 									<Button
 										variant='secondary'
-										onClick={() => handleRemove(friendship.id)}>
+										onClick={() =>
+											handleRemove(
+												friendship.id,
+												friend?.name || "Unknown User",
+											)
+										}>
 										Remove
 									</Button>
 								</div>
@@ -327,6 +361,35 @@ export const FriendsPage = () => {
 					</div>
 				)}
 			</div>
+
+			{/* Remove Friend / Decline Request Confirmation Modal */}
+			<ConfirmModal
+				isOpen={showRemoveConfirm}
+				onClose={() => {
+					setShowRemoveConfirm(false);
+					setFriendshipToRemove(null);
+				}}
+				onConfirm={handleConfirmRemove}
+				title={
+					friendshipToRemove?.isDecliningRequest
+						? "Decline Friend Request"
+						: "Remove Friend"
+				}
+				message={
+					friendshipToRemove?.isDecliningRequest
+						? `Are you sure you want to decline the friend request from ${
+								friendshipToRemove?.friendName || "this user"
+						  }?`
+						: `Are you sure you want to remove ${
+								friendshipToRemove?.friendName || "this friend"
+						  } from your friends list?`
+				}
+				confirmText={
+					friendshipToRemove?.isDecliningRequest ? "Decline" : "Remove"
+				}
+				cancelText='Cancel'
+				confirmVariant='primary'
+			/>
 		</div>
 	);
 };

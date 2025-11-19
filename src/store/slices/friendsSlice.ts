@@ -113,7 +113,20 @@ export const acceptFriendRequest = createAsyncThunk(
 			.single();
 
 		if (error) throw error;
-		return data as Friendship;
+
+		// Fetch the requester's profile (user_id) - needed for the Friends list display
+		const { data: requesterProfile, error: profileError } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", data.user_id)
+			.single();
+
+		if (profileError) throw profileError;
+
+		return {
+			...data,
+			user: requesterProfile,
+		} as Friendship;
 	},
 );
 
