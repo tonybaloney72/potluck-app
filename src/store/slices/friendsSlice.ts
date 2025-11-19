@@ -5,12 +5,14 @@ import type { Friendship } from "../../types";
 interface FriendsState {
 	friendships: Friendship[];
 	loading: boolean;
+	sendingRequest: boolean;
 	error: string | null;
 }
 
 const initialState: FriendsState = {
 	friendships: [],
 	loading: false,
+	sendingRequest: false,
 	error: null,
 };
 
@@ -22,20 +24,40 @@ export const fetchFriendships = createAsyncThunk(
 		} = await supabase.auth.getUser();
 		if (!user) throw new Error("Not authenticated");
 
+		// Simpler query without foreign key hints
 		const { data, error } = await supabase
 			.from("friendships")
-			.select(
-				`
-        *,
-        user:profiles!friendships_user_id_fkey(*),
-        friend:profiles!friendships_friend_id_fkey(*)
-      `,
-			)
+			.select("*")
 			.or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 			.order("created_at", { ascending: false });
 
 		if (error) throw error;
-		return data as Friendship[];
+
+		// Fetch profiles separately for each friendship
+		const friendshipsWithProfiles = await Promise.all(
+			(data || []).map(async friendship => {
+				const [userProfile, friendProfile] = await Promise.all([
+					supabase
+						.from("profiles")
+						.select("*")
+						.eq("id", friendship.user_id)
+						.single(),
+					supabase
+						.from("profiles")
+						.select("*")
+						.eq("id", friendship.friend_id)
+						.single(),
+				]);
+
+				return {
+					...friendship,
+					user: userProfile.data,
+					friend: friendProfile.data,
+				};
+			}),
+		);
+
+		return friendshipsWithProfiles as Friendship[];
 	},
 );
 
@@ -58,7 +80,20 @@ export const sendFriendRequest = createAsyncThunk(
 			.single();
 
 		if (error) throw error;
-		return data as Friendship;
+
+		// Fetch the friend's profile (receiver) - we only need this for the Sent Requests UI
+		const { data: friendProfile, error: profileError } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", data.friend_id)
+			.single();
+
+		if (profileError) throw profileError;
+
+		return {
+			...data,
+			friend: friendProfile,
+		} as Friendship;
 	},
 );
 
@@ -84,6 +119,19 @@ export const acceptFriendRequest = createAsyncThunk(
 
 export const removeFriend = createAsyncThunk(
 	"friends/removeFriend",
+	async (friendshipId: string) => {
+		const { error } = await supabase
+			.from("friendships")
+			.delete()
+			.eq("id", friendshipId);
+
+		if (error) throw error;
+		return friendshipId;
+	},
+);
+
+export const cancelFriendRequest = createAsyncThunk(
+	"friends/cancelFriendRequest",
 	async (friendshipId: string) => {
 		const { error } = await supabase
 			.from("friendships")
@@ -122,15 +170,15 @@ const friendsSlice = createSlice({
 		// Send friend request
 		builder
 			.addCase(sendFriendRequest.pending, state => {
-				state.loading = true;
+				state.sendingRequest = true;
 				state.error = null;
 			})
 			.addCase(sendFriendRequest.fulfilled, (state, action) => {
-				state.loading = false;
+				state.sendingRequest = false;
 				state.friendships.push(action.payload);
 			})
 			.addCase(sendFriendRequest.rejected, (state, action) => {
-				state.loading = false;
+				state.sendingRequest = false;
 				state.error = action.error.message || "Failed to send friend request";
 			});
 
@@ -146,6 +194,13 @@ const friendsSlice = createSlice({
 
 		// Remove friend
 		builder.addCase(removeFriend.fulfilled, (state, action) => {
+			state.friendships = state.friendships.filter(
+				f => f.id !== action.payload,
+			);
+		});
+
+		// Cancel friend request
+		builder.addCase(cancelFriendRequest.fulfilled, (state, action) => {
 			state.friendships = state.friendships.filter(
 				f => f.id !== action.payload,
 			);
