@@ -27,6 +27,7 @@ export const fetchFriendships = createAsyncThunk(
 			.select(
 				`
         *,
+        user:profiles!friendships_user_id_fkey(*),
         friend:profiles!friendships_friend_id_fkey(*)
       `,
 			)

@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
-import type { Message } from "../../types";
+import type { Message, Friendship } from "../../types";
+import { areFriends } from "../../utils/friendship";
+import type { RootState } from "../index";
 
 interface MessagesState {
 	messages: Message[];
@@ -18,11 +20,18 @@ const initialState: MessagesState = {
 
 export const fetchMessages = createAsyncThunk(
 	"messages/fetchMessages",
-	async (otherUserId: string) => {
+	async (otherUserId: string, { getState }) => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
 		if (!user) throw new Error("Not authenticated");
+
+		// Check if users are friends
+		const state = getState() as { friends: { friendships: Friendship[] } };
+		const friendships = state.friends.friendships;
+		if (!areFriends(friendships, user.id, otherUserId)) {
+			throw new Error("You can only view messages with your friends");
+		}
 
 		const { data, error } = await supabase
 			.from("messages")
@@ -45,11 +54,21 @@ export const fetchMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
 	"messages/sendMessage",
-	async ({ receiverId, content }: { receiverId: string; content: string }) => {
+	async (
+		{ receiverId, content }: { receiverId: string; content: string },
+		{ getState },
+	) => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
 		if (!user) throw new Error("Not authenticated");
+
+		// Check if users are friends
+		const state = getState() as RootState;
+		const friendships = state.friends.friendships;
+		if (!areFriends(friendships, user.id, receiverId)) {
+			throw new Error("You can only message your friends");
+		}
 
 		const { data, error } = await supabase
 			.from("messages")
@@ -94,11 +113,41 @@ export const markMessagesAsRead = createAsyncThunk(
 
 export const fetchConversations = createAsyncThunk(
 	"messages/fetchConversations",
-	async () => {
+	async (_, { getState }) => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
 		if (!user) throw new Error("Not authenticated");
+
+		// Get friendships to filter conversations
+		const state = getState() as RootState;
+		const friendships = state.friends.friendships;
+
+		// Get all friend IDs (users with accepted friendships)
+		const friendIds = new Set<string>();
+		friendships.forEach(friendship => {
+			if (friendship.status === "accepted") {
+				if (friendship.user_id === user.id) {
+					friendIds.add(friendship.friend_id);
+				} else if (friendship.friend_id === user.id) {
+					friendIds.add(friendship.user_id);
+				}
+			}
+		});
+
+		// If no friends, return empty conversations
+		if (friendIds.size === 0) {
+			return {};
+		}
+
+		// Build query to only fetch messages with friends
+		const friendIdsArray = Array.from(friendIds);
+		const orConditions = friendIdsArray
+			.map(
+				friendId =>
+					`and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`,
+			)
+			.join(",");
 
 		const { data, error } = await supabase
 			.from("messages")
@@ -109,20 +158,23 @@ export const fetchConversations = createAsyncThunk(
         receiver:profiles!messages_receiver_id_fkey(*)
       `,
 			)
-			.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+			.or(orConditions)
 			.order("created_at", { ascending: false });
 
 		if (error) throw error;
 
-		// Group by conversation partner
+		// Group by conversation partner (only friends)
 		const conversations: { [userId: string]: Message[] } = {};
 		(data as Message[]).forEach(message => {
 			const otherUserId =
 				message.sender_id === user.id ? message.receiver_id : message.sender_id;
-			if (!conversations[otherUserId]) {
-				conversations[otherUserId] = [];
+			// Double-check that the other user is a friend
+			if (friendIds.has(otherUserId)) {
+				if (!conversations[otherUserId]) {
+					conversations[otherUserId] = [];
+				}
+				conversations[otherUserId].push(message);
 			}
-			conversations[otherUserId].push(message);
 		});
 
 		return conversations;
@@ -209,10 +261,15 @@ const messagesSlice = createSlice({
 		builder
 			.addCase(fetchConversations.pending, state => {
 				state.loading = true;
+				state.error = null;
 			})
 			.addCase(fetchConversations.fulfilled, (state, action) => {
 				state.loading = false;
 				state.conversations = action.payload;
+			})
+			.addCase(fetchConversations.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to fetch conversations";
 			});
 	},
 });

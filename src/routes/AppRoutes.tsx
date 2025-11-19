@@ -5,6 +5,8 @@ import { RegisterPage } from "../pages/RegisterPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { Layout } from "../components/layout/Layout";
+import { FriendsPage } from "../pages/FriendsPage";
+import { MessagesPage } from "../pages/MessagesPage";
 
 export function AppRoutes() {
 	return (
@@ -25,6 +27,26 @@ export function AppRoutes() {
 					<Layout>
 						<ProtectedRoute>
 							<ProfilePage />
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/friends'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<FriendsPage />
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/messages'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<MessagesPage />
 						</ProtectedRoute>
 					</Layout>
 				}

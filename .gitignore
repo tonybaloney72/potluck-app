@@ -45,3 +45,4 @@ Thumbs.db
 PHASE*.md
 PROJECT_NOTES.md
 ERROR_BOUNDARY_GUIDE.md
+.cursor/rules/project-rules.mdc

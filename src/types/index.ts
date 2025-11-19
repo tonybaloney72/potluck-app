@@ -26,6 +26,7 @@ export interface Friendship {
 	status: FriendshipStatus;
 	created_at: string;
 	updated_at: string;
+	user?: Profile;
 	friend?: Profile;
 }
 
