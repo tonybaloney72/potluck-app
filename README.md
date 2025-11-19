@@ -1,75 +1,145 @@
-# React + TypeScript + Vite
+# Potluck App 🍽️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A social application that allows users to plan and participate in potluck events. Connect with friends, organize gatherings, coordinate contributions, and make event planning effortless!
 
-Currently, two official plugins are available:
+## About
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Potluck App is a modern web application designed to simplify the organization of potluck events. Users can create events, invite friends, manage contributions, and stay connected through messaging and notifications. Built with a focus on user experience, theme customization, and real-time collaboration.
 
-## React Compiler
+## Features
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Current Features (Phase 1 & 2 Complete)
 
-Note: This will impact Vite dev & build performances.
+- ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
+- ✅ **User Profiles** - Customizable profiles with avatars, names, and location
+- ✅ **Theme System** - Per-user theme preferences (light, dark, or system)
+- ✅ **Protected Routes** - Secure access to authenticated pages
+- ✅ **Responsive Design** - Modern UI built with Tailwind CSS
+- ✅ **Smooth Animations** - Enhanced UX with Motion (Framer Motion)
 
-## Expanding the ESLint configuration
+### Coming Soon
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 🔄 **Friends System** - Connect with other users, send friend requests
+- 🔄 **Event Management** - Create, edit, and manage potluck events
+- 🔄 **RSVP System** - Let attendees confirm their participation
+- 🔄 **Contribution Tracking** - Coordinate who's bringing what
+- 🔄 **Role-Based Permissions** - Creators, co-creators, contributors, and guests
+- 🔄 **Messaging** - Direct messaging between users
+- 🔄 **Notifications** - Real-time updates for event changes
+- 🔄 **Event Comments** - Discussion threads for each event
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Tech Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Frontend Framework**: React 19 with TypeScript
+- **State Management**: Redux Toolkit
+- **Styling**: Tailwind CSS v4
+- **Animations**: Motion (Framer Motion)
+- **Routing**: React Router v7
+- **Backend & Database**: Supabase
+  - Authentication
+  - PostgreSQL Database
+  - Row Level Security (RLS)
+- **Build Tool**: Vite
+- **Language**: TypeScript
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- A Supabase account and project
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd potluck-app
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   Create a `.env` file in the root directory:
+
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. Set up Supabase:
+
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Run the database migrations (see database setup in project documentation)
+   - Configure authentication settings
+
+5. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+6. Open your browser and navigate to `http://localhost:5173`
+
+## Project Structure
+
+```
+potluck-app/
+├── src/
+│   ├── components/      # Reusable UI components
+│   │   ├── common/      # Common components (Button, Input, etc.)
+│   │   └── layout/     # Layout components (Header, Layout)
+│   ├── context/        # React contexts (Theme, etc.)
+│   ├── features/       # Feature-specific code
+│   │   ├── auth/       # Authentication feature
+│   │   ├── events/     # Events feature (coming soon)
+│   │   ├── friends/    # Friends feature (coming soon)
+│   │   └── messages/   # Messaging feature (coming soon)
+│   ├── hooks/          # Custom React hooks
+│   ├── pages/          # Page components
+│   ├── routes/         # Route configuration
+│   ├── services/       # API services (Supabase client)
+│   ├── store/          # Redux store
+│   │   └── slices/     # Redux slices
+│   ├── types/          # TypeScript type definitions
+│   └── utils/          # Utility functions
+├── public/             # Static assets
+└── dist/              # Build output (generated)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Available Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Development Status
+
+This project is currently in active development. Phase 1 (Foundation) and Phase 2 (User Management) are complete. We're working on Phase 3 (Friends & Messaging) next.
+
+## Future Plans
+
+- Support for additional event types beyond potlucks
+- Mobile app (React Native)
+- Advanced event features (recurring events, event templates)
+- Social features (event discovery, public events)
+- Integration with calendar applications
+
+## Contributing
+
+This is a personal project, but suggestions and feedback are welcome!
+
+## License
+
+[Add your license here]
+
+---
+
+Built with ❤️ using React, TypeScript, and Supabase
