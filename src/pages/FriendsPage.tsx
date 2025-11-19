@@ -7,17 +7,26 @@ import {
 	sendFriendRequest,
 	cancelFriendRequest,
 } from "../store/slices/friendsSlice";
+import { useNavigate } from "react-router";
 import { searchUsers } from "../store/slices/usersSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { ConfirmModal } from "../components/common/ConfirmModal";
-import { FaCheck, FaTimes, FaSearch, FaUserPlus } from "react-icons/fa";
+import {
+	FaCheck,
+	FaTimes,
+	FaSearch,
+	FaUserPlus,
+	FaEnvelope,
+} from "react-icons/fa";
 import { useDebounce } from "../hooks/useDebounce";
 import { FriendCard } from "../components/friends/FriendCard";
 
 export const FriendsPage = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
+
 	const { friendships, loading, sendingRequest } = useAppSelector(
 		state => state.friends,
 	);
@@ -267,16 +276,28 @@ export const FriendsPage = () => {
 									key={friendship.id}
 									profile={friend}
 									actions={
-										<Button
-											variant='secondary'
-											onClick={() =>
-												handleRemove(
-													friendship.id,
-													friend?.name || "Unknown User",
-												)
-											}>
-											Remove
-										</Button>
+										<div className='flex gap-2'>
+											<Button
+												className='flex items-center'
+												variant='primary'
+												onClick={() =>
+													navigate("/messages", {
+														state: { selectedUserId: friend?.id },
+													})
+												}>
+												<FaEnvelope className='w-4 h-4 mr-2' /> Message
+											</Button>
+											<Button
+												variant='secondary'
+												onClick={() =>
+													handleRemove(
+														friendship.id,
+														friend?.name || "Unknown User",
+													)
+												}>
+												Remove
+											</Button>
+										</div>
 									}
 								/>
 							);

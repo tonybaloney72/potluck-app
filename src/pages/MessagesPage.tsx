@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchConversations,
@@ -21,6 +22,7 @@ interface MessageFormData {
 
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
+	const location = useLocation();
 	const { conversations, loading, error } = useAppSelector(
 		state => state.messages,
 	);
@@ -29,7 +31,6 @@ export const MessagesPage = () => {
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	const [hasLoaded, setHasLoaded] = useState(false);
 	const [showFriendSelector, setShowFriendSelector] = useState(false);
-
 	const {
 		register,
 		handleSubmit,
@@ -46,6 +47,14 @@ export const MessagesPage = () => {
 			});
 		});
 	}, [dispatch]);
+
+	useEffect(() => {
+		if (location.state?.selectedUserId && hasLoaded) {
+			setSelectedUserId(location.state.selectedUserId);
+			// Clear the location state after using it
+			window.history.replaceState({}, document.title);
+		}
+	}, [location.state, hasLoaded]);
 
 	useEffect(() => {
 		if (selectedUserId) {
