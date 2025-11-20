@@ -36,31 +36,27 @@ export const fetchFriendships = createAsyncThunk(
 		// Fetch profiles separately for each friendship
 		const friendshipsWithProfiles = await Promise.all(
 			(data || []).map(async friendship => {
-				const [userProfile, friendProfile] = await Promise.all([
-					supabase
-						.from("profiles")
-						.select("*")
-						.eq("id", friendship.user_id)
-						.single(),
-					supabase
-						.from("profiles")
-						.select("*")
-						.eq("id", friendship.friend_id)
-						.single(),
-				]);
+				const otherUserId =
+					friendship.user_id === user.id
+						? friendship.friend_id
+						: friendship.user_id;
+
+				const { data: friendProfile } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", otherUserId)
+					.single();
 
 				return {
 					...friendship,
-					user: userProfile.data,
-					friend: friendProfile.data,
+					user: friendship.user_id === user.id ? null : friendProfile, // Sender's profile
+					friend: friendship.user_id === user.id ? friendProfile : null, // Receiver's profile
 				};
 			}),
 		);
-
 		return friendshipsWithProfiles as Friendship[];
 	},
 );
-
 export const sendFriendRequest = createAsyncThunk(
 	"friends/sendFriendRequest",
 	async (friendId: string) => {
