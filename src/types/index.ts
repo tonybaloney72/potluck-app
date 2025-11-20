@@ -55,3 +55,23 @@ export interface Message {
 	sender?: Profile;
 	conversation?: Conversation;
 }
+
+export type NotificationType =
+	| "friend_request"
+	| "friend_request_accepted"
+	| "message"
+	| "event_invitation"
+	| "event_updated"
+	| "event_cancelled"
+	| "event_reminder";
+
+export interface Notification {
+	id: string;
+	user_id: string;
+	type: NotificationType;
+	title: string;
+	message: string;
+	related_id: string | null;
+	read: boolean;
+	created_at: string;
+}
