@@ -8,7 +8,7 @@ Potluck App is a modern web application designed to simplify the organization of
 
 ## Features
 
-### Current Features (Phase 1 & 2 Complete)
+### Current Features (Phase 1, 2 & 3 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and location
@@ -16,15 +16,15 @@ Potluck App is a modern web application designed to simplify the organization of
 - ✅ **Protected Routes** - Secure access to authenticated pages
 - ✅ **Responsive Design** - Modern UI built with Tailwind CSS
 - ✅ **Smooth Animations** - Enhanced UX with Motion (Framer Motion)
+- ✅ **Friends System** - Connect with other users, send and accept friend requests, manage friendships
+- ✅ **Messaging** - Direct messaging between friends with conversation-based architecture
 
 ### Coming Soon
 
-- 🔄 **Friends System** - Connect with other users, send friend requests
 - 🔄 **Event Management** - Create, edit, and manage potluck events
 - 🔄 **RSVP System** - Let attendees confirm their participation
 - 🔄 **Contribution Tracking** - Coordinate who's bringing what
 - 🔄 **Role-Based Permissions** - Creators, co-creators, contributors, and guests
-- 🔄 **Messaging** - Direct messaging between users
 - 🔄 **Notifications** - Real-time updates for event changes
 - 🔄 **Event Comments** - Discussion threads for each event
 
@@ -99,8 +99,8 @@ potluck-app/
 │   ├── features/       # Feature-specific code
 │   │   ├── auth/       # Authentication feature
 │   │   ├── events/     # Events feature (coming soon)
-│   │   ├── friends/    # Friends feature (coming soon)
-│   │   └── messages/   # Messaging feature (coming soon)
+│   │   ├── friends/    # Friends feature
+│   │   └── messages/   # Messaging feature
 │   ├── hooks/          # Custom React hooks
 │   ├── pages/          # Page components
 │   ├── routes/         # Route configuration
@@ -122,7 +122,7 @@ potluck-app/
 
 ## Development Status
 
-This project is currently in active development. Phase 1 (Foundation) and Phase 2 (User Management) are complete. We're working on Phase 3 (Friends & Messaging) next.
+This project is currently in active development. Phase 1 (Foundation), Phase 2 (User Management), and Phase 3 (Friends & Messaging) are complete. We're working on Phase 4 (Event Management) next.
 
 ## Future Plans
 

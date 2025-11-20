@@ -37,12 +37,14 @@ export function useAuth() {
 		// Listen for auth changes (but don't set initializing here)
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
+		} = supabase.auth.onAuthStateChange((event, session) => {
 			if (session?.user) {
 				dispatch(
 					setUser({ id: session.user.id, email: session.user.email || "" }),
 				);
-				dispatch(fetchUserProfile(session.user.id));
+				if (event !== "INITIAL_SESSION") {
+					dispatch(fetchUserProfile(session.user.id));
+				}
 			} else {
 				dispatch(setUser(null));
 			}

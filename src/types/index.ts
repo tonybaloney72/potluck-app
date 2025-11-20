@@ -30,13 +30,28 @@ export interface Friendship {
 	friend?: Profile;
 }
 
+export interface Conversation {
+	id: string;
+	user1_id: string;
+	user2_id: string;
+	last_message_at: string | null;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	user1?: Profile;
+	user2?: Profile;
+	last_message?: Message;
+	unread_count?: number;
+}
+
 export interface Message {
 	id: string;
+	conversation_id: string;
 	sender_id: string;
-	receiver_id: string;
 	content: string;
 	read: boolean;
 	created_at: string;
+	// Joined data
 	sender?: Profile;
-	receiver?: Profile;
+	conversation?: Conversation;
 }

@@ -2,19 +2,21 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
-	fetchConversations,
 	fetchMessages,
 	sendMessage,
 	markMessagesAsRead,
 } from "../store/slices/messagesSlice";
-import { fetchFriendships } from "../store/slices/friendsSlice";
+import {
+	fetchConversations,
+	getOrCreateConversation,
+} from "../store/slices/conversationsSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { FaUser, FaPaperPlane } from "react-icons/fa";
-import { areFriends } from "../utils/friendship";
 import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
+import { BiSolidConversation } from "react-icons/bi";
 
 interface MessageFormData {
 	content: string;
@@ -23,12 +25,16 @@ interface MessageFormData {
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
 	const location = useLocation();
-	const { conversations, loading, error } = useAppSelector(
-		state => state.messages,
-	);
+	const { messages, loading, error } = useAppSelector(state => state.messages);
+	const {
+		conversations,
+		loading: conversationsLoading,
+		creatingConversation,
+	} = useAppSelector(state => state.conversations);
 	const { profile } = useAppSelector(state => state.auth);
-	const { friendships } = useAppSelector(state => state.friends);
-	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	const [selectedConversationId, setSelectedConversationId] = useState<
+		string | null
+	>(null);
 	const [hasLoaded, setHasLoaded] = useState(false);
 	const [showFriendSelector, setShowFriendSelector] = useState(false);
 	const {
@@ -39,76 +45,103 @@ export const MessagesPage = () => {
 	} = useForm<MessageFormData>();
 
 	useEffect(() => {
-		// Fetch friendships first (needed for conversation filtering)
-		dispatch(fetchFriendships()).then(() => {
-			// Then fetch conversations (which will filter by friends)
-			dispatch(fetchConversations()).then(() => {
-				setHasLoaded(true);
-			});
+		dispatch(fetchConversations()).then(() => {
+			setHasLoaded(true);
 		});
 	}, [dispatch]);
 
 	useEffect(() => {
+		// Handle navigation from FriendsPage with selectedUserId
 		if (location.state?.selectedUserId && hasLoaded) {
-			setSelectedUserId(location.state.selectedUserId);
+			// Get or create conversation with that user
+			dispatch(getOrCreateConversation(location.state.selectedUserId)).then(
+				result => {
+					if (getOrCreateConversation.fulfilled.match(result)) {
+						setSelectedConversationId(result.payload.id);
+					}
+				},
+			);
 			// Clear the location state after using it
 			window.history.replaceState({}, document.title);
 		}
-	}, [location.state, hasLoaded]);
+	}, [location.state, hasLoaded, dispatch]);
 
 	useEffect(() => {
-		if (selectedUserId) {
-			dispatch(fetchMessages(selectedUserId));
-			dispatch(markMessagesAsRead(selectedUserId));
+		if (selectedConversationId) {
+			dispatch(fetchMessages(selectedConversationId));
+			dispatch(markMessagesAsRead(selectedConversationId));
 		}
-	}, [selectedUserId, dispatch]);
+	}, [selectedConversationId, dispatch]);
 
 	const onSubmit = async (data: MessageFormData) => {
-		if (!selectedUserId) return;
-		await dispatch(
-			sendMessage({ receiverId: selectedUserId, content: data.content }),
+		if (!selectedConversationId) return;
+
+		// Get the other user's ID from the selected conversation
+		const selectedConversation = conversations.find(
+			c => c.id === selectedConversationId,
 		);
+		if (!selectedConversation) return;
+
+		const receiverId =
+			selectedConversation.user1_id === profile?.id
+				? selectedConversation.user2_id
+				: selectedConversation.user1_id;
+
+		await dispatch(sendMessage({ receiverId, content: data.content }));
 		reset();
 	};
 
-	const conversationList = Object.keys(conversations);
+	const handleSelectFriend = async (friendId: string) => {
+		const result = await dispatch(getOrCreateConversation(friendId));
+		if (getOrCreateConversation.fulfilled.match(result)) {
+			setSelectedConversationId(result.payload.id);
+		}
+	};
 
-	// Show loading only on initial load, not when there are no conversations
-	if (loading && !hasLoaded) {
+	// Show loading only on initial load when we have no data
+	if (
+		(conversationsLoading || loading) &&
+		!hasLoaded &&
+		conversations.length === 0
+	) {
 		return <LoadingSpinner fullScreen message='Loading conversations...' />;
 	}
 
-	const selectedMessages = selectedUserId
-		? conversations[selectedUserId] || []
-		: [];
-
-	// Check if selected user is a friend
-	const isSelectedUserFriend =
-		selectedUserId && profile
-			? areFriends(friendships, profile.id, selectedUserId)
-			: false;
+	const selectedConversation = conversations.find(
+		c => c.id === selectedConversationId,
+	);
+	const otherUser = selectedConversation
+		? selectedConversation.user1_id === profile?.id
+			? selectedConversation.user2
+			: selectedConversation.user1
+		: null;
 
 	return (
 		<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
 			{/* Conversations List */}
-			<div className='w-1/3 border-r border-border pr-4 overflow-y-auto'>
-				<h2 className='text-xl font-semibold mb-4 text-text-primary'>
+			<div className='w-1/3 border-r border-border pr-4 overflow-y-auto flex flex-col gap-4'>
+				<h2 className='text-xl font-semibold text-text-primary'>
 					Conversations
 				</h2>
-				<Button onClick={() => setShowFriendSelector(true)}>
+				<Button
+					className='flex items-center gap-2'
+					variant='secondary'
+					onClick={() => setShowFriendSelector(true)}
+					loading={creatingConversation}>
+					<BiSolidConversation />
 					New Conversation
 				</Button>
 				<FriendSelectorModal
 					isOpen={showFriendSelector}
 					onClose={() => setShowFriendSelector(false)}
-					onSelectFriend={setSelectedUserId}
+					onSelectFriend={handleSelectFriend}
 				/>
 				{error && (
 					<div className='mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg'>
 						<p className='text-sm text-red-500'>{error}</p>
 					</div>
 				)}
-				{conversationList.length === 0 ? (
+				{conversations.length === 0 ? (
 					<div className='text-center py-8'>
 						<p className='text-text-secondary mb-2'>No conversations yet.</p>
 						<p className='text-sm text-text-tertiary'>
@@ -117,20 +150,18 @@ export const MessagesPage = () => {
 					</div>
 				) : (
 					<div className='space-y-2'>
-						{conversationList.map(userId => {
-							const messages = conversations[userId];
-							const lastMessage = messages[messages.length - 1];
+						{conversations.map(conversation => {
 							const otherUser =
-								lastMessage.sender_id === profile?.id
-									? lastMessage.receiver
-									: lastMessage.sender;
+								conversation.user1_id === profile?.id
+									? conversation.user2
+									: conversation.user1;
 
 							return (
 								<button
-									key={userId}
-									onClick={() => setSelectedUserId(userId)}
-									className={`w-full text-left p-3 rounded-lg transition-colors ${
-										selectedUserId === userId
+									key={conversation.id}
+									onClick={() => setSelectedConversationId(conversation.id)}
+									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-colors ${
+										selectedConversationId === conversation.id
 											? "bg-accent text-bg-secondary"
 											: "bg-secondary hover:bg-tertiary text-text-primary"
 									}`}>
@@ -147,12 +178,21 @@ export const MessagesPage = () => {
 											</div>
 										)}
 										<div className='flex-1 min-w-0'>
-											<p className='font-medium truncate'>
-												{otherUser?.name || "Unknown User"}
-											</p>
-											<p className='text-sm truncate opacity-75'>
-												{lastMessage.content}
-											</p>
+											<div className='flex items-center justify-between'>
+												<p className='font-medium truncate'>
+													{otherUser?.name || "Unknown User"}
+												</p>
+												{(conversation.unread_count ?? 0) > 0 && (
+													<span className='bg-accent text-bg-secondary rounded-full text-xs px-2 py-0.5 ml-2'>
+														{conversation.unread_count}
+													</span>
+												)}
+											</div>
+											{conversation.last_message && (
+												<p className='text-sm truncate opacity-75'>
+													{conversation.last_message.content}
+												</p>
+											)}
 										</div>
 									</div>
 								</button>
@@ -164,10 +204,10 @@ export const MessagesPage = () => {
 
 			{/* Messages View */}
 			<div className='flex-1 flex flex-col'>
-				{selectedUserId ? (
+				{selectedConversationId && otherUser ? (
 					<>
 						<div className='flex-1 overflow-y-auto mb-4 space-y-4'>
-							{selectedMessages.map(message => {
+							{messages.map(message => {
 								const isOwn = message.sender_id === profile?.id;
 								return (
 									<div
@@ -193,28 +233,19 @@ export const MessagesPage = () => {
 								);
 							})}
 						</div>
-						{isSelectedUserFriend ? (
-							<form onSubmit={handleSubmit(onSubmit)} className='flex gap-2'>
-								<Input
-									placeholder='Type a message...'
-									{...register("content", {
-										required: "Message cannot be empty",
-									})}
-									error={errors.content?.message}
-									className='flex-1'
-								/>
-								<Button type='submit' loading={loading}>
-									<FaPaperPlane className='w-4 h-4' />
-								</Button>
-							</form>
-						) : (
-							<div className='p-4 bg-tertiary rounded-lg border border-border'>
-								<p className='text-text-secondary text-sm text-center'>
-									You can only message your friends. Add this user as a friend
-									from the Friends page to start messaging.
-								</p>
-							</div>
-						)}
+						<form onSubmit={handleSubmit(onSubmit)} className='flex gap-2'>
+							<Input
+								placeholder='Type a message...'
+								{...register("content", {
+									required: "Message cannot be empty",
+								})}
+								error={errors.content?.message}
+								className='flex-1'
+							/>
+							<Button type='submit' loading={loading}>
+								<FaPaperPlane className='w-4 h-4' />
+							</Button>
+						</form>
 					</>
 				) : (
 					<div className='flex-1 flex items-center justify-center text-text-secondary'>

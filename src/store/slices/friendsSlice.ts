@@ -57,6 +57,7 @@ export const fetchFriendships = createAsyncThunk(
 		return friendshipsWithProfiles as Friendship[];
 	},
 );
+
 export const sendFriendRequest = createAsyncThunk(
 	"friends/sendFriendRequest",
 	async (friendId: string) => {
