@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
 	fetchNotifications,
@@ -13,6 +14,7 @@ import type { Notification } from "../../types";
 
 export const NotificationDropdown = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { notifications, unreadCount, loading } = useAppSelector(
 		state => state.notifications,
 	);
@@ -54,6 +56,22 @@ export const NotificationDropdown = () => {
 
 	const handleDelete = (notificationId: string) => {
 		dispatch(deleteNotification(notificationId));
+	};
+
+	const handleNotificationClick = (notification: Notification) => {
+		// If notification is a friend request, navigate to FriendsPage
+		if (
+			notification.type === "friend_request" ||
+			notification.type === "friend_request_accepted"
+		) {
+			// Mark as read if unread
+			if (!notification.read) {
+				dispatch(markNotificationAsRead(notification.id));
+			}
+			// Close dropdown and navigate
+			setIsOpen(false);
+			navigate("/friends");
+		}
 	};
 
 	const getNotificationIcon = (type: Notification["type"]) => {
@@ -152,7 +170,8 @@ export const NotificationDropdown = () => {
 													!notification.read ? "bg-primary/50" : ""
 												}`}
 												initial={{ opacity: 0, x: -10 }}
-												animate={{ opacity: 1, x: 0 }}>
+												animate={{ opacity: 1, x: 0 }}
+												onClick={() => handleNotificationClick(notification)}>
 												<div className='flex items-start gap-3'>
 													<div className='text-2xl shrink-0'>
 														{getNotificationIcon(notification.type)}
@@ -179,9 +198,10 @@ export const NotificationDropdown = () => {
 														<div className='flex items-center gap-2 mt-3'>
 															{!notification.read && (
 																<button
-																	onClick={() =>
-																		handleMarkAsRead(notification.id)
-																	}
+																	onClick={e => {
+																		e.stopPropagation();
+																		handleMarkAsRead(notification.id);
+																	}}
 																	className='text-xs text-accent hover:underline flex items-center gap-1'
 																	type='button'>
 																	<FaCheck className='w-3 h-3' />
@@ -189,7 +209,10 @@ export const NotificationDropdown = () => {
 																</button>
 															)}
 															<button
-																onClick={() => handleDelete(notification.id)}
+																onClick={e => {
+																	e.stopPropagation();
+																	handleDelete(notification.id);
+																}}
 																className='text-xs text-text-tertiary hover:text-text-primary flex items-center gap-1'
 																type='button'>
 																<FaTrash className='w-3 h-3' />

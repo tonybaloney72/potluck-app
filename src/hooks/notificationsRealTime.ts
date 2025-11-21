@@ -42,7 +42,7 @@ export function useNotificationsRealtime() {
 		const channel = supabase
 			.channel(`notifications:${user.id}`)
 			.on(
-				"postgres_changes",
+				"postgres_changes" as any, // Type assertion needed due to TypeScript type definitions
 				{
 					event: "*", // Listen to INSERT, UPDATE, DELETE
 					schema: "public",

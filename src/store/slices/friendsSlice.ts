@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	createAsyncThunk,
+	type PayloadAction,
+} from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Friendship } from "../../types";
 
@@ -160,6 +164,29 @@ const friendsSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		// Add friendship from realtime subscription
+		addFriendship: (state, action: PayloadAction<Friendship>) => {
+			// Prevent duplicates
+			const exists = state.friendships.some(f => f.id === action.payload.id);
+			if (!exists) {
+				state.friendships.push(action.payload);
+			}
+		},
+		// Update friendship from realtime subscription
+		updateFriendship: (state, action: PayloadAction<Friendship>) => {
+			const index = state.friendships.findIndex(
+				f => f.id === action.payload.id,
+			);
+			if (index !== -1) {
+				state.friendships[index] = action.payload;
+			}
+		},
+		// Remove friendship from realtime subscription
+		removeFriendship: (state, action: PayloadAction<string>) => {
+			state.friendships = state.friendships.filter(
+				f => f.id !== action.payload,
+			);
+		},
 	},
 	extraReducers: builder => {
 		// Fetch friendships
@@ -218,5 +245,6 @@ const friendsSlice = createSlice({
 	},
 });
 
-export const { clearError } = friendsSlice.actions;
+export const { clearError, addFriendship, updateFriendship, removeFriendship } =
+	friendsSlice.actions;
 export default friendsSlice.reducer;
