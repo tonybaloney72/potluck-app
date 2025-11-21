@@ -9,8 +9,12 @@ import {
 	FaSignOutAlt,
 	FaEnvelope,
 	FaUsers,
+	FaMoon,
+	FaSun,
 } from "react-icons/fa";
 import { LuCookingPot } from "react-icons/lu";
+import { useTheme } from "../../context/ThemeContext";
+import type { ThemePreference } from "../../types";
 
 export const Header = () => {
 	const { profile } = useAppSelector(state => state.auth);
@@ -18,6 +22,11 @@ export const Header = () => {
 	const navigate = useNavigate();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const { theme, setTheme } = useTheme();
+
+	const handleThemeChange = (newTheme: ThemePreference) => {
+		setTheme(newTheme);
+	};
 
 	const handleSignOut = () => {
 		dispatch(signOut());
@@ -130,6 +139,22 @@ export const Header = () => {
 													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary transition-colors duration-50 hover:cursor-pointer'>
 													<FaCog className='w-4 h-4' />
 													Settings
+												</motion.button>
+												<motion.button
+													whileHover={{ backgroundColor: "var(--bg-tertiary)" }}
+													whileTap={{ scale: 0.98 }}
+													onClick={() =>
+														handleThemeChange(
+															theme === "dark" ? "light" : "dark",
+														)
+													}
+													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary transition-colors duration-50 hover:cursor-pointer'>
+													{theme === "dark" ? (
+														<FaSun className='w-4 h-4' />
+													) : (
+														<FaMoon className='w-4 h-4' />
+													)}
+													{theme === "dark" ? "Light Mode" : "Dark Mode"}
 												</motion.button>
 												<motion.button
 													whileHover={{ backgroundColor: "var(--bg-tertiary)" }}

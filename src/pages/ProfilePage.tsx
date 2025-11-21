@@ -1,55 +1,94 @@
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { updateProfile } from "../store/slices/authSlice";
-import { useTheme } from "../context/ThemeContext";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
-import type { ThemePreference } from "../types";
 
-interface ProfileFormData {
-	name: string;
-	location: string;
-	theme_preference: ThemePreference;
-}
+// Zod schema: no numbers allowed in name or location
+const profileSchema = z.object({
+	name: z
+		.string()
+		.min(2, "Name must be at least 2 characters")
+		.regex(
+			/^[a-zA-Z\s'-]+$/,
+			"Name cannot contain numbers or special characters",
+		),
+	location: z.string().regex(
+		/^$|^[a-zA-Z\s'-]+$/, // Allow empty string OR letters/spaces/hyphens/apostrophes
+		"Location cannot contain numbers or special characters",
+	),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const ProfilePage = () => {
-	const { profile, loading } = useAppSelector(state => state.auth);
+	const { profile } = useAppSelector(state => state.auth);
 	const dispatch = useAppDispatch();
-	const { setTheme } = useTheme();
 
 	const {
 		register,
 		handleSubmit,
-		formState: { errors },
+		formState: { errors, isDirty, isSubmitting },
 		reset,
-		watch,
-		setValue,
 	} = useForm<ProfileFormData>({
+		resolver: zodResolver(profileSchema),
 		defaultValues: {
 			name: profile?.name || "",
 			location: profile?.location || "",
-			theme_preference: profile?.theme_preference || "light",
 		},
 	});
 
-	const currentTheme = watch("theme_preference");
-
+	// Initialize form when profile loads (only when profile ID changes)
+	// This handles the case where profile loads after component mounts
 	useEffect(() => {
-		if (profile) {
-			reset({
+		if (!profile) return; // Early return if no profile (defensive check)
+
+		// Only reset if profile ID actually changed (new profile loaded)
+		// This prevents unnecessary resets when profile data updates but ID stays same
+		reset(
+			{
 				name: profile.name || "",
 				location: profile.location || "",
-				theme_preference: profile.theme_preference || "light",
-			});
-		}
-	}, [profile, reset]);
+			},
+			{
+				keepDefaultValues: false, // Update default values so isDirty works correctly
+				keepErrors: false,
+				keepDirty: false,
+				keepIsSubmitted: false,
+				keepTouched: false,
+				keepIsValid: false,
+				keepSubmitCount: false,
+			},
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [profile?.id]); // Only reset when profile ID changes (initial load or user switch)
 
 	const onSubmit = async (data: ProfileFormData) => {
-		await dispatch(updateProfile(data));
-		// Update theme context after saving
-		setTheme(data.theme_preference);
+		const result = await dispatch(updateProfile(data));
+
+		// Reset form with saved data to update default values
+		// This should make isDirty work correctly for future edits
+		if (updateProfile.fulfilled.match(result) && result.payload) {
+			reset(
+				{
+					name: result.payload.name || "",
+					location: result.payload.location || "",
+				},
+				{
+					keepDefaultValues: false, // This is key - update defaults so isDirty works
+					keepErrors: false,
+					keepDirty: false,
+					keepIsSubmitted: false,
+					keepTouched: false,
+					keepIsValid: false,
+					keepSubmitCount: false,
+				},
+			);
+		}
 	};
 
 	if (!profile)
@@ -64,13 +103,7 @@ export const ProfilePage = () => {
 			<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 				<Input
 					label='Name'
-					{...register("name", {
-						required: "Name is required",
-						minLength: {
-							value: 2,
-							message: "Name must be at least 2 characters",
-						},
-					})}
+					{...register("name")}
 					error={errors.name?.message}
 				/>
 				<Input
@@ -80,37 +113,11 @@ export const ProfilePage = () => {
 					error={errors.location?.message}
 				/>
 
-				<div>
-					<label className='block text-sm font-medium mb-2 text-text-primary'>
-						Theme Preference
-					</label>
-					<div className='flex gap-2'>
-						<Button
-							type='button'
-							variant='toggle'
-							active={currentTheme === "light"}
-							onClick={() => setValue("theme_preference", "light")}>
-							Light
-						</Button>
-						<Button
-							type='button'
-							variant='toggle'
-							active={currentTheme === "dark"}
-							onClick={() => setValue("theme_preference", "dark")}>
-							Dark
-						</Button>
-						<Button
-							type='button'
-							variant='toggle'
-							active={currentTheme === "system"}
-							onClick={() => setValue("theme_preference", "system")}>
-							System
-						</Button>
-					</div>
-					<input type='hidden' {...register("theme_preference")} />
-				</div>
-
-				<Button variant='primary' type='submit' loading={loading}>
+				<Button
+					variant='primary'
+					type='submit'
+					loading={isSubmitting ? true : false}
+					disabled={!isDirty}>
 					Save Changes
 				</Button>
 			</form>

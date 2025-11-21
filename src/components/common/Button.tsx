@@ -31,7 +31,19 @@ export const Button = ({
 			className={`${baseStyles} ${variants[variant]} ${className}`}
 			disabled={disabled || loading}
 			{...props}>
-			{loading ? "Loading..." : children}
+			{loading ? (
+				<div className='flex items-center justify-center gap-2'>
+					<div
+						className='animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent'
+						aria-label='Loading'
+						role='status'>
+						<span className='sr-only'>Loading...</span>
+					</div>
+					<span>Saving...</span>
+				</div>
+			) : (
+				children
+			)}
 		</button>
 	);
 };

@@ -1,16 +1,35 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { signUp } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 
-interface RegisterFormData {
-	name: string;
-	email: string;
-	password: string;
-	confirmPassword: string;
-}
+// Zod schema: name cannot contain numbers, same validation as ProfilePage
+const registerSchema = z
+	.object({
+		name: z
+			.string()
+			.min(2, "Name must be at least 2 characters")
+			.regex(
+				/^[a-zA-Z\s'-]+$/,
+				"Name cannot contain numbers or special characters",
+			),
+		email: z
+			.string()
+			.min(1, "Email is required")
+			.email("Invalid email address"),
+		password: z.string().min(6, "Password must be at least 6 characters"),
+		confirmPassword: z.string().min(1, "Please confirm your password"),
+	})
+	.refine(data => data.password === data.confirmPassword, {
+		message: "Passwords do not match",
+		path: ["confirmPassword"], // This error will show on confirmPassword field
+	});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterPage = () => {
 	const navigate = useNavigate();
@@ -21,10 +40,9 @@ export const RegisterPage = () => {
 		register,
 		handleSubmit,
 		formState: { errors },
-		watch,
-	} = useForm<RegisterFormData>();
-
-	const password = watch("password");
+	} = useForm<RegisterFormData>({
+		resolver: zodResolver(registerSchema),
+	});
 
 	const onSubmit = async (data: RegisterFormData) => {
 		const { confirmPassword, ...signUpData } = data;
@@ -44,46 +62,25 @@ export const RegisterPage = () => {
 					<Input
 						label='Name'
 						type='text'
-						{...register("name", {
-							required: "Name is required",
-							minLength: {
-								value: 2,
-								message: "Name must be at least 2 characters",
-							},
-						})}
+						{...register("name")}
 						error={errors.name?.message}
 					/>
 					<Input
 						label='Email'
 						type='email'
-						{...register("email", {
-							required: "Email is required",
-							pattern: {
-								value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-								message: "Invalid email address",
-							},
-						})}
+						{...register("email")}
 						error={errors.email?.message}
 					/>
 					<Input
 						label='Password'
 						type='password'
-						{...register("password", {
-							required: "Password is required",
-							minLength: {
-								value: 6,
-								message: "Password must be at least 6 characters",
-							},
-						})}
+						{...register("password")}
 						error={errors.password?.message}
 					/>
 					<Input
 						label='Confirm Password'
 						type='password'
-						{...register("confirmPassword", {
-							required: "Please confirm your password",
-							validate: value => value === password || "Passwords do not match",
-						})}
+						{...register("confirmPassword")}
 						error={errors.confirmPassword?.message}
 					/>
 					<Button type='submit' loading={loading} className='w-full'>
