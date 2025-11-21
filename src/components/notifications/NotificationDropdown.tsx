@@ -135,7 +135,7 @@ export const NotificationDropdown = () => {
 									{unreadCount > 0 && (
 										<button
 											onClick={handleMarkAllAsRead}
-											className='text-sm text-accent hover:underline'
+											className='text-sm text-accent hover:underline hover:cursor-pointer'
 											type='button'>
 											Mark all read
 										</button>
@@ -195,14 +195,14 @@ export const NotificationDropdown = () => {
 																<div className='w-2 h-2 bg-accent rounded-full shrink-0 mt-1' />
 															)}
 														</div>
-														<div className='flex items-center gap-2 mt-3'>
+														<div className='flex items-center justify-between gap-2 mt-3'>
 															{!notification.read && (
 																<button
 																	onClick={e => {
 																		e.stopPropagation();
 																		handleMarkAsRead(notification.id);
 																	}}
-																	className='text-xs text-accent hover:underline flex items-center gap-1'
+																	className='text-xs text-accent hover:underline flex items-center gap-1 hover:cursor-pointer'
 																	type='button'>
 																	<FaCheck className='w-3 h-3' />
 																	Mark as read
@@ -213,7 +213,7 @@ export const NotificationDropdown = () => {
 																	e.stopPropagation();
 																	handleDelete(notification.id);
 																}}
-																className='text-xs text-text-tertiary hover:text-text-primary flex items-center gap-1'
+																className='text-xs text-tertiary hover:text-primary flex items-center gap-1 hover:cursor-pointer'
 																type='button'>
 																<FaTrash className='w-3 h-3' />
 																Delete
