@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	createAsyncThunk,
+	type PayloadAction,
+} from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Message } from "../../types";
 import { getOrCreateConversation } from "./conversationsSlice";
@@ -6,12 +10,14 @@ import { getOrCreateConversation } from "./conversationsSlice";
 interface MessagesState {
 	messages: Message[];
 	loading: boolean;
+	sending: boolean;
 	error: string | null;
 }
 
 const initialState: MessagesState = {
 	messages: [],
 	loading: false,
+	sending: false,
 	error: null,
 };
 
@@ -108,8 +114,24 @@ const messagesSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
-		addMessage: (state, action) => {
-			state.messages.push(action.payload);
+		// Add message from realtime subscription
+		addMessage: (state, action: PayloadAction<Message>) => {
+			// Prevent duplicates
+			const exists = state.messages.some(m => m.id === action.payload.id);
+			if (!exists) {
+				state.messages.push(action.payload);
+			}
+		},
+		// Update message from realtime subscription
+		updateMessage: (state, action: PayloadAction<Message>) => {
+			const index = state.messages.findIndex(m => m.id === action.payload.id);
+			if (index !== -1) {
+				state.messages[index] = action.payload;
+			}
+		},
+		// Remove message from realtime subscription (if needed)
+		removeMessage: (state, action: PayloadAction<string>) => {
+			state.messages = state.messages.filter(m => m.id !== action.payload);
 		},
 	},
 	extraReducers: builder => {
@@ -131,14 +153,14 @@ const messagesSlice = createSlice({
 		// Send message
 		builder
 			.addCase(sendMessage.pending, state => {
-				state.loading = true;
+				state.sending = true;
 			})
 			.addCase(sendMessage.fulfilled, (state, action) => {
-				state.loading = false;
+				state.sending = false;
 				state.messages.push(action.payload);
 			})
 			.addCase(sendMessage.rejected, (state, action) => {
-				state.loading = false;
+				state.sending = false;
 				state.error = action.error.message || "Failed to send message";
 			});
 
@@ -153,5 +175,6 @@ const messagesSlice = createSlice({
 	},
 });
 
-export const { clearError, addMessage } = messagesSlice.actions;
+export const { clearError, addMessage, updateMessage, removeMessage } =
+	messagesSlice.actions;
 export default messagesSlice.reducer;

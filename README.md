@@ -8,7 +8,7 @@ Potluck App is a modern web application designed to simplify the organization of
 
 ## Features
 
-### Current Features (Phase 1, 2 & 3 Complete)
+### Current Features (Phase 1, 2, 3 & 4.1-4.2 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and location
@@ -17,7 +17,14 @@ Potluck App is a modern web application designed to simplify the organization of
 - ✅ **Responsive Design** - Modern UI built with Tailwind CSS
 - ✅ **Smooth Animations** - Enhanced UX with Motion (Framer Motion)
 - ✅ **Friends System** - Connect with other users, send and accept friend requests, manage friendships
+  - ✅ **Real-time Updates** - Instant synchronization of friend requests, acceptances, and removals
 - ✅ **Messaging** - Direct messaging between friends with conversation-based architecture
+  - ✅ **Real-time Messaging** - Instant message delivery and conversation updates
+  - ✅ **Smart Notifications** - Message notifications that suppress when actively viewing a conversation
+  - ✅ **Auto-scroll** - Automatically scrolls to newest messages
+- ✅ **Notifications System** - Real-time notification updates for friend requests and messages
+  - ✅ **Real-time Notifications** - Instant notification delivery via Supabase Realtime
+  - ✅ **Notification Management** - Mark as read, delete, and navigate to related content
 
 ### Coming Soon
 
@@ -25,7 +32,7 @@ Potluck App is a modern web application designed to simplify the organization of
 - 🔄 **RSVP System** - Let attendees confirm their participation
 - 🔄 **Contribution Tracking** - Coordinate who's bringing what
 - 🔄 **Role-Based Permissions** - Creators, co-creators, contributors, and guests
-- 🔄 **Notifications** - Real-time updates for event changes
+- 🔄 **Event Notifications** - Real-time updates for event changes
 - 🔄 **Event Comments** - Discussion threads for each event
 
 ## Tech Stack
@@ -122,7 +129,19 @@ potluck-app/
 
 ## Development Status
 
-This project is currently in active development. Phase 1 (Foundation), Phase 2 (User Management), and Phase 3 (Friends & Messaging) are complete. We're working on Phase 4 (Event Management) next.
+This project is currently in active development.
+
+**Completed Phases:**
+
+- ✅ Phase 1: Foundation (Supabase setup, routing, Redux store)
+- ✅ Phase 2: User Management (authentication, profiles, theme system)
+- ✅ Phase 3: Friends & Messaging (friends system, direct messaging)
+- ✅ Phase 4.1: Real-time Friends Updates (instant friend request synchronization)
+- ✅ Phase 4.2: Real-time Messages (instant messaging, smart notifications)
+
+**In Progress:**
+
+- 🔄 Phase 4.3+: Event Management (create, edit, manage potluck events)
 
 ## Future Plans
 

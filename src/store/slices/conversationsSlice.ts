@@ -197,6 +197,34 @@ const conversationsSlice = createSlice({
 				conversation.unread_count = 0;
 			}
 		},
+		addConversation: (state, action: PayloadAction<Conversation>) => {
+			// Prevent duplicates
+			const exists = state.conversations.some(c => c.id === action.payload.id);
+			if (!exists) {
+				state.conversations.push(action.payload);
+				// Sort by last_message_at descending
+				state.conversations.sort((a, b) => {
+					const aTime = a.last_message_at || a.created_at;
+					const bTime = b.last_message_at || b.created_at;
+					return new Date(bTime).getTime() - new Date(aTime).getTime();
+				});
+			}
+		},
+		// Update conversation from realtime subscription
+		updateConversation: (state, action: PayloadAction<Conversation>) => {
+			const index = state.conversations.findIndex(
+				c => c.id === action.payload.id,
+			);
+			if (index !== -1) {
+				state.conversations[index] = action.payload;
+				// Re-sort by last_message_at descending
+				state.conversations.sort((a, b) => {
+					const aTime = a.last_message_at || a.created_at;
+					const bTime = b.last_message_at || b.created_at;
+					return new Date(bTime).getTime() - new Date(aTime).getTime();
+				});
+			}
+		},
 	},
 	extraReducers: builder => {
 		builder
@@ -249,5 +277,7 @@ export const {
 	updateConversationLastMessage,
 	incrementUnreadCount,
 	resetUnreadCount,
+	addConversation,
+	updateConversation,
 } = conversationsSlice.actions;
 export default conversationsSlice.reducer;

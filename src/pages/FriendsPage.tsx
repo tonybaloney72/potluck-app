@@ -159,6 +159,7 @@ export const FriendsPage = () => {
 															variant='primary'
 															onClick={() => handleSendRequest(user.id)}
 															loading={sendingRequest}
+															loadingText='Sending...'
 															disabled={sendingRequest}>
 															<FaUserPlus className='w-4 h-4 mr-2' />
 															Send Request

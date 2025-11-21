@@ -1,12 +1,14 @@
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: "primary" | "secondary" | "toggle";
 	loading?: boolean;
+	loadingText?: string;
 	active?: boolean;
 }
 
 export const Button = ({
 	variant = "primary",
 	loading = false,
+	loadingText,
 	active = false,
 	children,
 	className = "",
@@ -26,6 +28,9 @@ export const Button = ({
 			: "bg-tertiary text-text-primary hover:bg-border hover:shadow-sm",
 	};
 
+	// Default loading text based on context, or use provided loadingText
+	const defaultLoadingText = loadingText || "Saving...";
+
 	return (
 		<button
 			className={`${baseStyles} ${variants[variant]} ${className}`}
@@ -39,7 +44,7 @@ export const Button = ({
 						role='status'>
 						<span className='sr-only'>Loading...</span>
 					</div>
-					<span>Saving...</span>
+					{defaultLoadingText && <span>{defaultLoadingText}</span>}
 				</div>
 			) : (
 				children

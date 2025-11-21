@@ -69,9 +69,15 @@ export const NotificationDropdown = () => {
 				dispatch(markNotificationAsRead(notification.id));
 			}
 			// Close dropdown and navigate
-			setIsOpen(false);
 			navigate("/friends");
+		} else if (notification.type === "message" && notification.related_id) {
+			dispatch(markNotificationAsRead(notification.id));
+
+			navigate("/messages", {
+				state: { conversationId: notification.related_id },
+			});
 		}
+		setIsOpen(false);
 	};
 
 	const getNotificationIcon = (type: Notification["type"]) => {

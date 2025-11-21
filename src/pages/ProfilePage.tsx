@@ -117,6 +117,7 @@ export const ProfilePage = () => {
 					variant='primary'
 					type='submit'
 					loading={isSubmitting ? true : false}
+					loadingText='Saving...'
 					disabled={!isDirty}>
 					Save Changes
 				</Button>

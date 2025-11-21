@@ -183,3 +183,30 @@ html[data-theme="dark"] {
 @utility border-border {
 	border-color: var(--border);
 }
+
+/* Minimal scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+	background-color: var(--accent);
+	border-radius: 3px;
+	opacity: 0.5;
+	transition: opacity 0.2s ease;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+	opacity: 0.8;
+}
+
+/* For Firefox */
+.scrollbar-thin {
+	scrollbar-width: thin;
+	scrollbar-color: var(--accent-tertiary) transparent;
+}

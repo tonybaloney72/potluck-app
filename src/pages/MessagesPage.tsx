@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -10,6 +10,7 @@ import {
 	fetchConversations,
 	getOrCreateConversation,
 } from "../store/slices/conversationsSlice";
+import { markNotificationAsRead } from "../store/slices/notificationsSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
@@ -17,6 +18,9 @@ import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { FaUser, FaPaperPlane } from "react-icons/fa";
 import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
 import { BiSolidConversation } from "react-icons/bi";
+import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
+import { useConversationsRealtime } from "../hooks/useConversationsRealtime";
+import { supabase } from "../services/supabase";
 
 interface MessageFormData {
 	content: string;
@@ -25,24 +29,93 @@ interface MessageFormData {
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
 	const location = useLocation();
-	const { messages, loading, error } = useAppSelector(state => state.messages);
+	const { messages, loading, sending, error } = useAppSelector(
+		state => state.messages,
+	);
 	const {
 		conversations,
 		loading: conversationsLoading,
 		creatingConversation,
 	} = useAppSelector(state => state.conversations);
-	const { profile } = useAppSelector(state => state.auth);
+	const { profile, user } = useAppSelector(state => state.auth);
 	const [selectedConversationId, setSelectedConversationId] = useState<
 		string | null
 	>(null);
+
+	useMessagesRealtime(selectedConversationId);
+	useConversationsRealtime();
+
 	const [hasLoaded, setHasLoaded] = useState(false);
 	const [showFriendSelector, setShowFriendSelector] = useState(false);
+	const [isCreatingNewConversation, setIsCreatingNewConversation] =
+		useState(false);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const messagesContainerRef = useRef<HTMLDivElement>(null);
 	const {
 		register,
 		handleSubmit,
 		reset,
 		formState: { errors },
 	} = useForm<MessageFormData>();
+
+	// Track conversation and message count for scroll behavior
+	const lastConversationIdRef = useRef<string | null>(null);
+	const prevMessageCountRef = useRef(0);
+	const hasInitialScrolledRef = useRef(false);
+
+	// Scroll to bottom - immediate for initial load, smooth for new messages
+	const scrollToBottom = (immediate = false) => {
+		if (!messagesContainerRef.current) return;
+
+		const container = messagesContainerRef.current;
+
+		if (immediate) {
+			// Set scroll position immediately without animation
+			// Use scrollHeight to ensure we're at the very bottom
+			container.scrollTop = container.scrollHeight;
+		} else {
+			// Smooth scroll for new messages
+			messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+		}
+	};
+
+	// Set initial scroll position before browser paints (prevents visible jump)
+	useLayoutEffect(() => {
+		if (
+			messagesContainerRef.current &&
+			messages.length > 0 &&
+			!hasInitialScrolledRef.current
+		) {
+			// Set scroll position synchronously before paint
+			const container = messagesContainerRef.current;
+			container.scrollTop = container.scrollHeight;
+			hasInitialScrolledRef.current = true;
+		}
+	}, [messages.length, selectedConversationId]);
+
+	// Handle conversation changes and new messages
+	useEffect(() => {
+		// Reset tracking when conversation changes
+		if (lastConversationIdRef.current !== selectedConversationId) {
+			lastConversationIdRef.current = selectedConversationId;
+			prevMessageCountRef.current = 0;
+			hasInitialScrolledRef.current = false;
+		}
+
+		// Handle new messages (smooth scroll)
+		if (
+			messages.length > 0 &&
+			messagesContainerRef.current &&
+			hasInitialScrolledRef.current
+		) {
+			const hasNewMessage = messages.length > prevMessageCountRef.current;
+			if (hasNewMessage) {
+				// New message arrived: smooth scroll
+				scrollToBottom(false);
+			}
+			prevMessageCountRef.current = messages.length;
+		}
+	}, [messages, selectedConversationId]);
 
 	useEffect(() => {
 		dispatch(fetchConversations()).then(() => {
@@ -67,11 +140,39 @@ export const MessagesPage = () => {
 	}, [location.state, hasLoaded, dispatch]);
 
 	useEffect(() => {
-		if (selectedConversationId) {
+		if (selectedConversationId && user) {
 			dispatch(fetchMessages(selectedConversationId));
 			dispatch(markMessagesAsRead(selectedConversationId));
+
+			// Mark message notifications as read for this conversation
+			// This handles existing notifications when selecting a conversation
+			supabase
+				.from("notifications")
+				.update({ read: true })
+				.eq("user_id", user.id)
+				.eq("type", "message")
+				.eq("related_id", selectedConversationId)
+				.eq("read", false)
+				.select()
+				.then(({ data: notifications }) => {
+					// Update Redux state for each notification
+					if (notifications) {
+						notifications.forEach(notification => {
+							dispatch(markNotificationAsRead(notification.id));
+						});
+					}
+				});
 		}
-	}, [selectedConversationId, dispatch]);
+	}, [selectedConversationId, dispatch, user]);
+
+	useEffect(() => {
+		// Handle navigation from NotificationDropdown with conversationId
+		if (location.state?.conversationId && hasLoaded) {
+			setSelectedConversationId(location.state.conversationId);
+			// Clear the location state after using it
+			window.history.replaceState({}, document.title);
+		}
+	}, [location.state, hasLoaded]);
 
 	const onSubmit = async (data: MessageFormData) => {
 		if (!selectedConversationId) return;
@@ -92,9 +193,14 @@ export const MessagesPage = () => {
 	};
 
 	const handleSelectFriend = async (friendId: string) => {
+		setIsCreatingNewConversation(true);
 		const result = await dispatch(getOrCreateConversation(friendId));
 		if (getOrCreateConversation.fulfilled.match(result)) {
 			setSelectedConversationId(result.payload.id);
+			setIsCreatingNewConversation(false);
+			setShowFriendSelector(false);
+		} else {
+			setIsCreatingNewConversation(false);
 		}
 	};
 
@@ -126,14 +232,21 @@ export const MessagesPage = () => {
 				<Button
 					className='flex items-center gap-2'
 					variant='secondary'
-					onClick={() => setShowFriendSelector(true)}
-					loading={creatingConversation}>
+					onClick={() => {
+						setShowFriendSelector(true);
+						setIsCreatingNewConversation(true);
+					}}
+					loading={isCreatingNewConversation && creatingConversation}
+					loadingText='Creating...'>
 					<BiSolidConversation />
 					New Conversation
 				</Button>
 				<FriendSelectorModal
 					isOpen={showFriendSelector}
-					onClose={() => setShowFriendSelector(false)}
+					onClose={() => {
+						setShowFriendSelector(false);
+						setIsCreatingNewConversation(false);
+					}}
 					onSelectFriend={handleSelectFriend}
 				/>
 				{error && (
@@ -206,7 +319,9 @@ export const MessagesPage = () => {
 			<div className='flex-1 flex flex-col'>
 				{selectedConversationId && otherUser ? (
 					<>
-						<div className='flex-1 overflow-y-auto mb-4 space-y-4'>
+						<div
+							ref={messagesContainerRef}
+							className='flex-1 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent pr-4'>
 							{messages.map(message => {
 								const isOwn = message.sender_id === profile?.id;
 								return (
@@ -232,17 +347,19 @@ export const MessagesPage = () => {
 									</div>
 								);
 							})}
+							<div ref={messagesEndRef} />
 						</div>
 						<form onSubmit={handleSubmit(onSubmit)} className='flex gap-2'>
 							<Input
 								placeholder='Type a message...'
+								autoComplete='off'
 								{...register("content", {
 									required: "Message cannot be empty",
 								})}
 								error={errors.content?.message}
 								className='flex-1'
 							/>
-							<Button type='submit' loading={loading}>
+							<Button type='submit' loading={sending} loadingText='Sending...'>
 								<FaPaperPlane className='w-4 h-4' />
 							</Button>
 						</form>
