@@ -15,6 +15,7 @@ import {
 import { LuCookingPot } from "react-icons/lu";
 import { useTheme } from "../../context/ThemeContext";
 import type { ThemePreference } from "../../types";
+import { NotificationDropdown } from "../notifications/NotificationDropdown";
 
 export const Header = () => {
 	const { profile } = useAppSelector(state => state.auth);
@@ -80,6 +81,7 @@ export const Header = () => {
 							className='text-text-primary hover:text-text-tertiary transition-colors duration-200'>
 							<FaEnvelope className='w-6 h-6 inline-block ml-2' />
 						</Link>
+						<NotificationDropdown />
 						<nav className='flex items-center gap-4'>
 							<div className='relative' ref={dropdownRef}>
 								<button

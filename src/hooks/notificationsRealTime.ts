@@ -38,34 +38,29 @@ export function useNotificationsRealtime() {
 		isSubscribingRef.current = true;
 
 		// Create a channel for this user's notifications
-		// Using public channel first to test - can switch to private later
-		// Following Supabase naming convention: scope:id:entity
-		const channel = supabase.channel(`user:${user.id}:notifications`);
-
-		channel
+		// Using Postgres Changes to listen to notifications table changes
+		const channel = supabase
+			.channel(`notifications:${user.id}`)
 			.on(
-				"broadcast",
-				{ event: "notification_change" },
+				"postgres_changes",
+				{
+					event: "*", // Listen to INSERT, UPDATE, DELETE
+					schema: "public",
+					table: "notifications",
+					filter: `user_id=eq.${user.id}`, // Only notifications for this user
+				},
 				(payload: {
-					payload: {
-						type: "INSERT" | "UPDATE" | "DELETE";
-						notification: Notification | { id: string };
-					};
+					eventType: "INSERT" | "UPDATE" | "DELETE";
+					new: Notification | null;
+					old: { id: string } | null;
 				}) => {
-					// Handle notification changes broadcast from database triggers
-					// payload.payload contains the data we sent from the trigger
-					const { type, notification } = payload.payload;
-					if (type === "INSERT" || type === "UPDATE") {
-						// notification is a full Notification object
-						const notif = notification as Notification;
-						if (type === "INSERT") {
-							dispatch(addNotification(notif));
-						} else {
-							dispatch(updateNotification(notif));
-						}
-					} else if (type === "DELETE") {
-						// notification only has id
-						dispatch(removeNotification(notification.id));
+					// Handle notification changes from database
+					if (payload.eventType === "INSERT" && payload.new) {
+						dispatch(addNotification(payload.new as Notification));
+					} else if (payload.eventType === "UPDATE" && payload.new) {
+						dispatch(updateNotification(payload.new as Notification));
+					} else if (payload.eventType === "DELETE" && payload.old) {
+						dispatch(removeNotification(payload.old.id));
 					}
 				},
 			)
