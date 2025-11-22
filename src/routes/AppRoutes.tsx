@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router";
-import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { ProfilePage } from "../pages/ProfilePage";
@@ -7,6 +6,9 @@ import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { Layout } from "../components/layout/Layout";
 import { FriendsPage } from "../pages/FriendsPage";
 import { MessagesPage } from "../pages/MessagesPage";
+import { MyEventsPage } from "../pages/MyEventsPage";
+import { HomePage } from "../pages/HomePage";
+import { EventDetailPage } from "../pages/EventDetailsPage";
 
 export function AppRoutes() {
 	return (
@@ -47,6 +49,26 @@ export function AppRoutes() {
 					<Layout>
 						<ProtectedRoute>
 							<MessagesPage />
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/events'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<MyEventsPage />
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/events/:eventId'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<EventDetailPage />
 						</ProtectedRoute>
 					</Layout>
 				}

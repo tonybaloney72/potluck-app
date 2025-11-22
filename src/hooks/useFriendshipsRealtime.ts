@@ -165,8 +165,6 @@ export function useFriendshipsRealtime() {
 				isSubscribingRef.current = false;
 
 				if (status === "SUBSCRIBED") {
-					console.log("✅ Friendships channel subscribed successfully");
-					// Clear any pending reconnect attempts
 					if (reconnectTimeoutRef.current) {
 						clearTimeout(reconnectTimeoutRef.current);
 						reconnectTimeoutRef.current = null;
@@ -179,9 +177,6 @@ export function useFriendshipsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to friendships channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
@@ -192,27 +187,16 @@ export function useFriendshipsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to friendships channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
 				} else if (status === "CLOSED") {
-					console.log(
-						"📡 Friendships channel closed - Will attempt to reconnect...",
-					);
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to friendships channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
-				} else {
-					console.log("📡 Channel status:", status);
 				}
 			});
 

@@ -68,7 +68,6 @@ export function useNotificationsRealtime() {
 				isSubscribingRef.current = false;
 
 				if (status === "SUBSCRIBED") {
-					console.log("✅ Notifications channel subscribed successfully");
 					// Clear any pending reconnect attempts
 					if (reconnectTimeoutRef.current) {
 						clearTimeout(reconnectTimeoutRef.current);
@@ -82,9 +81,6 @@ export function useNotificationsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to notifications channel...",
-							);
 							subscribeToChannel();
 						}, 3000); // Wait 3 seconds before reconnecting
 					}
@@ -96,28 +92,17 @@ export function useNotificationsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to notifications channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
 				} else if (status === "CLOSED") {
-					console.log(
-						"📡 Notifications channel closed - Will attempt to reconnect...",
-					);
 					// Attempt to reconnect after a delay
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to notifications channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
-				} else {
-					console.log("📡 Channel status:", status);
 				}
 			});
 

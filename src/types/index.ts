@@ -75,3 +75,64 @@ export interface Notification {
 	read: boolean;
 	created_at: string;
 }
+
+export type EventRole = "host" | "co_host" | "contributor" | "guest";
+export type RSVPStatus = "pending" | "going" | "not_going" | "maybe";
+
+export interface Event {
+	id: string;
+	created_by: string;
+	title: string;
+	description: string | null;
+	theme: string | null;
+	event_date: string; // ISO date string
+	event_time: string; // HH:mm format
+	location: string | null;
+	location_url: string | null;
+	is_public: boolean;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	creator?: Profile;
+	participants?: EventParticipant[];
+	contributions?: Contribution[];
+	comments?: EventComment[];
+}
+
+export interface EventParticipant {
+	id: string;
+	event_id: string;
+	user_id: string;
+	role: EventRole;
+	rsvp_status: RSVPStatus;
+	invited_at: string;
+	joined_at: string | null;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	user?: Profile;
+}
+
+export interface Contribution {
+	id: string;
+	event_id: string;
+	user_id: string;
+	item_name: string;
+	quantity: string | null;
+	description: string | null;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	user?: Profile;
+}
+
+export interface EventComment {
+	id: string;
+	event_id: string;
+	user_id: string;
+	content: string;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	user?: Profile;
+}

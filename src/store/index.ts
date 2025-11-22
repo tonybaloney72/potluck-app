@@ -5,6 +5,7 @@ import messagesReducer from "./slices/messagesSlice";
 import usersReducer from "./slices/usersSlice";
 import conversationsReducer from "./slices/conversationsSlice";
 import notificationsReducer from "./slices/notificationsSlice";
+import eventsReducer from "./slices/eventsSlice";
 
 export const store = configureStore({
 	reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
 		users: usersReducer,
 		conversations: conversationsReducer,
 		notifications: notificationsReducer,
+		events: eventsReducer,
 	},
 });
 

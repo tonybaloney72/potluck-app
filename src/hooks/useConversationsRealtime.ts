@@ -229,7 +229,6 @@ export function useConversationsRealtime() {
 				isSubscribingRef.current = false;
 
 				if (status === "SUBSCRIBED") {
-					console.log("✅ Conversations channel subscribed successfully");
 					if (reconnectTimeoutRef.current) {
 						clearTimeout(reconnectTimeoutRef.current);
 						reconnectTimeoutRef.current = null;
@@ -241,9 +240,6 @@ export function useConversationsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to conversations channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
@@ -254,22 +250,13 @@ export function useConversationsRealtime() {
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to conversations channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
 				} else if (status === "CLOSED") {
-					console.log(
-						"📡 Conversations channel closed - Will attempt to reconnect...",
-					);
 					if (!reconnectTimeoutRef.current) {
 						reconnectTimeoutRef.current = window.setTimeout(() => {
 							reconnectTimeoutRef.current = null;
-							console.log(
-								"🔄 Attempting to reconnect to conversations channel...",
-							);
 							subscribeToChannel();
 						}, 3000);
 					}
