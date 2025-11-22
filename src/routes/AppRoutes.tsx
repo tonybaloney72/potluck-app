@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { ProfilePage } from "../pages/ProfilePage";
@@ -7,7 +7,7 @@ import { Layout } from "../components/layout/Layout";
 import { FriendsPage } from "../pages/FriendsPage";
 import { MessagesPage } from "../pages/MessagesPage";
 import { MyEventsPage } from "../pages/MyEventsPage";
-import { HomePage } from "../pages/HomePage";
+// import { HomePage } from "../pages/HomePage";
 import { EventDetailPage } from "../pages/EventDetailsPage";
 
 export function AppRoutes() {
@@ -18,7 +18,7 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<HomePage />
+							<MyEventsPage />
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -53,7 +53,7 @@ export function AppRoutes() {
 					</Layout>
 				}
 			/>
-			<Route
+			{/* <Route
 				path='/events'
 				element={
 					<Layout>
@@ -62,7 +62,7 @@ export function AppRoutes() {
 						</ProtectedRoute>
 					</Layout>
 				}
-			/>
+			/> */}
 			<Route
 				path='/events/:eventId'
 				element={
@@ -75,6 +75,8 @@ export function AppRoutes() {
 			/>
 			<Route path='/login' element={<LoginPage />} />
 			<Route path='/register' element={<RegisterPage />} />
+			{/* Catch-all route: redirect any unmatched paths to home */}
+			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>
 	);
 }
