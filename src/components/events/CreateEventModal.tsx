@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
 import { DatePicker } from "../common/DatePicker";
+import { FriendSelector } from "./FriendSelector";
 
 interface CreateEventFormData {
 	title: string;
@@ -30,6 +31,7 @@ export const CreateEventModal = ({
 	const dispatch = useAppDispatch();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
 
 	const {
 		register,
@@ -78,6 +80,7 @@ export const CreateEventModal = ({
 					location: data.location || undefined,
 					location_url: data.location_url || undefined,
 					is_public: data.is_public,
+					invitedUserIds: selectedFriendIds,
 				}),
 			);
 
@@ -169,6 +172,11 @@ export const CreateEventModal = ({
 								)}
 							</div>
 						</div>
+
+						<FriendSelector
+							selectedFriends={selectedFriendIds}
+							onSelectionChange={setSelectedFriendIds}
+						/>
 
 						<Input
 							label='Location'

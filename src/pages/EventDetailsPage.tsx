@@ -136,7 +136,7 @@ export const EventDetailPage = () => {
 				{/* Back Button */}
 				<button
 					onClick={() => navigate(-1)}
-					className='mb-4 text-blue-600 dark:text-blue-400 hover:underline'>
+					className='mb-4 text-blue-600 dark:text-blue-400 hover:underline hover:cursor-pointer'>
 					← Back to My Events
 				</button>
 				{/* Event Header */}

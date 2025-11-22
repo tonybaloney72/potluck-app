@@ -162,6 +162,7 @@ export const createEvent = createAsyncThunk(
 		location?: string;
 		location_url?: string;
 		is_public?: boolean;
+		invitedUserIds?: string[];
 	}) => {
 		const {
 			data: { user },
@@ -190,6 +191,52 @@ export const createEvent = createAsyncThunk(
 			.single();
 
 		if (error) throw error;
+
+		if (eventData.invitedUserIds && eventData.invitedUserIds.length > 0) {
+			const participants = eventData.invitedUserIds.map(userId => ({
+				event_id: event.id,
+				user_id: userId,
+				role: "guest", // Default role for invited users
+				rsvp_status: "pending",
+			}));
+
+			const { error: participantsError } = await supabase
+				.from("event_participants")
+				.insert(participants);
+
+			if (participantsError) {
+				console.error("Error adding participants:", participantsError);
+				// Don't throw - event was created successfully, just log the error
+			}
+
+			const { data: creatorProfile } = await supabase
+				.from("profiles")
+				.select("name")
+				.eq("id", user.id)
+				.single();
+
+			const creatorName = creatorProfile?.name || "Someone";
+
+			// Create notifications for each invited user
+			const notifications = eventData.invitedUserIds.map(userId => ({
+				user_id: userId,
+				type: "event_invitation" as const,
+				title: "Event Invitation",
+				message: `${creatorName} invited you to "${eventData.title}"`,
+				related_id: event.id,
+			}));
+
+			// Insert notifications (using Supabase directly since we're in a thunk)
+			const { error: notificationsError } = await supabase
+				.from("notifications")
+				.insert(notifications);
+
+			if (notificationsError) {
+				console.error("Error creating notifications:", notificationsError);
+				// Don't throw - event and participants were created successfully
+			}
+		}
+
 		return event as Event;
 	},
 );
