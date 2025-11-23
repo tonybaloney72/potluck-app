@@ -558,6 +558,149 @@ const eventsSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		updateParticipantRSVP: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				participant: EventParticipant;
+			}>,
+		) => {
+			const { eventId, participant } = action.payload;
+
+			// Update in events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event && event.participants) {
+				const index = event.participants.findIndex(
+					p => p.user_id === participant.user_id,
+				);
+				if (index !== -1) {
+					event.participants[index] = participant;
+				}
+			}
+
+			// Update in currentEvent
+			if (
+				state.currentEvent?.id === eventId &&
+				state.currentEvent.participants
+			) {
+				const index = state.currentEvent.participants.findIndex(
+					p => p.user_id === participant.user_id,
+				);
+				if (index !== -1) {
+					state.currentEvent.participants[index] = participant;
+				}
+			}
+		},
+
+		// Real-time: Add comment (from other users)
+		addCommentRealtime: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				comment: EventComment;
+			}>,
+		) => {
+			const { eventId, comment } = action.payload;
+
+			// Add to events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event && event.comments) {
+				// Check if comment already exists (avoid duplicates)
+				const exists = event.comments.some(c => c.id === comment.id);
+				if (!exists) {
+					event.comments.push(comment);
+				}
+			}
+
+			// Add to currentEvent
+			if (state.currentEvent?.id === eventId && state.currentEvent.comments) {
+				const exists = state.currentEvent.comments.some(
+					c => c.id === comment.id,
+				);
+				if (!exists) {
+					state.currentEvent.comments.push(comment);
+				}
+			}
+		},
+
+		// Real-time: Delete comment (from other users)
+		deleteCommentRealtime: (state, action: PayloadAction<string>) => {
+			// Just commentId, like optimistic
+			const commentId = action.payload;
+
+			// Search all events (same as optimistic handler)
+			const event = state.events.find(e =>
+				e.comments?.some(c => c.id === commentId),
+			);
+			if (event && event.comments) {
+				event.comments = event.comments.filter(c => c.id !== commentId);
+			}
+
+			// Remove from currentEvent if it exists
+			if (state.currentEvent?.comments) {
+				state.currentEvent.comments = state.currentEvent.comments.filter(
+					c => c.id !== commentId,
+				);
+			}
+		},
+
+		// Real-time: Add contribution (from other users)
+		addContributionRealtime: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				contribution: Contribution;
+			}>,
+		) => {
+			const { eventId, contribution } = action.payload;
+
+			// Add to events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event && event.contributions) {
+				// Check if contribution already exists (avoid duplicates)
+				const exists = event.contributions.some(c => c.id === contribution.id);
+				if (!exists) {
+					event.contributions.push(contribution);
+				}
+			}
+
+			// Add to currentEvent
+			if (
+				state.currentEvent?.id === eventId &&
+				state.currentEvent.contributions
+			) {
+				const exists = state.currentEvent.contributions.some(
+					c => c.id === contribution.id,
+				);
+				if (!exists) {
+					state.currentEvent.contributions.push(contribution);
+				}
+			}
+		},
+
+		// Real-time: Delete contribution (from other users)
+		deleteContributionRealtime: (
+			state,
+			action: PayloadAction<string>, // Just the contributionId string
+		) => {
+			const contributionId = action.payload;
+
+			// Remove from events array - search for which event contains this contribution
+			const event = state.events.find(e =>
+				e.contributions?.some(c => c.id === contributionId),
+			);
+			if (event && event.contributions) {
+				event.contributions = event.contributions.filter(
+					c => c.id !== contributionId,
+				);
+			}
+
+			// Remove from currentEvent
+			if (state.currentEvent?.contributions) {
+				state.currentEvent.contributions =
+					state.currentEvent.contributions.filter(c => c.id !== contributionId);
+			}
+		},
 	},
 	extraReducers: builder => {
 		// Fetch user events
@@ -835,5 +978,14 @@ const eventsSlice = createSlice({
 	},
 });
 
-export const { setCurrentEvent, removeEvent, clearError } = eventsSlice.actions;
+export const {
+	setCurrentEvent,
+	removeEvent,
+	clearError,
+	updateParticipantRSVP,
+	addCommentRealtime,
+	deleteCommentRealtime,
+	addContributionRealtime,
+	deleteContributionRealtime,
+} = eventsSlice.actions;
 export default eventsSlice.reducer;

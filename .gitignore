@@ -42,11 +42,8 @@ coverage/
 Thumbs.db
 
 # Project documentation and guides
-PHASE*.md
+*GUIDE.md
 PROJECT_NOTES.md
-ERROR_BOUNDARY_GUIDE.md
 .cursor/rules/project-rules.mdc
 *.local.md
 *.sql
-DRY_REFACTOR.md
-DATETIME_MIGRATION_GUIDE.md

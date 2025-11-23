@@ -19,6 +19,7 @@ import {
 	downloadAppleCalendar,
 } from "../utils/calendar";
 import { FaApple, FaGoogle } from "react-icons/fa";
+import { useEventDetailsRealtime } from "../hooks/useEventDetailsRealtime";
 
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -42,6 +43,8 @@ export const EventDetailPage = () => {
 		description: "",
 	});
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+	useEventDetailsRealtime(eventId || null);
 
 	useEffect(() => {
 		if (!eventId) return;
