@@ -78,17 +78,13 @@ export const MyEventsPage = () => {
 	}
 
 	return (
-		<div className='min-h-screen bg-gray-50 dark:bg-gray-900 p-8'>
+		<div className='min-h-screen bg-secondary p-8'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex justify-between items-center mb-8'>
 					<div className='flex items-center gap-3'>
-						<h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
-							My Events
-						</h1>
+						<h1 className='text-3xl font-bold text-primary'>My Events</h1>
 						{refreshingEvents && (
-							<div className='text-sm text-gray-500 dark:text-gray-400'>
-								Refreshing...
-							</div>
+							<div className='text-sm text-tertiary'>Refreshing...</div>
 						)}
 					</div>
 					<Button onClick={() => setShowCreateModal(true)}>
@@ -98,13 +94,11 @@ export const MyEventsPage = () => {
 
 				{/* Hosted Events Section */}
 				<div className='mb-12'>
-					<h2 className='text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+					<h2 className='text-2xl font-semibold text-primary mb-4'>
 						Events I'm Hosting
 					</h2>
 					{hostedEvents.length === 0 ? (
-						<p className='text-gray-600 dark:text-gray-400'>
-							You're not hosting any events yet.
-						</p>
+						<p className='text-tertiary'>You're not hosting any events yet.</p>
 					) : (
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 							{hostedEvents.map(event => (
@@ -112,20 +106,20 @@ export const MyEventsPage = () => {
 									key={event.id}
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
-									className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
+									className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
 									onClick={() => handleEventClick(event.id)}>
-									<h3 className='text-xl font-semibold text-gray-900 dark:text-white mb-2'>
+									<h3 className='text-xl font-semibold text-primary mb-2'>
 										{event.title}
 									</h3>
 									{event.theme && (
-										<span className='inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded mb-2'>
+										<span className='inline-block px-2 py-1 text-xs bg-accent/20 text-accent rounded mb-2'>
 											{event.theme}
 										</span>
 									)}
-									<p className='text-gray-600 dark:text-gray-400 mb-4 line-clamp-2'>
+									<p className='text-secondary mb-4 line-clamp-2'>
 										{event.description || "No description"}
 									</p>
-									<div className='space-y-1 text-sm text-gray-500 dark:text-gray-400'>
+									<div className='space-y-1 text-sm text-tertiary'>
 										<p>
 											📅 {formatDate(event.event_date)} at{" "}
 											{formatTime(event.event_time)}
@@ -142,11 +136,11 @@ export const MyEventsPage = () => {
 
 				{/* Attending Events Section */}
 				<div className='mb-12'>
-					<h2 className='text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+					<h2 className='text-2xl font-semibold text-primary mb-4'>
 						Events I'm Attending
 					</h2>
 					{attendingEvents.length === 0 ? (
-						<p className='text-gray-600 dark:text-gray-400'>
+						<p className='text-tertiary'>
 							You're not attending any events yet.
 						</p>
 					) : (
@@ -156,20 +150,20 @@ export const MyEventsPage = () => {
 									key={event.id}
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
-									className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
+									className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
 									onClick={() => handleEventClick(event.id)}>
-									<h3 className='text-xl font-semibold text-gray-900 dark:text-white mb-2'>
+									<h3 className='text-xl font-semibold text-primary mb-2'>
 										{event.title}
 									</h3>
 									{event.theme && (
-										<span className='inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded mb-2'>
+										<span className='inline-block px-2 py-1 text-xs bg-accent/20 text-accent rounded mb-2'>
 											{event.theme}
 										</span>
 									)}
-									<p className='text-gray-600 dark:text-gray-400 mb-4 line-clamp-2'>
+									<p className='text-secondary mb-4 line-clamp-2'>
 										{event.description || "No description"}
 									</p>
-									<div className='space-y-1 text-sm text-gray-500 dark:text-gray-400'>
+									<div className='space-y-1 text-sm text-tertiary'>
 										<p>
 											📅 {formatDate(event.event_date)} at{" "}
 											{formatTime(event.event_time)}
@@ -186,11 +180,11 @@ export const MyEventsPage = () => {
 
 				{/* Invited Events Section */}
 				<div>
-					<h2 className='text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+					<h2 className='text-2xl font-semibold text-primary mb-4'>
 						Events I'm Invited To
 					</h2>
 					{invitedEvents.length === 0 ? (
-						<p className='text-gray-600 dark:text-gray-400'>
+						<p className='text-tertiary'>
 							You haven't been invited to any events yet.
 						</p>
 					) : (
@@ -200,25 +194,25 @@ export const MyEventsPage = () => {
 									key={event.id}
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
-									className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
+									className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
 									onClick={() => handleEventClick(event.id)}>
-									<h3 className='text-xl font-semibold text-gray-900 dark:text-white mb-2'>
+									<h3 className='text-xl font-semibold text-primary mb-2'>
 										{event.title}
 									</h3>
 									{event.theme && (
-										<span className='inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded mb-2'>
+										<span className='inline-block px-2 py-1 text-xs bg-accent/20 text-accent rounded mb-2'>
 											{event.theme}
 										</span>
 									)}
 									{event.creator && (
-										<p className='text-sm text-gray-500 dark:text-gray-400 mb-2'>
+										<p className='text-sm text-tertiary mb-2'>
 											Hosted by {event.creator.name}
 										</p>
 									)}
-									<p className='text-gray-600 dark:text-gray-400 mb-4 line-clamp-2'>
+									<p className='text-secondary mb-4 line-clamp-2'>
 										{event.description || "No description"}
 									</p>
-									<div className='space-y-1 text-sm text-gray-500 dark:text-gray-400'>
+									<div className='space-y-1 text-sm text-tertiary'>
 										<p>
 											📅 {formatDate(event.event_date)} at{" "}
 											{formatTime(event.event_time)}

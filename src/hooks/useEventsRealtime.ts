@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { fetchUserEvents } from "../store/slices/eventsSlice";
+import { store } from "../store";
+import { fetchUserEvents, removeEvent } from "../store/slices/eventsSlice";
 import { supabase } from "../services/supabase";
 
 export function useEventsRealtime() {
@@ -8,6 +9,9 @@ export function useEventsRealtime() {
 	const { user } = useAppSelector(state => state.auth);
 	const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 	const notificationsChannelRef = useRef<ReturnType<
+		typeof supabase.channel
+	> | null>(null);
+	const eventsDeleteChannelRef = useRef<ReturnType<
 		typeof supabase.channel
 	> | null>(null);
 	const reconnectTimeoutRef = useRef<number | null>(null);
@@ -29,9 +33,15 @@ export function useEventsRealtime() {
 		// Capture user ID at subscription time to avoid closure issues
 		const currentUserId = user.id;
 
-		// Remove existing channel if any
+		// Remove existing channels if any
 		if (channelRef.current) {
 			supabase.removeChannel(channelRef.current);
+		}
+		if (notificationsChannelRef.current) {
+			supabase.removeChannel(notificationsChannelRef.current);
+		}
+		if (eventsDeleteChannelRef.current) {
+			supabase.removeChannel(eventsDeleteChannelRef.current);
 		}
 
 		isSubscribingRef.current = true;
@@ -97,6 +107,43 @@ export function useEventsRealtime() {
 			});
 
 		notificationsChannelRef.current = notificationsChannel;
+
+		// Subscribe to DELETE events on the events table
+		// When an event is deleted, remove it from Redux if it exists in the user's events
+		const eventsDeleteChannel = supabase
+			.channel(`events_delete:${currentUserId}`)
+			.on(
+				"postgres_changes" as any,
+				{
+					event: "DELETE",
+					schema: "public",
+					table: "events",
+					// No filter - we'll check manually if the event exists in our state
+				},
+				(payload: { eventType: "DELETE"; old: { id: string } | null }) => {
+					if (payload.eventType === "DELETE" && payload.old) {
+						const deletedEventId = payload.old.id;
+
+						// Check if this event exists in our Redux state
+						// If it exists, it means the current user is a participant
+						const state = store.getState();
+						const eventExists = state.events.events.some(
+							e => e.id === deletedEventId,
+						);
+
+						if (eventExists) {
+							dispatch(removeEvent(deletedEventId));
+						}
+					}
+				},
+			)
+			.subscribe(status => {
+				if (status === "CHANNEL_ERROR") {
+					console.error("❌ Error subscribing to event deletions");
+				}
+			});
+
+		eventsDeleteChannelRef.current = eventsDeleteChannel;
 	};
 
 	useEffect(() => {
@@ -110,6 +157,10 @@ export function useEventsRealtime() {
 			if (notificationsChannelRef.current) {
 				supabase.removeChannel(notificationsChannelRef.current);
 				notificationsChannelRef.current = null;
+			}
+			if (eventsDeleteChannelRef.current) {
+				supabase.removeChannel(eventsDeleteChannelRef.current);
+				eventsDeleteChannelRef.current = null;
 			}
 			if (reconnectTimeoutRef.current) {
 				clearTimeout(reconnectTimeoutRef.current);

@@ -588,6 +588,14 @@ const eventsSlice = createSlice({
 		setCurrentEvent: (state, action: PayloadAction<Event | null>) => {
 			state.currentEvent = action.payload;
 		},
+		removeEvent: (state, action: PayloadAction<string>) => {
+			// Remove event from events array
+			state.events = state.events.filter(e => e.id !== action.payload);
+			// Clear currentEvent if it's the deleted event
+			if (state.currentEvent?.id === action.payload) {
+				state.currentEvent = null;
+			}
+		},
 		clearError: state => {
 			state.error = null;
 		},
@@ -868,5 +876,5 @@ const eventsSlice = createSlice({
 	},
 });
 
-export const { setCurrentEvent, clearError } = eventsSlice.actions;
+export const { setCurrentEvent, removeEvent, clearError } = eventsSlice.actions;
 export default eventsSlice.reducer;

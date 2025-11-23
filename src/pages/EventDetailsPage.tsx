@@ -15,6 +15,11 @@ import { Button } from "../components/common/Button";
 import { EditEventModal } from "../components/events/EditEventModal";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { deleteEvent } from "../store/slices/eventsSlice";
+import {
+	generateGoogleCalendarUrl,
+	downloadAppleCalendar,
+} from "../utils/calendar";
+import { FaApple, FaGoogle } from "react-icons/fa";
 
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -153,13 +158,13 @@ export const EventDetailPage = () => {
 	// );
 
 	return (
-		<div className='min-h-screen bg-gray-50 dark:bg-gray-900 p-8'>
+		<div className='min-h-screen bg-secondary p-8'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button */}
 				<div className='flex justify-between items-center mb-4'>
 					<button
 						onClick={() => navigate(-1)}
-						className='mb-4 text-blue-600 dark:text-blue-400 hover:underline hover:cursor-pointer'>
+						className='mb-4 text-accent hover:underline hover:cursor-pointer'>
 						← Back to My Events
 					</button>
 					{isEventCreator && (
@@ -183,57 +188,72 @@ export const EventDetailPage = () => {
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6'>
+					className='bg-primary rounded-lg shadow-md p-6 mb-6'>
 					<div className='flex justify-between items-start mb-4'>
 						<div>
-							<h1 className='text-3xl font-bold text-gray-900 dark:text-white mb-2'>
+							<h1 className='text-3xl font-bold text-primary mb-2'>
 								{currentEvent.title}
 							</h1>
 							{currentEvent.theme && (
-								<span className='inline-block px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded'>
+								<span className='inline-block px-3 py-1 text-sm bg-accent/20 text-accent rounded'>
 									{currentEvent.theme}
 								</span>
 							)}
 						</div>
-						{currentEvent.creator && (
-							<div className='text-right'>
-								<p className='text-sm text-gray-500 dark:text-gray-400'>
-									Hosted by
-								</p>
-								<p className='font-semibold text-gray-900 dark:text-white'>
-									{currentEvent.creator.name}
-								</p>
+						<div className='flex flex-col gap-2'>
+							{currentEvent.creator && (
+								<div className='text-right'>
+									<p className='text-sm text-tertiary'>Hosted by</p>
+									<p className='font-semibold text-primary'>
+										{currentEvent.creator.name}
+									</p>
+								</div>
+							)}
+							{/* Calendar Buttons */}
+							<div className='flex gap-2'>
+								<a
+									href={generateGoogleCalendarUrl(currentEvent)}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='flex items-center gap-2 px-3 py-1.5 bg-accent-secondary hover:bg-accent text-white rounded-md text-sm transition'>
+									<FaGoogle className='w-4 h-4' />
+									<span>Google</span>
+								</a>
+								<button
+									onClick={() => downloadAppleCalendar(currentEvent)}
+									className='flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-tertiary text-white rounded-md text-sm transition cursor-pointer'>
+									<FaApple className='w-4 h-4' />
+									<span>Apple</span>
+								</button>
 							</div>
-						)}
+						</div>
 					</div>
 
 					{currentEvent.description && (
-						<p className='text-gray-700 dark:text-gray-300 mb-4'>
-							{currentEvent.description}
-						</p>
+						<p className='text-primary mb-4'>{currentEvent.description}</p>
 					)}
 
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
 						<div>
-							<p className='text-gray-500 dark:text-gray-400'>Date & Time</p>
-							<p className='font-semibold text-gray-900 dark:text-white'>
+							<p className='text-tertiary'>Date & Time</p>
+							<p className='font-semibold text-primary'>
 								{formatDate(currentEvent.event_date)} at{" "}
 								{formatTime(currentEvent.event_time)}
 							</p>
 						</div>
 						{currentEvent.location && (
 							<div>
-								<p className='text-gray-500 dark:text-gray-400'>Location</p>
+								<p className='text-tertiary'>Location</p>
 								{currentEvent.location_url ? (
 									<a
 										href={currentEvent.location_url}
 										target='_blank'
 										rel='noopener noreferrer'
-										className='font-semibold text-blue-600 dark:text-blue-400 hover:underline'>
+										className='font-semibold text-accent hover:underline'>
 										{currentEvent.location} →
 									</a>
 								) : (
-									<p className='font-semibold text-gray-900 dark:text-white'>
+									<p className='font-semibold text-primary'>
 										{currentEvent.location}
 									</p>
 								)}
@@ -243,8 +263,8 @@ export const EventDetailPage = () => {
 
 					{/* RSVP Section */}
 					{currentUserParticipant && (
-						<div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700'>
-							<p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+						<div className='mt-6 pt-6 border-t border-border'>
+							<p className='text-sm font-medium text-primary mb-2'>
 								Your RSVP Status:{" "}
 								<span className='capitalize'>
 									{currentUserParticipant.rsvp_status}
@@ -296,8 +316,8 @@ export const EventDetailPage = () => {
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.15 }}
-					className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6'>
-					<h2 className='text-2xl font-semibold text-gray-900 dark:text-white mb-4'>
+					className='bg-primary rounded-lg shadow-md p-6 mb-6'>
+					<h2 className='text-2xl font-semibold text-primary mb-4'>
 						Attendees ({currentEvent.participants?.length || 0})
 					</h2>
 					{currentEvent.participants && currentEvent.participants.length > 0 ? (
@@ -305,7 +325,7 @@ export const EventDetailPage = () => {
 							{currentEvent.participants.map(participant => (
 								<div
 									key={participant.id}
-									className='p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between'>
+									className='p-3 bg-secondary rounded-lg flex items-center justify-between'>
 									<div className='flex items-center gap-3'>
 										{participant.user?.avatar_url ? (
 											<img
@@ -314,18 +334,18 @@ export const EventDetailPage = () => {
 												className='w-10 h-10 rounded-full'
 											/>
 										) : (
-											<div className='w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center'>
-												<span className='text-gray-600 dark:text-gray-300'>
+											<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+												<span className='text-primary'>
 													{participant.user?.name?.charAt(0).toUpperCase() ||
 														"?"}
 												</span>
 											</div>
 										)}
 										<div>
-											<p className='font-semibold text-gray-900 dark:text-white'>
+											<p className='font-semibold text-primary'>
 												{participant.user?.name || "Unknown"}
 											</p>
-											<p className='text-xs text-gray-500 dark:text-gray-400 capitalize'>
+											<p className='text-xs text-tertiary capitalize'>
 												{participant.role} • {participant.rsvp_status}
 											</p>
 										</div>
@@ -334,9 +354,7 @@ export const EventDetailPage = () => {
 							))}
 						</div>
 					) : (
-						<p className='text-gray-500 dark:text-gray-400'>
-							No attendees yet.
-						</p>
+						<p className='text-tertiary'>No attendees yet.</p>
 					)}
 				</motion.div>
 				{/* Contributions Section */}
@@ -344,9 +362,9 @@ export const EventDetailPage = () => {
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.1 }}
-					className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6'>
+					className='bg-primary rounded-lg shadow-md p-6 mb-6'>
 					<div className='flex justify-between items-center mb-4'>
-						<h2 className='text-2xl font-semibold text-gray-900 dark:text-white'>
+						<h2 className='text-2xl font-semibold text-primary'>
 							Contributions
 						</h2>
 						{currentUserParticipant &&
@@ -362,7 +380,7 @@ export const EventDetailPage = () => {
 					</div>
 
 					{showContributionForm && (
-						<div className='mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+						<div className='mb-4 p-4 bg-secondary rounded-lg'>
 							<input
 								type='text'
 								placeholder='Item name *'
@@ -373,7 +391,7 @@ export const EventDetailPage = () => {
 										itemName: e.target.value,
 									})
 								}
-								className='w-full mb-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white'
+								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 							/>
 							<input
 								type='text'
@@ -385,7 +403,7 @@ export const EventDetailPage = () => {
 										quantity: e.target.value,
 									})
 								}
-								className='w-full mb-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white'
+								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 							/>
 							<textarea
 								placeholder='Description (optional)'
@@ -396,7 +414,7 @@ export const EventDetailPage = () => {
 										description: e.target.value,
 									})
 								}
-								className='w-full mb-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white'
+								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 								rows={2}
 							/>
 							<Button
@@ -415,25 +433,25 @@ export const EventDetailPage = () => {
 							{currentEvent.contributions.map(contribution => (
 								<div
 									key={contribution.id}
-									className='p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex justify-between items-start'>
+									className='p-4 bg-secondary rounded-lg flex justify-between items-start'>
 									<div className='flex-1'>
 										<div className='flex items-center gap-2 mb-1'>
-											<p className='font-semibold text-gray-900 dark:text-white'>
+											<p className='font-semibold text-primary'>
 												{contribution.item_name}
 											</p>
 											{contribution.quantity && (
-												<span className='text-sm text-gray-500 dark:text-gray-400'>
+												<span className='text-sm text-tertiary'>
 													({contribution.quantity})
 												</span>
 											)}
 										</div>
 										{contribution.description && (
-											<p className='text-sm text-gray-600 dark:text-gray-300'>
+											<p className='text-sm text-secondary'>
 												{contribution.description}
 											</p>
 										)}
 										{contribution.user && (
-											<p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+											<p className='text-xs text-tertiary mt-1'>
 												Brought by {contribution.user.name}
 											</p>
 										)}
@@ -454,9 +472,7 @@ export const EventDetailPage = () => {
 							))}
 						</div>
 					) : (
-						<p className='text-gray-500 dark:text-gray-400'>
-							No contributions yet.
-						</p>
+						<p className='text-tertiary'>No contributions yet.</p>
 					)}
 				</motion.div>
 				{/* Comments Section */}
@@ -464,10 +480,8 @@ export const EventDetailPage = () => {
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.2 }}
-					className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6'>
-					<h2 className='text-2xl font-semibold text-gray-900 dark:text-white mb-4'>
-						Comments
-					</h2>
+					className='bg-primary rounded-lg shadow-md p-6'>
+					<h2 className='text-2xl font-semibold text-primary mb-4'>Comments</h2>
 
 					{/* Add Comment Form */}
 					{currentUserParticipant && (
@@ -476,7 +490,7 @@ export const EventDetailPage = () => {
 								value={commentText}
 								onChange={e => setCommentText(e.target.value)}
 								placeholder='Add a comment...'
-								className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-2'
+								className='w-full px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
 								rows={3}
 							/>
 							<Button
@@ -492,17 +506,15 @@ export const EventDetailPage = () => {
 					{currentEvent.comments && currentEvent.comments.length > 0 ? (
 						<div className='space-y-4'>
 							{currentEvent.comments.map(comment => (
-								<div
-									key={comment.id}
-									className='p-4 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+								<div key={comment.id} className='p-4 bg-secondary rounded-lg'>
 									<div className='flex justify-between items-start mb-2'>
 										<div>
 											{comment.user && (
-												<p className='font-semibold text-gray-900 dark:text-white'>
+												<p className='font-semibold text-primary'>
 													{comment.user.name}
 												</p>
 											)}
-											<p className='text-xs text-gray-500 dark:text-gray-400'>
+											<p className='text-xs text-tertiary'>
 												{new Date(comment.created_at).toLocaleString()}
 											</p>
 										</div>
@@ -519,14 +531,12 @@ export const EventDetailPage = () => {
 											</button>
 										)}
 									</div>
-									<p className='text-gray-700 dark:text-gray-300'>
-										{comment.content}
-									</p>
+									<p className='text-primary'>{comment.content}</p>
 								</div>
 							))}
 						</div>
 					) : (
-						<p className='text-gray-500 dark:text-gray-400'>No comments yet.</p>
+						<p className='text-tertiary'>No comments yet.</p>
 					)}
 				</motion.div>
 				{/* Edit Modal */}
