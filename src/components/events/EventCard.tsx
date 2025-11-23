@@ -16,23 +16,20 @@ export const EventCard = ({
 	onEventClick,
 	showCreator = false,
 }: EventCardProps) => {
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
+	const formatDateTime = (datetimeString: string) => {
+		const date = new Date(datetimeString);
+		const dateStr = date.toLocaleDateString("en-US", {
 			weekday: "short",
 			year: "numeric",
 			month: "short",
 			day: "numeric",
 		});
-	};
-
-	const formatTime = (timeString: string) => {
-		// timeString is in HH:mm format
-		const [hours, minutes] = timeString.split(":");
-		const hour = parseInt(hours);
-		const ampm = hour >= 12 ? "PM" : "AM";
-		const displayHour = hour % 12 || 12;
-		return `${displayHour}:${minutes} ${ampm}`;
+		const timeStr = date.toLocaleTimeString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		});
+		return { date: dateStr, time: timeStr };
 	};
 
 	return (
@@ -67,8 +64,11 @@ export const EventCard = ({
 							</p>
 							<div className='space-y-1 text-sm text-tertiary'>
 								<p>
-									📅 {formatDate(event.event_date)} at{" "}
-									{formatTime(event.event_time)}
+									📅{" "}
+									{(() => {
+										const { date, time } = formatDateTime(event.event_datetime);
+										return `${date} at ${time}`;
+									})()}
 								</p>
 								{event.location && (
 									<p className='truncate'>📍 {event.location}</p>

@@ -76,22 +76,20 @@ export const EventDetailPage = () => {
 		p => p.user_id === user?.id,
 	);
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
+	const formatDateTime = (datetimeString: string) => {
+		const date = new Date(datetimeString);
+		const dateStr = date.toLocaleDateString("en-US", {
 			weekday: "long",
 			year: "numeric",
 			month: "long",
 			day: "numeric",
 		});
-	};
-
-	const formatTime = (timeString: string) => {
-		const [hours, minutes] = timeString.split(":");
-		const hour = parseInt(hours);
-		const ampm = hour >= 12 ? "PM" : "AM";
-		const displayHour = hour % 12 || 12;
-		return `${displayHour}:${minutes} ${ampm}`;
+		const timeStr = date.toLocaleTimeString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		});
+		return { date: dateStr, time: timeStr };
 	};
 
 	const handleRSVP = async (status: "going" | "not_going" | "maybe") => {
@@ -150,6 +148,8 @@ export const EventDetailPage = () => {
 	};
 
 	const isEventCreator = currentEvent.created_by === user?.id;
+
+	const eventDateTime = formatDateTime(currentEvent.event_datetime);
 
 	// const userContributions = currentEvent.contributions?.filter(
 	// 	c => c.user_id === user?.id,
@@ -229,8 +229,7 @@ export const EventDetailPage = () => {
 						<div>
 							<p className='text-tertiary'>Date & Time</p>
 							<p className='font-semibold text-primary'>
-								{formatDate(currentEvent.event_date)} at{" "}
-								{formatTime(currentEvent.event_time)}
+								{eventDateTime.date} at {eventDateTime.time}
 							</p>
 						</div>
 						{currentEvent.location && (

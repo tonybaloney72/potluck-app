@@ -85,8 +85,7 @@ export interface Event {
 	title: string;
 	description: string | null;
 	theme: string | null;
-	event_date: string; // ISO date string
-	event_time: string; // HH:mm format
+	event_datetime: string; // ISO datetime string
 	location: string | null;
 	location_url: string | null;
 	is_public: boolean;

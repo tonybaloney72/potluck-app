@@ -7,7 +7,6 @@ import { Layout } from "../components/layout/Layout";
 import { FriendsPage } from "../pages/FriendsPage";
 import { MessagesPage } from "../pages/MessagesPage";
 import { MyEventsPage } from "../pages/MyEventsPage";
-// import { HomePage } from "../pages/HomePage";
 import { EventDetailPage } from "../pages/EventDetailsPage";
 import { CreateEventPage } from "../pages/CreateEventPage";
 
@@ -54,16 +53,6 @@ export function AppRoutes() {
 					</Layout>
 				}
 			/>
-			{/* <Route
-				path='/events'
-				element={
-					<Layout>
-						<ProtectedRoute>
-							<MyEventsPage />
-						</ProtectedRoute>
-					</Layout>
-				}
-			/> */}
 			<Route
 				path='/events/:eventId'
 				element={
@@ -86,7 +75,7 @@ export function AppRoutes() {
 			/>
 			<Route path='/login' element={<LoginPage />} />
 			<Route path='/register' element={<RegisterPage />} />
-			{/* Catch-all route: redirect any unmatched paths to home */}
+
 			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>
 	);

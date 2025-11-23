@@ -12,8 +12,7 @@ interface CreateEventFormData {
 	title: string;
 	description: string;
 	theme: string;
-	event_date: string;
-	event_time: string;
+	event_datetime: string;
 	location: string;
 	location_url: string;
 	is_public: boolean;
@@ -47,8 +46,7 @@ export const CreateEventPage = () => {
 					title: data.title,
 					description: data.description || undefined,
 					theme: data.theme || undefined,
-					event_date: data.event_date,
-					event_time: data.event_time,
+					event_datetime: data.event_datetime,
 					location: data.location || undefined,
 					location_url: data.location_url || undefined,
 					is_public: data.is_public,
@@ -115,36 +113,13 @@ export const CreateEventPage = () => {
 							placeholder='e.g., Summer BBQ, Holiday Party'
 						/>
 
-						<div className='grid grid-cols-2 gap-4'>
-							<DatePicker
-								control={control}
-								name='event_date'
-								label='Event Date'
-								error={errors.event_date}
-								required
-							/>
-
-							<div>
-								<label className='block text-sm font-medium mb-1 text-primary'>
-									Event Time *
-								</label>
-								<input
-									type='time'
-									{...register("event_time", {
-										required: "Time is required",
-									})}
-									className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent'
-									style={{
-										colorScheme: "dark light",
-									}}
-								/>
-								{errors.event_time && (
-									<p className='mt-1 text-sm text-red-500'>
-										{errors.event_time.message}
-									</p>
-								)}
-							</div>
-						</div>
+						<DatePicker
+							control={control}
+							name='event_datetime'
+							label='Event Date & Time'
+							error={errors.event_datetime}
+							required
+						/>
 
 						<FriendSelector
 							selectedFriends={selectedFriendIds}

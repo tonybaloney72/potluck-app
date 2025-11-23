@@ -4,7 +4,7 @@ import type { Event } from "../types";
  * Generate Google Calendar URL
  */
 export const generateGoogleCalendarUrl = (event: Event): string => {
-	const startDate = new Date(`${event.event_date}T${event.event_time}`);
+	const startDate = new Date(event.event_datetime);
 	const endDate = new Date(startDate);
 	endDate.setHours(endDate.getHours() + 2); // Default 2-hour duration
 
@@ -27,7 +27,7 @@ export const generateGoogleCalendarUrl = (event: Event): string => {
  * Generate Apple Calendar (.ics file) data
  */
 export const generateAppleCalendarData = (event: Event): string => {
-	const startDate = new Date(`${event.event_date}T${event.event_time}`);
+	const startDate = new Date(event.event_datetime);
 	const endDate = new Date(startDate);
 	endDate.setHours(endDate.getHours() + 2); // Default 2-hour duration
 

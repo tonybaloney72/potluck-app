@@ -78,8 +78,7 @@ export const fetchUserEvents = createAsyncThunk(
 			`,
 			)
 			.in("id", eventIds)
-			.order("event_date", { ascending: true })
-			.order("event_time", { ascending: true });
+			.order("event_datetime", { ascending: true });
 
 		if (eventsError) throw eventsError;
 
@@ -200,8 +199,7 @@ export const createEvent = createAsyncThunk(
 		title: string;
 		description?: string;
 		theme?: string;
-		event_date: string;
-		event_time: string;
+		event_datetime: string;
 		location?: string;
 		location_url?: string;
 		is_public?: boolean;
@@ -216,8 +214,7 @@ export const createEvent = createAsyncThunk(
 				title: eventData.title,
 				description: eventData.description || null,
 				theme: eventData.theme || null,
-				event_date: eventData.event_date,
-				event_time: eventData.event_time,
+				event_datetime: eventData.event_datetime,
 				location: eventData.location || null,
 				location_url: eventData.location_url || null,
 				is_public: eventData.is_public || false,

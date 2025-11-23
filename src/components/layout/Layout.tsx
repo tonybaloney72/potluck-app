@@ -6,9 +6,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
 	return (
-		<div className='min-h-screen'>
+		<div className='h-screen flex flex-col'>
 			<Header />
-			<main>{children}</main>
+			<main className='flex-1 overflow-y-auto'>{children}</main>
 		</div>
 	);
 }
