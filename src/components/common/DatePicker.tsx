@@ -2,7 +2,7 @@ import { Controller, type Control, type FieldError } from "react-hook-form";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
 import "react-calendar/dist/Calendar.css";
-import "react-clock/dist/Clock.css";
+import "./DateTimePicker.css"; // Custom styling to match app theme
 
 interface DatePickerProps {
 	control: Control<any>;
@@ -43,21 +43,17 @@ export const DatePicker = ({
 
 					return (
 						<>
-							<DateTimePicker
-								onChange={handleDateTimeChange}
-								value={selectedDateTime}
-								format='y-MM-dd h:mm a'
-								disableClock={false}
-								className='w-full [&_input]:w-full [&_input]:px-4 [&_input]:py-2 [&_input]:bg-secondary [&_input]:border [&_input]:border-border [&_input]:rounded-md [&_input]:text-primary [&_input]:focus:outline-none [&_input]:focus:ring-2 [&_input]:focus:ring-accent'
-								calendarProps={{
-									className: "bg-secondary border border-border rounded-lg",
-								}}
-								clockProps={{
-									className: "bg-secondary",
-								}}
-								minDate={new Date()} // Prevent selecting past dates
-								clearIcon={null} // Optional: remove clear button if desired
-							/>
+							<div className={`w-full ${error ? "has-error" : ""}`}>
+								<DateTimePicker
+									onChange={handleDateTimeChange}
+									value={selectedDateTime}
+									format='y-MM-dd h:mm a'
+									disableClock={true}
+									maxDetail='minute'
+									minDate={new Date()} // Prevent selecting past dates
+									clearIcon={null} // Optional: remove clear button if desired
+								/>
+							</div>
 							{error && (
 								<p className='mt-1 text-sm text-red-500'>{error.message}</p>
 							)}

@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<
 
 			// Default fallback UI
 			return (
-				<div className='min-h-screen flex items-center justify-center bg-secondary p-4'>
+				<div className='flex items-center justify-center bg-secondary p-4'>
 					<div className='max-w-md w-full bg-secondary border border-border rounded-lg shadow-lg p-6'>
 						<h1 className='text-2xl font-bold text-primary mb-4'>
 							Something went wrong

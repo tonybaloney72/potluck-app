@@ -55,17 +55,23 @@ export const EventDetailPage = () => {
 		dispatch(fetchEventById(eventId));
 	}, [dispatch, eventId, currentEvent]);
 
-	if (loading) {
+	// Show loading if:
+	// 1. We're actively loading, OR
+	// 2. We have an eventId but currentEvent doesn't match (still fetching)
+	const isLoading = loading || (eventId && currentEvent?.id !== eventId);
+
+	if (isLoading) {
 		return (
-			<div className='min-h-screen flex items-center justify-center'>
+			<div className=' flex items-center justify-center'>
 				<div className='text-lg'>Loading event...</div>
 			</div>
 		);
 	}
 
+	// Only show "not found" if we've finished loading and still don't have the event
 	if (!currentEvent) {
 		return (
-			<div className='min-h-screen flex items-center justify-center'>
+			<div className='flex items-center justify-center'>
 				<div className='text-lg text-red-500'>Event not found</div>
 			</div>
 		);
@@ -156,12 +162,12 @@ export const EventDetailPage = () => {
 	// );
 
 	return (
-		<div className='min-h-screen bg-secondary p-8'>
+		<div className='bg-secondary p-8'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button */}
 				<div className='flex justify-between items-center mb-4'>
 					<button
-						onClick={() => navigate(-1)}
+						onClick={() => navigate("/")}
 						className='mb-4 text-accent hover:underline hover:cursor-pointer'>
 						← Back to My Events
 					</button>

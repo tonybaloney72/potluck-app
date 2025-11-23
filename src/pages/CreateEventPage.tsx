@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { useAppDispatch } from "../store/hooks";
-import { createEvent } from "../store/slices/eventsSlice";
+import { createEvent, setCurrentEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { DatePicker } from "../components/common/DatePicker";
@@ -55,6 +55,9 @@ export const CreateEventPage = () => {
 			);
 
 			if (createEvent.fulfilled.match(result)) {
+				// Set the created event as currentEvent before redirecting
+				// This prevents the "Event not found" flash on the details page
+				dispatch(setCurrentEvent(result.payload));
 				// Redirect to the newly created event
 				navigate(`/events/${result.payload.id}`);
 			} else {
@@ -68,7 +71,7 @@ export const CreateEventPage = () => {
 	};
 
 	return (
-		<div className='min-h-screen bg-secondary p-8'>
+		<div className='bg-secondary p-8'>
 			<div className='max-w-2xl mx-auto'>
 				{/* Back Button */}
 				<button

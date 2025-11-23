@@ -1,0 +1,250 @@
+/* DateTimePicker Custom Styling - Colors and Themes Only */
+
+/* Main DateTimePicker wrapper - colors only */
+.react-datetime-picker,
+.react-datetime-picker--closed,
+.react-datetime-picker--enabled {
+	width: 100%;
+	--tw-bg-secondary: var(--bg-secondary);
+	--tw-text-primary: var(--text-primary);
+	--tw-text-tertiary: var(--text-tertiary);
+	--tw-border: var(--border);
+	--tw-accent: var(--accent);
+	--tw-accent-hover: var(--accent-secondary);
+}
+
+.react-datetime-picker__wrapper {
+	border-color: var(--border) !important;
+	background-color: var(--bg-secondary);
+	padding: 0.5rem 1rem;
+}
+
+/* Input fields - colors only */
+.react-datetime-picker__inputGroup__input {
+	color: var(--text-primary) !important;
+	background-color: transparent;
+}
+
+.react-datetime-picker__inputGroup__input::placeholder {
+	color: var(--text-tertiary);
+}
+
+/* Divider colors */
+.react-datetime-picker__inputGroup__divider {
+	color: var(--text-primary);
+}
+
+/* Buttons (calendar/clock icons) - colors only */
+.react-datetime-picker__button {
+	background-color: transparent;
+	color: var(--text-primary);
+}
+
+.react-datetime-picker__button:hover {
+	color: var(--accent);
+}
+
+.react-datetime-picker__button:enabled:active {
+	background-color: var(--bg-tertiary);
+}
+
+.react-datetime-picker__button:disabled {
+	opacity: 0.5;
+}
+
+/* Calendar Dropdown - colors only */
+.react-datetime-picker__calendar {
+	background-color: var(--bg-secondary);
+	border-color: var(--border);
+}
+
+/* Clock Dropdown - colors only */
+.react-datetime-picker__clock {
+	background-color: var(--bg-secondary);
+	border-color: var(--border);
+}
+
+/* Calendar Component Styles - colors only */
+.react-calendar {
+	background-color: var(--bg-secondary) !important;
+	color: var(--text-primary) !important;
+	border-color: var(--border) !important;
+	padding: 10px;
+}
+
+.react-calendar__navigation__label {
+	color: var(--text-primary) !important;
+}
+
+.react-calendar__navigation__label:hover {
+	background-color: var(--accent-secondary) !important;
+}
+
+.react-calendar__navigation__label:focus {
+	background-color: var(--bg-tertiary) !important;
+}
+
+.react-calendar__navigation__arrow {
+	color: var(--text-primary) !important;
+	background-color: transparent !important;
+}
+
+.react-calendar__navigation__arrow:hover {
+	background-color: var(--bg-tertiary) !important;
+	color: var(--accent) !important;
+}
+
+.react-calendar__navigation__arrow:disabled {
+	opacity: 0.5;
+}
+
+/* Calendar weekday labels - colors only */
+.react-calendar__month-view__weekdays {
+	color: var(--text-tertiary);
+}
+
+/* Calendar days - colors only */
+.react-calendar__tile {
+	color: var(--text-primary) !important;
+	background-color: transparent !important;
+}
+
+.react-calendar__tile:hover {
+	background-color: var(--accent-secondary) !important;
+}
+
+.react-calendar__tile:enabled:focus {
+	background-color: var(--bg-tertiary) !important;
+	outline-color: var(--accent);
+}
+
+.react-calendar__tile--active {
+	background-color: var(--accent-secondary) !important;
+	color: var(--bg-secondary) !important;
+}
+
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+	background-color: var(--accent-hover) !important;
+	color: var(--bg-secondary) !important;
+}
+
+.react-calendar__tile--now {
+	background-color: var(--bg-tertiary) !important;
+}
+
+.react-calendar__tile--hasActive {
+	background-color: var(--bg-tertiary) !important;
+}
+
+.react-calendar__tile--rangeStart,
+.react-calendar__tile--rangeEnd {
+	background-color: var(--accent) !important;
+	color: var(--bg-secondary) !important;
+}
+
+/* Disabled days - colors only */
+.react-calendar__tile:disabled {
+	opacity: 0.3;
+	color: var(--text-tertiary) !important;
+}
+
+/* Neighboring month days - colors only */
+.react-calendar__month-view__days__day--neighboringMonth {
+	color: var(--text-tertiary) !important;
+	opacity: 0.5;
+}
+
+/* Clock Component Styles - colors only */
+.react-clock {
+	background-color: var(--bg-secondary) !important;
+	border-color: var(--border);
+}
+
+.react-clock__face {
+	border-color: var(--border) !important;
+	background-color: var(--bg-secondary) !important;
+}
+
+.react-clock__hand {
+	background-color: var(--accent) !important;
+}
+
+.react-clock__hand__body {
+	background-color: var(--accent) !important;
+}
+
+.react-clock__mark {
+	background-color: var(--text-primary) !important;
+}
+
+.react-clock__mark__body {
+	background-color: var(--text-primary) !important;
+}
+
+.react-clock__second-hand {
+	background-color: var(--accent) !important;
+}
+
+.react-clock__second-hand__body {
+	background-color: var(--accent) !important;
+}
+
+/* Focus styles - accent color */
+.react-datetime-picker__wrapper:focus-within {
+	outline-color: var(--accent);
+	border-color: var(--accent);
+}
+
+/* Error state - red color */
+.has-error .react-datetime-picker__wrapper {
+	border-color: rgb(239, 68, 68) !important; /* red-500 */
+}
+
+.has-error .react-datetime-picker__wrapper:focus-within {
+	outline-color: rgb(239, 68, 68);
+	border-color: rgb(239, 68, 68);
+}
+
+/* AM/PM Dropdown Styling - colors only */
+.react-datetime-picker__inputGroup__amPm,
+.react-datetime-picker__inputGroup select {
+	background-color: var(--bg-secondary);
+	border-color: var(--border);
+	color: var(--text-primary);
+}
+
+.react-datetime-picker__inputGroup__amPm:hover,
+.react-datetime-picker__inputGroup select:hover {
+	border-color: var(--accent);
+	background-color: var(--bg-tertiary);
+}
+
+.react-datetime-picker__inputGroup__amPm:focus,
+.react-datetime-picker__inputGroup select:focus {
+	border-color: var(--accent);
+	outline-color: var(--accent);
+}
+
+.react-datetime-picker__inputGroup__amPm option,
+.react-datetime-picker__inputGroup select option {
+	background-color: var(--bg-secondary);
+	color: var(--text-primary);
+}
+
+.react-datetime-picker__inputGroup__amPm option:hover,
+.react-datetime-picker__inputGroup select option:hover {
+	background-color: var(--bg-tertiary);
+}
+
+.react-datetime-picker__inputGroup__amPm option:checked,
+.react-datetime-picker__inputGroup select option:checked {
+	background-color: var(--accent) !important;
+	color: var(--bg-secondary) !important;
+}
+
+/* Dark mode specific adjustments - colors only */
+[data-theme="dark"] .react-datetime-picker__calendar {
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+		0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}

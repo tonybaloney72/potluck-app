@@ -29,7 +29,7 @@ export const LoginPage = () => {
 	};
 
 	return (
-		<div className='min-h-screen flex items-center justify-center bg-primary'>
+		<div className='flex items-center justify-center bg-primary'>
 			<div className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
 				<h1 className='text-3xl font-bold text-center text-primary'>Login</h1>
 				<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>

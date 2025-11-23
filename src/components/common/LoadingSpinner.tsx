@@ -26,7 +26,7 @@ export const LoadingSpinner = ({
 
 	if (fullScreen) {
 		return (
-			<div className='min-h-screen flex flex-col items-center justify-center bg-primary p-4'>
+			<div className='flex flex-col items-center justify-center bg-primary p-4'>
 				{spinner}
 				{message && <p className='mt-4 text-sm text-secondary'>{message}</p>}
 			</div>

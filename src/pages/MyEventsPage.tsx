@@ -50,14 +50,14 @@ export const MyEventsPage = () => {
 
 	if (loading) {
 		return (
-			<div className='min-h-screen flex items-center justify-center'>
+			<div className='flex items-center justify-center'>
 				<div className='text-lg'>Loading events...</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className='min-h-screen bg-secondary p-8'>
+		<div className='bg-secondary p-8'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex justify-between items-center mb-8'>
 					<div className='flex items-center gap-3'>
