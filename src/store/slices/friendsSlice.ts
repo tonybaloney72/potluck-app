@@ -5,6 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Friendship } from "../../types";
+import { requireAuth } from "../../utils/auth";
 
 interface FriendsState {
 	friendships: Friendship[];
@@ -23,9 +24,7 @@ const initialState: FriendsState = {
 export const fetchFriendships = createAsyncThunk(
 	"friends/fetchFriendships",
 	async () => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		// Simpler query without foreign key hints
@@ -65,9 +64,7 @@ export const fetchFriendships = createAsyncThunk(
 export const sendFriendRequest = createAsyncThunk(
 	"friends/sendFriendRequest",
 	async (friendId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase
@@ -101,9 +98,7 @@ export const sendFriendRequest = createAsyncThunk(
 export const acceptFriendRequest = createAsyncThunk(
 	"friends/acceptFriendRequest",
 	async (friendshipId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase

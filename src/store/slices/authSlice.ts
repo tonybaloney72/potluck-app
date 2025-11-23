@@ -5,6 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Profile } from "../../types";
+import { requireAuth } from "../../utils/auth";
 
 interface AuthState {
 	user: { id: string; email?: string } | null;
@@ -83,9 +84,7 @@ export const signOut = createAsyncThunk("auth/signOut", async () => {
 export const updateProfile = createAsyncThunk(
 	"auth/updateProfile",
 	async (updates: Partial<Profile>) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase

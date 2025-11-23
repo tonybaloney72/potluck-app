@@ -8,6 +8,7 @@ import type { Conversation, Message } from "../../types";
 import type { RootState } from "../index";
 import { markMessagesAsRead } from "./messagesSlice";
 import { fetchFriendships } from "./friendsSlice";
+import { requireAuth } from "../../utils/auth";
 
 interface ConversationsState {
 	conversations: Conversation[];
@@ -26,9 +27,7 @@ const initialState: ConversationsState = {
 export const fetchConversations = createAsyncThunk(
 	"conversations/fetchConversations",
 	async (_, { getState, dispatch }) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const state = getState() as RootState;
@@ -112,9 +111,7 @@ export const fetchConversations = createAsyncThunk(
 export const getOrCreateConversation = createAsyncThunk(
 	"conversations/getOrCreateConversation",
 	async (otherUserId: string, { getState, dispatch }) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const state = getState() as RootState;

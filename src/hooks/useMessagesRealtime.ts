@@ -7,6 +7,7 @@ import {
 } from "../store/slices/conversationsSlice";
 import { supabase } from "../services/supabase";
 import type { Message } from "../types";
+import { requireSession } from "../utils/auth";
 
 export function useMessagesRealtime(currentConversationId: string | null) {
 	const dispatch = useAppDispatch();
@@ -25,12 +26,9 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 		if (!user || isSubscribingRef.current) return;
 
 		// Verify user is authenticated before subscribing
-		const {
-			data: { session },
-		} = await supabase.auth.getSession();
+		const session = await requireSession();
 
 		if (!session) {
-			console.error("❌ Cannot subscribe to messages: User not authenticated");
 			return;
 		}
 

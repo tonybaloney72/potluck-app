@@ -8,6 +8,7 @@ import {
 } from "../store/slices/friendsSlice";
 import { supabase } from "../services/supabase";
 import type { Friendship } from "../types";
+import { requireSession } from "../utils/auth";
 
 export function useFriendshipsRealtime() {
 	const dispatch = useAppDispatch();
@@ -20,14 +21,9 @@ export function useFriendshipsRealtime() {
 		if (!user || isSubscribingRef.current) return;
 
 		// Verify user is authenticated before subscribing
-		const {
-			data: { session },
-		} = await supabase.auth.getSession();
+		const session = await requireSession();
 
 		if (!session) {
-			console.error(
-				"❌ Cannot subscribe to friendships: User not authenticated",
-			);
 			return;
 		}
 

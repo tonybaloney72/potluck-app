@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Profile } from "../../types";
+import { requireAuth } from "../../utils/auth";
 
 interface UsersState {
 	users: Profile[];
@@ -21,9 +22,7 @@ const initialState: UsersState = {
 export const searchUsers = createAsyncThunk(
 	"users/searchUsers",
 	async (searchQuery: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		if (!searchQuery.trim()) {

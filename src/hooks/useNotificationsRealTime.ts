@@ -7,6 +7,7 @@ import {
 } from "../store/slices/notificationsSlice";
 import { supabase } from "../services/supabase";
 import type { Notification } from "../types";
+import { requireSession } from "../utils/auth";
 
 export function useNotificationsRealtime() {
 	const dispatch = useAppDispatch();
@@ -19,14 +20,9 @@ export function useNotificationsRealtime() {
 		if (!user || isSubscribingRef.current) return;
 
 		// Verify user is authenticated before subscribing
-		const {
-			data: { session },
-		} = await supabase.auth.getSession();
+		const session = await requireSession();
 
 		if (!session) {
-			console.error(
-				"❌ Cannot subscribe to notifications: User not authenticated",
-			);
 			return;
 		}
 

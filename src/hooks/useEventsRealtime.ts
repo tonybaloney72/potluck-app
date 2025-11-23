@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { store } from "../store";
 import { fetchUserEvents, removeEvent } from "../store/slices/eventsSlice";
 import { supabase } from "../services/supabase";
+import { requireSession } from "../utils/auth";
 
 export function useEventsRealtime() {
 	const dispatch = useAppDispatch();
@@ -21,12 +22,9 @@ export function useEventsRealtime() {
 		if (!user || isSubscribingRef.current) return;
 
 		// Verify user is authenticated before subscribing
-		const {
-			data: { session },
-		} = await supabase.auth.getSession();
+		const session = await requireSession();
 
 		if (!session) {
-			console.error("❌ Cannot subscribe to events: User not authenticated");
 			return;
 		}
 

@@ -11,6 +11,7 @@ import type {
 	EventComment,
 	RSVPStatus,
 } from "../../types";
+import { requireAuth } from "../../utils/auth";
 
 interface EventsState {
 	events: Event[];
@@ -42,9 +43,7 @@ const initialState: EventsState = {
 export const fetchUserEvents = createAsyncThunk(
 	"events/fetchUserEvents",
 	async () => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		// Get events where user is a participant
@@ -93,9 +92,7 @@ export const fetchUserEvents = createAsyncThunk(
 export const fetchEventById = createAsyncThunk(
 	"events/fetchEventById",
 	async (eventId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		// Fetch event with creator
@@ -212,9 +209,7 @@ export const createEvent = createAsyncThunk(
 		is_public?: boolean;
 		invitedUserIds?: string[];
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: event, error } = await supabase
@@ -303,9 +298,7 @@ export const updateEvent = createAsyncThunk(
 		eventId: string;
 		updates: Partial<Event>;
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: event, error } = await supabase
@@ -329,9 +322,7 @@ export const updateEvent = createAsyncThunk(
 export const deleteEvent = createAsyncThunk(
 	"events/deleteEvent",
 	async (eventId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase.from("events").delete().eq("id", eventId);
@@ -353,9 +344,7 @@ export const addParticipant = createAsyncThunk(
 		userId: string;
 		role?: "host" | "co_host" | "contributor" | "guest";
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: participant, error } = await supabase
@@ -389,9 +378,7 @@ export const updateRSVP = createAsyncThunk(
 		eventId: string;
 		rsvpStatus: RSVPStatus;
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const updateData: any = {
@@ -425,9 +412,7 @@ export const updateRSVP = createAsyncThunk(
 export const removeParticipant = createAsyncThunk(
 	"events/removeParticipant",
 	async ({ eventId, userId }: { eventId: string; userId: string }) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase
@@ -455,9 +440,7 @@ export const addContribution = createAsyncThunk(
 		quantity?: string;
 		description?: string;
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: contribution, error } = await supabase
@@ -492,9 +475,7 @@ export const updateContribution = createAsyncThunk(
 		contributionId: string;
 		updates: Partial<Contribution>;
 	}) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: contribution, error } = await supabase
@@ -518,9 +499,7 @@ export const updateContribution = createAsyncThunk(
 export const deleteContribution = createAsyncThunk(
 	"events/deleteContribution",
 	async (contributionId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase
@@ -537,9 +516,7 @@ export const deleteContribution = createAsyncThunk(
 export const addComment = createAsyncThunk(
 	"events/addComment",
 	async ({ eventId, content }: { eventId: string; content: string }) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { data: comment, error } = await supabase
@@ -566,9 +543,7 @@ export const addComment = createAsyncThunk(
 export const deleteComment = createAsyncThunk(
 	"events/deleteComment",
 	async (commentId: string) => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireAuth();
 		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase

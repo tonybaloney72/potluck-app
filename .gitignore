@@ -48,3 +48,4 @@ ERROR_BOUNDARY_GUIDE.md
 .cursor/rules/project-rules.mdc
 *.local.md
 *.sql
+DRY_REFACTOR.md
