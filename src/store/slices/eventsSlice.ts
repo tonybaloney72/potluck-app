@@ -15,7 +15,8 @@ import type {
 interface EventsState {
 	events: Event[];
 	currentEvent: Event | null;
-	loading: boolean;
+	loading: boolean; // Initial load - shows full loading screen
+	refreshingEvents: boolean; // Background refresh - doesn't block UI
 	updatingRSVP: RSVPStatus | null; // Track which RSVP status is being updated
 	addingComment: boolean;
 	addingContribution: boolean;
@@ -28,6 +29,7 @@ const initialState: EventsState = {
 	events: [],
 	currentEvent: null,
 	loading: false,
+	refreshingEvents: false,
 	updatingRSVP: null,
 	addingComment: false,
 	addingContribution: false,
@@ -259,7 +261,35 @@ export const createEvent = createAsyncThunk(
 			// Notifications are created automatically by the database trigger
 		}
 
-		return event as Event;
+		// Fetch the full event with participants to return complete data
+		const { data: fullEvent, error: fetchError } = await supabase
+			.from("events")
+			.select(
+				`
+				*,
+				creator:profiles!events_created_by_fkey(id, name, avatar_url),
+				participants:event_participants(
+					id,
+					user_id,
+					role,
+					rsvp_status,
+					invited_at,
+					joined_at,
+					created_at,
+					updated_at,
+					user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+				)
+			`,
+			)
+			.eq("id", event.id)
+			.single();
+
+		if (fetchError) {
+			// If fetch fails, return the event without participants (better than nothing)
+			return event as Event;
+		}
+
+		return fullEvent as Event;
 	},
 );
 
@@ -566,15 +596,23 @@ const eventsSlice = createSlice({
 		// Fetch user events
 		builder
 			.addCase(fetchUserEvents.pending, state => {
-				state.loading = true;
+				// Only show full loading if we don't have events yet (initial load)
+				if (state.events.length === 0) {
+					state.loading = true;
+				} else {
+					// Otherwise, just mark as refreshing (background update)
+					state.refreshingEvents = true;
+				}
 				state.error = null;
 			})
 			.addCase(fetchUserEvents.fulfilled, (state, action) => {
 				state.loading = false;
+				state.refreshingEvents = false;
 				state.events = action.payload;
 			})
 			.addCase(fetchUserEvents.rejected, (state, action) => {
 				state.loading = false;
+				state.refreshingEvents = false;
 				state.error = action.error.message || "Failed to fetch events";
 			});
 
@@ -601,15 +639,24 @@ const eventsSlice = createSlice({
 		// Create event
 		builder
 			.addCase(createEvent.pending, state => {
-				state.loading = true;
+				// Only show full loading if we don't have events yet
+				if (state.events.length === 0) {
+					state.loading = true;
+				} else {
+					// Otherwise, just mark as refreshing (background update)
+					state.refreshingEvents = true;
+				}
 				state.error = null;
 			})
 			.addCase(createEvent.fulfilled, (state, action) => {
 				state.loading = false;
+				state.refreshingEvents = false;
+				// Add the new event to the list
 				state.events.push(action.payload);
 			})
 			.addCase(createEvent.rejected, (state, action) => {
 				state.loading = false;
+				state.refreshingEvents = false;
 				state.error = action.error.message || "Failed to create event";
 			});
 

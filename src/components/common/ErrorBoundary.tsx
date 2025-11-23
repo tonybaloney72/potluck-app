@@ -61,10 +61,10 @@ export class ErrorBoundary extends Component<
 			return (
 				<div className='min-h-screen flex items-center justify-center bg-secondary p-4'>
 					<div className='max-w-md w-full bg-secondary border border-border rounded-lg shadow-lg p-6'>
-						<h1 className='text-2xl font-bold text-text-primary mb-4'>
+						<h1 className='text-2xl font-bold text-primary mb-4'>
 							Something went wrong
 						</h1>
-						<p className='text-text-secondary mb-4'>
+						<p className='text-secondary mb-4'>
 							We're sorry, but something unexpected happened. Please try
 							refreshing the page or contact support if the problem persists.
 						</p>
@@ -72,10 +72,10 @@ export class ErrorBoundary extends Component<
 						{/* Show error details in development */}
 						{import.meta.env.DEV && this.state.error && (
 							<details className='mb-4'>
-								<summary className='cursor-pointer text-text-secondary hover:text-text-primary mb-2'>
+								<summary className='cursor-pointer text-secondary hover:text-primary mb-2'>
 									Error Details (Development Only)
 								</summary>
-								<div className='bg-tertiary p-3 rounded text-sm text-text-primary overflow-auto max-h-48'>
+								<div className='bg-tertiary p-3 rounded text-sm text-primary overflow-auto max-h-48'>
 									<pre className='whitespace-pre-wrap wrap-break-words'>
 										{this.state.error.toString()}
 										{this.state.errorInfo?.componentStack}

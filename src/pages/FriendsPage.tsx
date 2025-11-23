@@ -117,7 +117,7 @@ export const FriendsPage = () => {
 
 	return (
 		<div className='max-w-4xl mx-auto p-8'>
-			<h1 className='text-3xl font-bold mb-8 text-text-primary'>Friends</h1>
+			<h1 className='text-3xl font-bold mb-8 text-primary'>Friends</h1>
 
 			{/* Search Section */}
 			<div className='mb-8'>
@@ -129,18 +129,18 @@ export const FriendsPage = () => {
 						onChange={e => setSearchQuery(e.target.value)}
 						className='pl-10'
 					/>
-					<FaSearch className='absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary w-4 h-4' />
+					<FaSearch className='absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary w-4 h-4' />
 				</div>
 
 				{/* Search Results */}
 				{searchQuery.trim() && (
 					<div className='mt-4'>
 						{searchLoading ? (
-							<div className='text-center py-4 text-text-secondary'>
+							<div className='text-center py-4 text-secondary'>
 								Searching...
 							</div>
 						) : searchResults.length === 0 ? (
-							<div className='text-center py-4 text-text-secondary'>
+							<div className='text-center py-4 text-secondary'>
 								No users found
 							</div>
 						) : (
@@ -166,17 +166,17 @@ export const FriendsPage = () => {
 														</Button>
 													)}
 													{status === "sent" && (
-														<span className='text-sm text-text-secondary'>
+														<span className='text-sm text-secondary'>
 															Request Sent
 														</span>
 													)}
 													{status === "pending" && (
-														<span className='text-sm text-text-secondary'>
+														<span className='text-sm text-secondary'>
 															Pending Request
 														</span>
 													)}
 													{status === "accepted" && (
-														<span className='text-sm text-text-secondary'>
+														<span className='text-sm text-secondary'>
 															Already Friends
 														</span>
 													)}
@@ -194,7 +194,7 @@ export const FriendsPage = () => {
 			{/* Pending Requests */}
 			{pendingRequests.length > 0 && (
 				<div className='mb-8'>
-					<h2 className='text-xl font-semibold mb-4 text-text-primary'>
+					<h2 className='text-xl font-semibold mb-4 text-primary'>
 						Friend Requests
 					</h2>
 					<div className='space-y-3'>
@@ -232,7 +232,7 @@ export const FriendsPage = () => {
 			{/* Sent Requests */}
 			{sentRequests.length > 0 && (
 				<div className='mb-8'>
-					<h2 className='text-xl font-semibold mb-4 text-text-primary'>
+					<h2 className='text-xl font-semibold mb-4 text-primary'>
 						Sent Requests
 					</h2>
 					<div className='space-y-3'>
@@ -258,11 +258,11 @@ export const FriendsPage = () => {
 
 			{/* Friends List */}
 			<div>
-				<h2 className='text-xl font-semibold mb-4 text-text-primary'>
+				<h2 className='text-xl font-semibold mb-4 text-primary'>
 					Your Friends ({acceptedFriends.length})
 				</h2>
 				{acceptedFriends.length === 0 ? (
-					<p className='text-text-secondary'>No friends yet.</p>
+					<p className='text-secondary'>No friends yet.</p>
 				) : (
 					<div className='space-y-3'>
 						{acceptedFriends.map(friendship => {

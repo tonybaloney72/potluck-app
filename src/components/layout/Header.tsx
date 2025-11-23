@@ -66,19 +66,19 @@ export const Header = () => {
 				<div className='flex justify-between items-center h-16'>
 					<Link
 						to='/'
-						className='text-xl font-bold text-text-primary flex items-center'>
+						className='text-xl font-bold text-primary flex items-center'>
 						Potluck <LuCookingPot className='w-6 h-6 inline-block ml-2' />
 					</Link>
 					<div className='flex items-center gap-4'>
 						<Link
 							to='/friends'
-							className='text-text-primary hover:text-text-tertiary transition-colors duration-200'>
+							className='text-primary hover:text-tertiary transition-colors duration-200'>
 							<FaUsers className='w-6 h-6 inline-block ml-2' />
 						</Link>
 
 						<Link
 							to='/messages'
-							className='text-text-primary hover:text-text-tertiary transition-colors duration-200'>
+							className='text-primary hover:text-tertiary transition-colors duration-200'>
 							<FaEnvelope className='w-6 h-6 inline-block ml-2' />
 						</Link>
 						<NotificationDropdown />
@@ -86,7 +86,7 @@ export const Header = () => {
 							<div className='relative' ref={dropdownRef}>
 								<button
 									onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-									className='flex items-center justify-center w-10 h-10 rounded-full bg-tertiary text-text-primary hover:bg-border cursor-pointer transition-all duration-200 hover:opacity-90 active:opacity-75'
+									className='flex items-center justify-center w-10 h-10 rounded-full bg-tertiary text-primary hover:bg-border cursor-pointer transition-all duration-200 hover:opacity-90 active:opacity-75'
 									aria-label='User menu'>
 									{profile?.avatar_url ? (
 										<img
@@ -123,10 +123,10 @@ export const Header = () => {
 															/>
 														) : (
 															<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
-																<FaUser className='w-4 h-4 text-text-primary' />
+																<FaUser className='w-4 h-4 text-primary' />
 															</div>
 														)}
-														<span className='text-sm font-medium text-text-primary truncate'>
+														<span className='text-sm font-medium text-primary truncate'>
 															{profile.name.split(" ")[0]}
 														</span>
 													</div>
@@ -138,7 +138,7 @@ export const Header = () => {
 													whileHover={{ backgroundColor: "var(--bg-tertiary)" }}
 													whileTap={{ scale: 0.98 }}
 													onClick={handleSettings}
-													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary transition-colors duration-50 hover:cursor-pointer'>
+													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-primary transition-colors duration-50 hover:cursor-pointer'>
 													<FaCog className='w-4 h-4' />
 													Settings
 												</motion.button>
@@ -150,7 +150,7 @@ export const Header = () => {
 															theme === "dark" ? "light" : "dark",
 														)
 													}
-													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary transition-colors duration-50 hover:cursor-pointer'>
+													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-primary transition-colors duration-50 hover:cursor-pointer'>
 													{theme === "dark" ? (
 														<FaSun className='w-4 h-4' />
 													) : (
@@ -162,7 +162,7 @@ export const Header = () => {
 													whileHover={{ backgroundColor: "var(--bg-tertiary)" }}
 													whileTap={{ scale: 0.98 }}
 													onClick={handleSignOut}
-													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary transition-colors duration-50 hover:cursor-pointer'>
+													className='w-full flex items-center gap-3 px-4 py-2 text-sm text-primary transition-colors duration-50 hover:cursor-pointer'>
 													<FaSignOutAlt className='w-4 h-4' />
 													Log Out
 												</motion.button>

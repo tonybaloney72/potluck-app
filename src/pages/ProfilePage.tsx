@@ -96,7 +96,7 @@ export const ProfilePage = () => {
 
 	return (
 		<div className='max-w-2xl mx-auto p-8'>
-			<h1 className=' text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-text-primary'>
+			<h1 className=' text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary'>
 				Profile Settings
 			</h1>
 

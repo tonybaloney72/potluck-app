@@ -63,10 +63,10 @@ export const ConfirmModal = ({
 								className='bg-secondary rounded-lg shadow-xl w-full max-w-md p-6 relative z-50 pointer-events-auto border border-border'
 								onClick={e => e.stopPropagation()}>
 								<div className='mb-4'>
-									<h2 className='text-xl font-semibold text-text-primary mb-2'>
+									<h2 className='text-xl font-semibold text-primary mb-2'>
 										{title}
 									</h2>
-									<p className='text-text-secondary'>{message}</p>
+									<p className='text-secondary'>{message}</p>
 								</div>
 								<div className='flex gap-3 justify-end'>
 									<Button variant='secondary' onClick={onClose}>

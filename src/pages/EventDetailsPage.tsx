@@ -12,6 +12,9 @@ import {
 } from "../store/slices/eventsSlice";
 import { motion } from "motion/react";
 import { Button } from "../components/common/Button";
+import { EditEventModal } from "../components/events/EditEventModal";
+import { ConfirmModal } from "../components/common/ConfirmModal";
+import { deleteEvent } from "../store/slices/eventsSlice";
 
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -34,12 +37,20 @@ export const EventDetailPage = () => {
 		quantity: "",
 		description: "",
 	});
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	useEffect(() => {
-		if (eventId) {
-			dispatch(fetchEventById(eventId));
+		if (!eventId) return;
+
+		// If we already have this event as currentEvent, no need to fetch again
+		if (currentEvent?.id === eventId) {
+			return;
 		}
-	}, [dispatch, eventId]);
+
+		// Fetch the event to get full details including comments and contributions
+		dispatch(fetchEventById(eventId));
+	}, [dispatch, eventId, currentEvent]);
 
 	if (loading) {
 		return (
@@ -126,6 +137,17 @@ export const EventDetailPage = () => {
 		// No need to refetch - state is updated optimistically
 	};
 
+	const handleDeleteEvent = async () => {
+		if (eventId) {
+			const result = await dispatch(deleteEvent(eventId));
+			if (deleteEvent.fulfilled.match(result)) {
+				navigate("/");
+			}
+		}
+	};
+
+	const isEventCreator = currentEvent.created_by === user?.id;
+
 	// const userContributions = currentEvent.contributions?.filter(
 	// 	c => c.user_id === user?.id,
 	// );
@@ -134,11 +156,29 @@ export const EventDetailPage = () => {
 		<div className='min-h-screen bg-gray-50 dark:bg-gray-900 p-8'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button */}
-				<button
-					onClick={() => navigate(-1)}
-					className='mb-4 text-blue-600 dark:text-blue-400 hover:underline hover:cursor-pointer'>
-					← Back to My Events
-				</button>
+				<div className='flex justify-between items-center mb-4'>
+					<button
+						onClick={() => navigate(-1)}
+						className='mb-4 text-blue-600 dark:text-blue-400 hover:underline hover:cursor-pointer'>
+						← Back to My Events
+					</button>
+					{isEventCreator && (
+						<div className='flex gap-2'>
+							<Button
+								variant='secondary'
+								onClick={() => setShowEditModal(true)}
+								className='text-sm'>
+								Edit Event
+							</Button>
+							<Button
+								variant='secondary'
+								onClick={() => setShowDeleteConfirm(true)}
+								className='text-sm text-red-600 hover:text-red-700'>
+								Delete Event
+							</Button>
+						</div>
+					)}
+				</div>
 				{/* Event Header */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -489,6 +529,32 @@ export const EventDetailPage = () => {
 						<p className='text-gray-500 dark:text-gray-400'>No comments yet.</p>
 					)}
 				</motion.div>
+				{/* Edit Modal */}
+				{showEditModal && currentEvent && (
+					<EditEventModal
+						event={currentEvent}
+						onClose={() => setShowEditModal(false)}
+						onSuccess={() => {
+							setShowEditModal(false);
+							if (eventId) {
+								dispatch(fetchEventById(eventId));
+							}
+						}}
+					/>
+				)}
+
+				{/* Delete Confirmation Modal */}
+				{showDeleteConfirm && (
+					<ConfirmModal
+						isOpen={showDeleteConfirm}
+						onClose={() => setShowDeleteConfirm(false)}
+						onConfirm={handleDeleteEvent}
+						title='Delete Event'
+						message='Are you sure you want to delete this event? This action cannot be undone.'
+						confirmText='Delete'
+						confirmVariant='secondary'
+					/>
+				)}
 			</div>
 		</div>
 	);

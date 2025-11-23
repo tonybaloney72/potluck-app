@@ -9,7 +9,9 @@ import { CreateEventModal } from "../components/events/CreateEventModal";
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { events, loading } = useAppSelector(state => state.events);
+	const { events, loading, refreshingEvents } = useAppSelector(
+		state => state.events,
+	);
 	const { user } = useAppSelector(state => state.auth);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const lastFetchedUserId = useRef<string | null>(null);
@@ -79,9 +81,16 @@ export const MyEventsPage = () => {
 		<div className='min-h-screen bg-gray-50 dark:bg-gray-900 p-8'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex justify-between items-center mb-8'>
-					<h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
-						My Events
-					</h1>
+					<div className='flex items-center gap-3'>
+						<h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
+							My Events
+						</h1>
+						{refreshingEvents && (
+							<div className='text-sm text-gray-500 dark:text-gray-400'>
+								Refreshing...
+							</div>
+						)}
+					</div>
 					<Button onClick={() => setShowCreateModal(true)}>
 						Create New Event
 					</Button>
@@ -231,6 +240,9 @@ export const MyEventsPage = () => {
 					onClose={() => setShowCreateModal(false)}
 					onSuccess={() => {
 						setShowCreateModal(false);
+						// Event is already added to state by createEvent.fulfilled
+						// Only refresh if we want to ensure we have the latest data
+						// This will be a background refresh (refreshingEvents) since events already exist
 						dispatch(fetchUserEvents());
 					}}
 				/>

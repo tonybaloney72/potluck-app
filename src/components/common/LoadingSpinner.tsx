@@ -28,9 +28,7 @@ export const LoadingSpinner = ({
 		return (
 			<div className='min-h-screen flex flex-col items-center justify-center bg-primary p-4'>
 				{spinner}
-				{message && (
-					<p className='mt-4 text-sm text-text-secondary'>{message}</p>
-				)}
+				{message && <p className='mt-4 text-sm text-secondary'>{message}</p>}
 			</div>
 		);
 	}
@@ -38,7 +36,7 @@ export const LoadingSpinner = ({
 	return (
 		<div className='flex flex-col items-center justify-center p-4'>
 			{spinner}
-			{message && <p className='mt-4 text-sm text-text-secondary'>{message}</p>}
+			{message && <p className='mt-4 text-sm text-secondary'>{message}</p>}
 		</div>
 	);
 };

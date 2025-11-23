@@ -226,9 +226,7 @@ export const MessagesPage = () => {
 		<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
 			{/* Conversations List */}
 			<div className='w-1/3 border-r border-border pr-4 overflow-y-auto flex flex-col gap-4'>
-				<h2 className='text-xl font-semibold text-text-primary'>
-					Conversations
-				</h2>
+				<h2 className='text-xl font-semibold text-primary'>Conversations</h2>
 				<Button
 					className='flex items-center gap-2'
 					variant='secondary'
@@ -256,8 +254,8 @@ export const MessagesPage = () => {
 				)}
 				{conversations.length === 0 ? (
 					<div className='text-center py-8'>
-						<p className='text-text-secondary mb-2'>No conversations yet.</p>
-						<p className='text-sm text-text-tertiary'>
+						<p className='text-secondary mb-2'>No conversations yet.</p>
+						<p className='text-sm text-tertiary'>
 							Start a conversation from your Friends page!
 						</p>
 					</div>
@@ -276,7 +274,7 @@ export const MessagesPage = () => {
 									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-colors ${
 										selectedConversationId === conversation.id
 											? "bg-accent text-bg-secondary"
-											: "bg-secondary hover:bg-tertiary text-text-primary"
+											: "bg-secondary hover:bg-tertiary text-primary"
 									}`}>
 									<div className='flex items-center gap-3'>
 										{otherUser?.avatar_url ? (
@@ -334,12 +332,12 @@ export const MessagesPage = () => {
 											className={`max-w-xs p-3 rounded-lg ${
 												isOwn
 													? "bg-accent text-bg-secondary"
-													: "bg-tertiary text-text-primary"
+													: "bg-tertiary text-primary"
 											}`}>
 											<p>{message.content}</p>
 											<p
 												className={`text-xs mt-1 ${
-													isOwn ? "text-bg-secondary/70" : "text-text-secondary"
+													isOwn ? "text-bg-secondary/70" : "text-secondary"
 												}`}>
 												{new Date(message.created_at).toLocaleTimeString()}
 											</p>
@@ -365,7 +363,7 @@ export const MessagesPage = () => {
 						</form>
 					</>
 				) : (
-					<div className='flex-1 flex items-center justify-center text-text-secondary'>
+					<div className='flex-1 flex items-center justify-center text-secondary'>
 						Select a conversation to start messaging
 					</div>
 				)}

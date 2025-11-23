@@ -85,7 +85,7 @@ export const FriendSelectorModal = ({
 								</div>
 								<div className='max-h-80 overflow-y-auto'>
 									{friends.length === 0 ? (
-										<div className='text-center text-text-tertiary py-10'>
+										<div className='text-center text-tertiary py-10'>
 											<p>No friends available to message.</p>
 										</div>
 									) : (
@@ -110,11 +110,11 @@ export const FriendSelectorModal = ({
 															</div>
 														)}
 														<div className='min-w-0 text-left'>
-															<p className='font-medium truncate text-text-primary'>
+															<p className='font-medium truncate text-primary'>
 																{friend.name || "Unknown User"}
 															</p>
 															{friend.location && (
-																<p className='text-xs text-text-secondary truncate'>
+																<p className='text-xs text-secondary truncate'>
 																	{friend.location}
 																</p>
 															)}

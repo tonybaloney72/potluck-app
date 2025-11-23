@@ -104,7 +104,7 @@ export const NotificationDropdown = () => {
 				className='relative p-2 rounded-lg hover:bg-tertiary transition-colors focus:outline-none hover:cursor-pointer'
 				aria-label='Notifications'
 				type='button'>
-				<FaBell className='w-5 h-5 text-text-primary' />
+				<FaBell className='w-5 h-5 text-primary' />
 				{unreadCount > 0 && (
 					<span className='absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-accent rounded-full'>
 						{unreadCount > 9 ? "9+" : unreadCount}
@@ -134,7 +134,7 @@ export const NotificationDropdown = () => {
 							transition={{ duration: 0.15 }}>
 							{/* Header */}
 							<div className='flex items-center justify-between p-4 border-b border-border'>
-								<h3 className='text-lg font-semibold text-text-primary'>
+								<h3 className='text-lg font-semibold text-primary'>
 									Notifications
 								</h3>
 								<div className='flex items-center gap-2'>
@@ -151,7 +151,7 @@ export const NotificationDropdown = () => {
 										className='p-1 rounded hover:bg-tertiary transition-colors'
 										aria-label='Close'
 										type='button'>
-										<FaTimes className='w-4 h-4 text-text-secondary' />
+										<FaTimes className='w-4 h-4 text-secondary' />
 									</button>
 								</div>
 							</div>
@@ -163,7 +163,7 @@ export const NotificationDropdown = () => {
 										<LoadingSpinner />
 									</div>
 								) : notifications.length === 0 ? (
-									<div className='p-8 text-center text-text-secondary'>
+									<div className='p-8 text-center text-secondary'>
 										<FaBell className='w-12 h-12 mx-auto mb-3 opacity-50' />
 										<p>No notifications</p>
 									</div>
@@ -185,13 +185,13 @@ export const NotificationDropdown = () => {
 													<div className='flex-1 min-w-0'>
 														<div className='flex items-start justify-between gap-2'>
 															<div className='flex-1'>
-																<h4 className='font-medium text-text-primary'>
+																<h4 className='font-medium text-primary'>
 																	{notification.title}
 																</h4>
-																<p className='text-sm text-text-secondary mt-1'>
+																<p className='text-sm text-secondary mt-1'>
 																	{notification.message}
 																</p>
-																<p className='text-xs text-text-tertiary mt-2'>
+																<p className='text-xs text-tertiary mt-2'>
 																	{new Date(
 																		notification.created_at,
 																	).toLocaleString()}

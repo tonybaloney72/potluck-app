@@ -22,10 +22,10 @@ export const Button = ({
 		primary:
 			"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
 		secondary:
-			"bg-tertiary text-text-primary hover:bg-border hover:shadow-md disabled:bg-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
+			"bg-tertiary text-primary hover:bg-border hover:shadow-md disabled:bg-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
 		toggle: active
 			? "bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md"
-			: "bg-tertiary text-text-primary hover:bg-border hover:shadow-sm",
+			: "bg-tertiary text-primary hover:bg-border hover:shadow-sm",
 	};
 
 	// Default loading text based on context, or use provided loadingText
