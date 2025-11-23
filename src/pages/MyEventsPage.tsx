@@ -49,9 +49,23 @@ export const MyEventsPage = () => {
 		return `${displayHour}:${minutes} ${ampm}`;
 	};
 
-	// Separate events into hosted and invited
+	// Separate events into hosted, attending, and invited
 	const hostedEvents = events.filter(e => e.created_by === user?.id);
-	const invitedEvents = events.filter(e => e.created_by !== user?.id);
+
+	// Events where user has RSVP'd "going"
+	const attendingEvents = events.filter(e => {
+		if (e.created_by === user?.id) return false; // Don't include hosted events
+		const userParticipant = e.participants?.find(p => p.user_id === user?.id);
+		return userParticipant?.rsvp_status === "going";
+	});
+
+	// Events where user is invited but hasn't RSVP'd "going"
+	// (includes "maybe", "not_going", or "pending")
+	const invitedEvents = events.filter(e => {
+		if (e.created_by === user?.id) return false; // Don't include hosted events
+		const userParticipant = e.participants?.find(p => p.user_id === user?.id);
+		return userParticipant && userParticipant.rsvp_status !== "going";
+	});
 
 	if (loading) {
 		return (
@@ -85,6 +99,50 @@ export const MyEventsPage = () => {
 					) : (
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 							{hostedEvents.map(event => (
+								<motion.div
+									key={event.id}
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
+									onClick={() => handleEventClick(event.id)}>
+									<h3 className='text-xl font-semibold text-gray-900 dark:text-white mb-2'>
+										{event.title}
+									</h3>
+									{event.theme && (
+										<span className='inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded mb-2'>
+											{event.theme}
+										</span>
+									)}
+									<p className='text-gray-600 dark:text-gray-400 mb-4 line-clamp-2'>
+										{event.description || "No description"}
+									</p>
+									<div className='space-y-1 text-sm text-gray-500 dark:text-gray-400'>
+										<p>
+											📅 {formatDate(event.event_date)} at{" "}
+											{formatTime(event.event_time)}
+										</p>
+										{event.location && (
+											<p className='truncate'>📍 {event.location}</p>
+										)}
+									</div>
+								</motion.div>
+							))}
+						</div>
+					)}
+				</div>
+
+				{/* Attending Events Section */}
+				<div className='mb-12'>
+					<h2 className='text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+						Events I'm Attending
+					</h2>
+					{attendingEvents.length === 0 ? (
+						<p className='text-gray-600 dark:text-gray-400'>
+							You're not attending any events yet.
+						</p>
+					) : (
+						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+							{attendingEvents.map(event => (
 								<motion.div
 									key={event.id}
 									initial={{ opacity: 0, y: 20 }}

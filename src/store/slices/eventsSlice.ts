@@ -57,13 +57,24 @@ export const fetchUserEvents = createAsyncThunk(
 
 		if (eventIds.length === 0) return [];
 
-		// Fetch events with creator profile
+		// Fetch events with creator profile and participants
 		const { data: events, error: eventsError } = await supabase
 			.from("events")
 			.select(
 				`
 				*,
-				creator:profiles!events_created_by_fkey(id, name, avatar_url)
+				creator:profiles!events_created_by_fkey(id, name, avatar_url),
+				participants:event_participants(
+					id,
+					user_id,
+					role,
+					rsvp_status,
+					invited_at,
+					joined_at,
+					created_at,
+					updated_at,
+					user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+				)
 			`,
 			)
 			.in("id", eventIds)
@@ -102,16 +113,26 @@ export const fetchEventById = createAsyncThunk(
 		// Fetch participants with user profiles
 		const { data: participants, error: participantsError } = await supabase
 			.from("event_participants")
-			.select(
-				`
-				*,
-				user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
-			`,
-			)
+			.select("*")
 			.eq("event_id", eventId)
 			.order("created_at", { ascending: true });
 
 		if (participantsError) throw participantsError;
+
+		const participantsWithProfiles = await Promise.all(
+			(participants || []).map(async participant => {
+				const { data: userProfile } = await supabase
+					.from("profiles")
+					.select("id, name, avatar_url")
+					.eq("id", participant.user_id)
+					.single();
+
+				return {
+					...participant,
+					user: userProfile || undefined,
+				};
+			}),
+		);
 
 		// Fetch contributions with user profiles
 		const { data: contributions, error: contributionsError } = await supabase
@@ -127,25 +148,50 @@ export const fetchEventById = createAsyncThunk(
 
 		if (contributionsError) throw contributionsError;
 
+		const contributionsWithProfiles = await Promise.all(
+			(contributions || []).map(async contribution => {
+				const { data: userProfile } = await supabase
+					.from("profiles")
+					.select("id, name, avatar_url")
+					.eq("id", contribution.user_id)
+					.single();
+
+				return {
+					...contribution,
+					user: userProfile || undefined,
+				};
+			}),
+		);
+
 		// Fetch comments with user profiles
 		const { data: comments, error: commentsError } = await supabase
 			.from("event_comments")
-			.select(
-				`
-				*,
-				user:profiles!event_comments_user_id_fkey(id, name, avatar_url)
-			`,
-			)
+			.select("*")
 			.eq("event_id", eventId)
 			.order("created_at", { ascending: true });
 
 		if (commentsError) throw commentsError;
 
+		const commentsWithProfiles = await Promise.all(
+			(comments || []).map(async comment => {
+				const { data: userProfile } = await supabase
+					.from("profiles")
+					.select("id, name, avatar_url")
+					.eq("id", comment.user_id)
+					.single();
+
+				return {
+					...comment,
+					user: userProfile || undefined,
+				};
+			}),
+		);
+
 		return {
 			...event,
-			participants: participants || [],
-			contributions: contributions || [],
-			comments: comments || [],
+			participants: participantsWithProfiles || [],
+			contributions: contributionsWithProfiles || [],
+			comments: commentsWithProfiles || [],
 		} as Event;
 	},
 );
@@ -192,6 +238,8 @@ export const createEvent = createAsyncThunk(
 
 		if (error) throw error;
 
+		// Add invited users as participants
+		// The database trigger will automatically create notifications for invited users
 		if (eventData.invitedUserIds && eventData.invitedUserIds.length > 0) {
 			const participants = eventData.invitedUserIds.map(userId => ({
 				event_id: event.id,
@@ -208,33 +256,7 @@ export const createEvent = createAsyncThunk(
 				console.error("Error adding participants:", participantsError);
 				// Don't throw - event was created successfully, just log the error
 			}
-
-			const { data: creatorProfile } = await supabase
-				.from("profiles")
-				.select("name")
-				.eq("id", user.id)
-				.single();
-
-			const creatorName = creatorProfile?.name || "Someone";
-
-			// Create notifications for each invited user
-			const notifications = eventData.invitedUserIds.map(userId => ({
-				user_id: userId,
-				type: "event_invitation" as const,
-				title: "Event Invitation",
-				message: `${creatorName} invited you to "${eventData.title}"`,
-				related_id: event.id,
-			}));
-
-			// Insert notifications (using Supabase directly since we're in a thunk)
-			const { error: notificationsError } = await supabase
-				.from("notifications")
-				.insert(notifications);
-
-			if (notificationsError) {
-				console.error("Error creating notifications:", notificationsError);
-				// Don't throw - event and participants were created successfully
-			}
+			// Notifications are created automatically by the database trigger
 		}
 
 		return event as Event;
