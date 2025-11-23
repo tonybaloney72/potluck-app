@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+// src/hooks/useConversationsRealtime.ts
+import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { supabase } from "../services/supabase";
 import {
@@ -6,287 +7,132 @@ import {
 	updateConversation,
 } from "../store/slices/conversationsSlice";
 import type { Conversation, Message } from "../types";
-import { requireSession } from "../utils/auth";
 
 export function useConversationsRealtime() {
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector(state => state.auth);
-	const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-	const reconnectTimeoutRef = useRef<number | null>(null);
-	const isSubscribingRef = useRef(false);
 
-	const subscribeToChannel = async () => {
-		if (!user || isSubscribingRef.current) return;
+	// Helper function to enrich conversation with profiles
+	const enrichConversation = async (
+		conversationData: any,
+	): Promise<Conversation> => {
+		const { data: user1Profile } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", conversationData.user1_id)
+			.single();
 
-		// Verify user is authenticated before subscribing
-		const session = await requireSession();
+		const { data: user2Profile } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", conversationData.user2_id)
+			.single();
 
-		if (!session) {
-			return;
-		}
-
-		// Capture user ID at subscription time to avoid closure issues
-		const currentUserId = user.id;
-
-		// Remove existing channel if any
-		if (channelRef.current) {
-			supabase.removeChannel(channelRef.current);
-		}
-
-		isSubscribingRef.current = true;
-
-		// Create a channel for conversations changes
-		const channel = supabase
-			.channel(`conversations:${currentUserId}`)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "conversations",
-					// Listen to conversations where current user is involved
-					filter: `user1_id=eq.${currentUserId}`,
-				},
-				async (payload: { eventType: "INSERT"; new: any }) => {
-					if (payload.eventType === "INSERT" && payload.new) {
-						const newConversation = payload.new;
-
-						// Fetch user profiles
-						const { data: user1Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", newConversation.user1_id)
-							.single();
-
-						const { data: user2Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", newConversation.user2_id)
-							.single();
-
-						const conversation: Conversation = {
-							...newConversation,
-							user1: user1Profile || undefined,
-							user2: user2Profile || undefined,
-							unread_count: 0,
-						};
-
-						dispatch(addConversation(conversation));
-					}
-				},
-			)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "conversations",
-					filter: `user2_id=eq.${currentUserId}`,
-				},
-				async (payload: { eventType: "INSERT"; new: any }) => {
-					if (payload.eventType === "INSERT" && payload.new) {
-						const newConversation = payload.new;
-
-						// Fetch user profiles
-						const { data: user1Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", newConversation.user1_id)
-							.single();
-
-						const { data: user2Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", newConversation.user2_id)
-							.single();
-
-						const conversation: Conversation = {
-							...newConversation,
-							user1: user1Profile || undefined,
-							user2: user2Profile || undefined,
-							unread_count: 0,
-						};
-
-						dispatch(addConversation(conversation));
-					}
-				},
-			)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "UPDATE",
-					schema: "public",
-					table: "conversations",
-					filter: `user1_id=eq.${currentUserId}`,
-				},
-				async (payload: { eventType: "UPDATE"; new: any }) => {
-					if (payload.eventType === "UPDATE" && payload.new) {
-						const updatedConversation = payload.new;
-
-						// Fetch user profiles
-						const { data: user1Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", updatedConversation.user1_id)
-							.single();
-
-						const { data: user2Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", updatedConversation.user2_id)
-							.single();
-
-						// Fetch last message if last_message_at was updated
-						let lastMessage: Message | undefined;
-						if (updatedConversation.last_message_at) {
-							const { data: lastMessageData } = await supabase
-								.from("messages")
-								.select(
-									`
-                  *,
-                  sender:profiles!messages_sender_id_fkey(*)
-                `,
-								)
-								.eq("conversation_id", updatedConversation.id)
-								.order("created_at", { ascending: false })
-								.limit(1)
-								.single();
-
-							lastMessage = lastMessageData as Message | undefined;
-						}
-
-						const conversation: Conversation = {
-							...updatedConversation,
-							user1: user1Profile || undefined,
-							user2: user2Profile || undefined,
-							last_message: lastMessage,
-						};
-
-						dispatch(updateConversation(conversation));
-					}
-				},
-			)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "UPDATE",
-					schema: "public",
-					table: "conversations",
-					filter: `user2_id=eq.${currentUserId}`,
-				},
-				async (payload: { eventType: "UPDATE"; new: any }) => {
-					if (payload.eventType === "UPDATE" && payload.new) {
-						const updatedConversation = payload.new;
-
-						// Fetch user profiles
-						const { data: user1Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", updatedConversation.user1_id)
-							.single();
-
-						const { data: user2Profile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", updatedConversation.user2_id)
-							.single();
-
-						// Fetch last message if last_message_at was updated
-						let lastMessage: Message | undefined;
-						if (updatedConversation.last_message_at) {
-							const { data: lastMessageData } = await supabase
-								.from("messages")
-								.select(
-									`
-                  *,
-                  sender:profiles!messages_sender_id_fkey(*)
-                `,
-								)
-								.eq("conversation_id", updatedConversation.id)
-								.order("created_at", { ascending: false })
-								.limit(1)
-								.single();
-
-							lastMessage = lastMessageData as Message | undefined;
-						}
-
-						const conversation: Conversation = {
-							...updatedConversation,
-							user1: user1Profile || undefined,
-							user2: user2Profile || undefined,
-							last_message: lastMessage,
-						};
-
-						dispatch(updateConversation(conversation));
-					}
-				},
-			)
-			.subscribe(status => {
-				isSubscribingRef.current = false;
-
-				if (status === "SUBSCRIBED") {
-					if (reconnectTimeoutRef.current) {
-						clearTimeout(reconnectTimeoutRef.current);
-						reconnectTimeoutRef.current = null;
-					}
-				} else if (status === "CHANNEL_ERROR") {
-					console.error(
-						"❌ Conversations channel error - Will attempt to reconnect...",
-					);
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				} else if (status === "TIMED_OUT") {
-					console.warn(
-						"⚠️ Conversations channel subscription timed out - Will attempt to reconnect...",
-					);
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				} else if (status === "CLOSED") {
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				}
-			});
-
-		channelRef.current = channel;
+		return {
+			...conversationData,
+			user1: user1Profile || undefined,
+			user2: user2Profile || undefined,
+		};
 	};
 
-	useEffect(() => {
-		if (!user) {
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
-			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
-			}
-			return;
-		}
+	// Helper function to fetch last message
+	const fetchLastMessage = async (
+		conversationId: string,
+	): Promise<Message | undefined> => {
+		const { data: lastMessageData } = await supabase
+			.from("messages")
+			.select(`*, sender:profiles!messages_sender_id_fkey(*)`)
+			.eq("conversation_id", conversationId)
+			.order("created_at", { ascending: false })
+			.limit(1)
+			.single();
 
-		subscribeToChannel();
+		return lastMessageData as Message | undefined;
+	};
 
-		return () => {
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
+	// Subscription 1: INSERT where user is user1
+	useRealtimeSubscription({
+		channelName: `conversations:${user?.id}:insert:user1`,
+		table: "conversations",
+		filter: `user1_id=eq.${user?.id}`,
+		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
+			if (payload.eventType === "INSERT" && payload.new) {
+				const conversation = await enrichConversation(payload.new);
+				dispatch(
+					addConversation({
+						...conversation,
+						unread_count: 0,
+					}),
+				);
 			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
+		},
+	});
+
+	// Subscription 2: INSERT where user is user2
+	useRealtimeSubscription({
+		channelName: `conversations:${user?.id}:insert:user2`,
+		table: "conversations",
+		filter: `user2_id=eq.${user?.id}`,
+		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
+			if (payload.eventType === "INSERT" && payload.new) {
+				const conversation = await enrichConversation(payload.new);
+				dispatch(
+					addConversation({
+						...conversation,
+						unread_count: 0,
+					}),
+				);
 			}
-			isSubscribingRef.current = false;
-		};
-	}, [user, dispatch]);
+		},
+	});
+
+	// Subscription 3: UPDATE where user is user1
+	useRealtimeSubscription({
+		channelName: `conversations:${user?.id}:update:user1`,
+		table: "conversations",
+		filter: `user1_id=eq.${user?.id}`,
+		onUpdate: async (payload: { eventType: "UPDATE"; new: any }) => {
+			if (payload.eventType === "UPDATE" && payload.new) {
+				const conversation = await enrichConversation(payload.new);
+
+				// Fetch last message if last_message_at was updated
+				let lastMessage: Message | undefined;
+				if (payload.new.last_message_at) {
+					lastMessage = await fetchLastMessage(payload.new.id);
+				}
+
+				dispatch(
+					updateConversation({
+						...conversation,
+						last_message: lastMessage,
+					}),
+				);
+			}
+		},
+	});
+
+	// Subscription 4: UPDATE where user is user2
+	useRealtimeSubscription({
+		channelName: `conversations:${user?.id}:update:user2`,
+		table: "conversations",
+		filter: `user2_id=eq.${user?.id}`,
+		onUpdate: async (payload: { eventType: "UPDATE"; new: any }) => {
+			if (payload.eventType === "UPDATE" && payload.new) {
+				const conversation = await enrichConversation(payload.new);
+
+				// Fetch last message if last_message_at was updated
+				let lastMessage: Message | undefined;
+				if (payload.new.last_message_at) {
+					lastMessage = await fetchLastMessage(payload.new.id);
+				}
+
+				dispatch(
+					updateConversation({
+						...conversation,
+						last_message: lastMessage,
+					}),
+				);
+			}
+		},
+	});
 }

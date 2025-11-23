@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { store } from "../store";
 import {
@@ -8,224 +8,112 @@ import {
 } from "../store/slices/friendsSlice";
 import { supabase } from "../services/supabase";
 import type { Friendship } from "../types";
-import { requireSession } from "../utils/auth";
 
 export function useFriendshipsRealtime() {
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector(state => state.auth);
-	const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-	const reconnectTimeoutRef = useRef<number | null>(null);
-	const isSubscribingRef = useRef(false);
 
-	const subscribeToChannel = async () => {
-		if (!user || isSubscribingRef.current) return;
+	useRealtimeSubscription({
+		channelName: `friendships:${user?.id}:requester`,
+		table: "friendships",
+		filter: `user_id=eq.${user?.id}`,
+		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
+			if (payload.eventType === "INSERT" && payload.new) {
+				// Fetch the friend's profile
+				const { data: friendProfile } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", payload.new.friend_id)
+					.single();
 
-		// Verify user is authenticated before subscribing
-		const session = await requireSession();
+				const friendship: Friendship = {
+					...payload.new,
+					friend: friendProfile || null,
+					user: null,
+				};
+				dispatch(addFriendship(friendship));
+			}
+		},
+		onUpdate: async (payload: { eventType: "UPDATE"; new: any }) => {
+			if (payload.eventType === "UPDATE" && payload.new) {
+				// Fetch the friend's profile
+				const { data: friendProfile } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", payload.new.friend_id)
+					.single();
 
-		if (!session) {
-			return;
-		}
+				const friendship: Friendship = {
+					...payload.new,
+					friend: friendProfile || null,
+					user: null,
+				};
+				dispatch(updateFriendship(friendship));
+			}
+		},
+	});
 
-		// Capture user ID at subscription time to avoid closure issues
-		const currentUserId = user.id;
+	useRealtimeSubscription({
+		channelName: `friendships:${user?.id}:receiver`,
+		table: "friendships",
+		filter: `friend_id=eq.${user?.id}`,
+		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
+			if (payload.eventType === "INSERT" && payload.new) {
+				// Fetch the requester's profile
+				const { data: requesterProfile } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", payload.new.user_id)
+					.single();
 
-		// Remove existing channel if any
-		if (channelRef.current) {
-			supabase.removeChannel(channelRef.current);
-		}
+				const friendship: Friendship = {
+					...payload.new,
+					user: requesterProfile || null,
+					friend: null,
+				};
+				dispatch(addFriendship(friendship));
+			}
+		},
+		onUpdate: async (payload: { eventType: "UPDATE"; new: any }) => {
+			if (payload.eventType === "UPDATE" && payload.new) {
+				// Fetch the requester's profile
+				const { data: requesterProfile } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", payload.new.user_id)
+					.single();
 
-		isSubscribingRef.current = true;
+				const friendship: Friendship = {
+					...payload.new,
+					user: requesterProfile || null,
+					friend: null,
+				};
+				dispatch(updateFriendship(friendship));
+			}
+		},
+	});
 
-		// Create a channel for friendships changes
-		const channel = supabase
-			.channel(`friendships:${currentUserId}`)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "*", // Listen to INSERT, UPDATE, DELETE
-					schema: "public",
-					table: "friendships",
-					filter: `user_id=eq.${currentUserId}`, // Friendships where current user is the requester
-				},
-				async (payload: {
-					eventType: "INSERT" | "UPDATE";
-					new: any;
-					old: { id: string } | null;
-				}) => {
-					// Handle friendships where current user is user_id (requester)
-					if (payload.eventType === "INSERT" && payload.new) {
-						// Fetch the friend's profile
-						const { data: friendProfile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", payload.new.friend_id)
-							.single();
+	useRealtimeSubscription({
+		channelName: `friendships:${user?.id}:delete`,
+		table: "friendships",
+		// No filter - we'll check manually in the callback
+		onDelete: (payload: {
+			eventType: "DELETE";
+			old: { id: string } | null;
+		}) => {
+			if (payload.eventType === "DELETE" && payload.old) {
+				const deletedFriendshipId = payload.old.id;
 
-						const friendship: Friendship = {
-							...payload.new,
-							friend: friendProfile || null,
-							user: null,
-						};
-						dispatch(addFriendship(friendship));
-					} else if (payload.eventType === "UPDATE" && payload.new) {
-						// Fetch the friend's profile
-						const { data: friendProfile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", payload.new.friend_id)
-							.single();
+				// Check if this friendship exists in our Redux state
+				const state = store.getState();
+				const friendshipExists = state.friends.friendships.some(
+					f => f.id === deletedFriendshipId,
+				);
 
-						const friendship: Friendship = {
-							...payload.new,
-							friend: friendProfile || null,
-							user: null,
-						};
-						dispatch(updateFriendship(friendship));
-					}
-				},
-			)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "*", // Listen to INSERT, UPDATE, DELETE
-					schema: "public",
-					table: "friendships",
-					filter: `friend_id=eq.${currentUserId}`, // Friendships where current user is the receiver
-				},
-				async (payload: {
-					eventType: "INSERT" | "UPDATE";
-					new: any;
-					old: { id: string } | null;
-				}) => {
-					// Handle friendships where current user is friend_id (receiver)
-					if (payload.eventType === "INSERT" && payload.new) {
-						// Fetch the requester's profile
-						const { data: requesterProfile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", payload.new.user_id)
-							.single();
-
-						const friendship: Friendship = {
-							...payload.new,
-							user: requesterProfile || null,
-							friend: null,
-						};
-						dispatch(addFriendship(friendship));
-					} else if (payload.eventType === "UPDATE" && payload.new) {
-						// Fetch the requester's profile
-						const { data: requesterProfile } = await supabase
-							.from("profiles")
-							.select("*")
-							.eq("id", payload.new.user_id)
-							.single();
-
-						const friendship: Friendship = {
-							...payload.new,
-							user: requesterProfile || null,
-							friend: null,
-						};
-						dispatch(updateFriendship(friendship));
-					}
-				},
-			)
-			.on(
-				"postgres_changes" as any,
-				{
-					event: "DELETE", // Only listen to DELETE events
-					schema: "public",
-					table: "friendships",
-					// No filter - we'll check manually in the callback
-				},
-				(payload: { eventType: "DELETE"; old: { id: string } | null }) => {
-					// Handle DELETE events for any friendship where current user is involved
-					// This catches DELETE events that filters might miss
-					if (payload.eventType === "DELETE" && payload.old) {
-						const deletedFriendshipId = payload.old.id;
-
-						// Check if this friendship exists in our Redux state
-						// If it exists, it means it involves the current user (we only load our own friendships)
-						const state = store.getState();
-						const friendshipExists = state.friends.friendships.some(
-							f => f.id === deletedFriendshipId,
-						);
-
-						if (friendshipExists) {
-							dispatch(removeFriendship(deletedFriendshipId));
-						}
-					}
-				},
-			)
-			.subscribe(status => {
-				isSubscribingRef.current = false;
-
-				if (status === "SUBSCRIBED") {
-					if (reconnectTimeoutRef.current) {
-						clearTimeout(reconnectTimeoutRef.current);
-						reconnectTimeoutRef.current = null;
-					}
-				} else if (status === "CHANNEL_ERROR") {
-					console.error(
-						"❌ Friendships channel error - Will attempt to reconnect...",
-					);
-					// Attempt to reconnect after a delay
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				} else if (status === "TIMED_OUT") {
-					console.warn(
-						"⚠️ Friendships channel subscription timed out - Will attempt to reconnect...",
-					);
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				} else if (status === "CLOSED") {
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
+				if (friendshipExists) {
+					dispatch(removeFriendship(deletedFriendshipId));
 				}
-			});
-
-		channelRef.current = channel;
-	};
-
-	useEffect(() => {
-		if (!user) {
-			// Clean up if user logs out
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
 			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
-			}
-			return;
-		}
-
-		subscribeToChannel();
-
-		// Cleanup function
-		return () => {
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
-			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
-			}
-			isSubscribingRef.current = false;
-		};
-	}, [user, dispatch]);
+		},
+	});
 }

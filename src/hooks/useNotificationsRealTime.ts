@@ -1,137 +1,37 @@
-import { useEffect, useRef } from "react";
+import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	addNotification,
 	updateNotification,
 	removeNotification,
 } from "../store/slices/notificationsSlice";
-import { supabase } from "../services/supabase";
 import type { Notification } from "../types";
-import { requireSession } from "../utils/auth";
 
 export function useNotificationsRealtime() {
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector(state => state.auth);
-	const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-	const reconnectTimeoutRef = useRef<number | null>(null);
-	const isSubscribingRef = useRef(false);
 
-	const subscribeToChannel = async () => {
-		if (!user || isSubscribingRef.current) return;
-
-		// Verify user is authenticated before subscribing
-		const session = await requireSession();
-
-		if (!session) {
-			return;
-		}
-
-		// Remove existing channel if any
-		if (channelRef.current) {
-			supabase.removeChannel(channelRef.current);
-		}
-
-		isSubscribingRef.current = true;
-
-		// Create a channel for this user's notifications
-		// Using Postgres Changes to listen to notifications table changes
-		const channel = supabase
-			.channel(`notifications:${user.id}`)
-			.on(
-				"postgres_changes" as any, // Type assertion needed due to TypeScript type definitions
-				{
-					event: "*", // Listen to INSERT, UPDATE, DELETE
-					schema: "public",
-					table: "notifications",
-					filter: `user_id=eq.${user.id}`, // Only notifications for this user
-				},
-				(payload: {
-					eventType: "INSERT" | "UPDATE" | "DELETE";
-					new: Notification | null;
-					old: { id: string } | null;
-				}) => {
-					// Handle notification changes from database
-					if (payload.eventType === "INSERT" && payload.new) {
-						dispatch(addNotification(payload.new as Notification));
-					} else if (payload.eventType === "UPDATE" && payload.new) {
-						dispatch(updateNotification(payload.new as Notification));
-					} else if (payload.eventType === "DELETE" && payload.old) {
-						dispatch(removeNotification(payload.old.id));
-					}
-				},
-			)
-			.subscribe(status => {
-				isSubscribingRef.current = false;
-
-				if (status === "SUBSCRIBED") {
-					// Clear any pending reconnect attempts
-					if (reconnectTimeoutRef.current) {
-						clearTimeout(reconnectTimeoutRef.current);
-						reconnectTimeoutRef.current = null;
-					}
-				} else if (status === "CHANNEL_ERROR") {
-					console.error(
-						"❌ Notifications channel error - Will attempt to reconnect...",
-					);
-					// Attempt to reconnect after a delay
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000); // Wait 3 seconds before reconnecting
-					}
-				} else if (status === "TIMED_OUT") {
-					console.warn(
-						"⚠️ Notifications channel subscription timed out - Will attempt to reconnect...",
-					);
-					// Attempt to reconnect after a delay
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				} else if (status === "CLOSED") {
-					// Attempt to reconnect after a delay
-					if (!reconnectTimeoutRef.current) {
-						reconnectTimeoutRef.current = window.setTimeout(() => {
-							reconnectTimeoutRef.current = null;
-							subscribeToChannel();
-						}, 3000);
-					}
-				}
-			});
-
-		channelRef.current = channel;
-	};
-
-	useEffect(() => {
-		if (!user) {
-			// Clean up if user logs out
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
+	useRealtimeSubscription({
+		channelName: `notifications:${user?.id}`,
+		table: "notifications",
+		filter: `user_id=eq.${user?.id}`,
+		onInsert: (payload: { eventType: "INSERT"; new: Notification | null }) => {
+			if (payload.eventType === "INSERT" && payload.new) {
+				dispatch(addNotification(payload.new as Notification));
 			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
+		},
+		onUpdate: (payload: { eventType: "UPDATE"; new: Notification | null }) => {
+			if (payload.eventType === "UPDATE" && payload.new) {
+				dispatch(updateNotification(payload.new as Notification));
 			}
-			return;
-		}
-
-		subscribeToChannel();
-
-		// Cleanup function
-		return () => {
-			if (channelRef.current) {
-				supabase.removeChannel(channelRef.current);
-				channelRef.current = null;
+		},
+		onDelete: (payload: {
+			eventType: "DELETE";
+			old: { id: string } | null;
+		}) => {
+			if (payload.eventType === "DELETE" && payload.old) {
+				dispatch(removeNotification(payload.old.id));
 			}
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-				reconnectTimeoutRef.current = null;
-			}
-			isSubscribingRef.current = false;
-		};
-	}, [user, dispatch]);
+		},
+	});
 }
