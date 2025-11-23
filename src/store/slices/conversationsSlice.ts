@@ -28,7 +28,6 @@ export const fetchConversations = createAsyncThunk(
 	"conversations/fetchConversations",
 	async (_, { getState, dispatch }) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const state = getState() as RootState;
 		let friendships = state.friends.friendships;
@@ -112,7 +111,6 @@ export const getOrCreateConversation = createAsyncThunk(
 	"conversations/getOrCreateConversation",
 	async (otherUserId: string, { getState, dispatch }) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const state = getState() as RootState;
 		let friendships = state.friends.friendships;

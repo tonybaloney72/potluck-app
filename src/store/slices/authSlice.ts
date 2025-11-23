@@ -85,7 +85,6 @@ export const updateProfile = createAsyncThunk(
 	"auth/updateProfile",
 	async (updates: Partial<Profile>) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase
 			.from("profiles")

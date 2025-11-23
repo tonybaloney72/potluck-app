@@ -26,7 +26,6 @@ export const fetchNotifications = createAsyncThunk(
 	"notifications/fetchNotifications",
 	async () => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase
 			.from("notifications")
@@ -45,7 +44,6 @@ export const markNotificationAsRead = createAsyncThunk(
 	"notifications/markNotificationAsRead",
 	async (notificationId: string) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase
 			.from("notifications")
@@ -63,7 +61,6 @@ export const markAllNotificationsAsRead = createAsyncThunk(
 	"notifications/markAllNotificationsAsRead",
 	async () => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase.rpc("mark_notifications_as_read", {
 			p_user_id: user.id,
@@ -79,7 +76,6 @@ export const deleteNotification = createAsyncThunk(
 	"notifications/deleteNotification",
 	async (notificationId: string) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase
 			.from("notifications")

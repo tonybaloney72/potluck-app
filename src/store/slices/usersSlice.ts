@@ -23,7 +23,6 @@ export const searchUsers = createAsyncThunk(
 	"users/searchUsers",
 	async (searchQuery: string) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		if (!searchQuery.trim()) {
 			return [];

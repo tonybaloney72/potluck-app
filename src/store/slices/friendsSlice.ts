@@ -25,7 +25,6 @@ export const fetchFriendships = createAsyncThunk(
 	"friends/fetchFriendships",
 	async () => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		// Simpler query without foreign key hints
 		const { data, error } = await supabase
@@ -65,7 +64,6 @@ export const sendFriendRequest = createAsyncThunk(
 	"friends/sendFriendRequest",
 	async (friendId: string) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data, error } = await supabase
 			.from("friendships")
@@ -98,8 +96,7 @@ export const sendFriendRequest = createAsyncThunk(
 export const acceptFriendRequest = createAsyncThunk(
 	"friends/acceptFriendRequest",
 	async (friendshipId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { data, error } = await supabase
 			.from("friendships")

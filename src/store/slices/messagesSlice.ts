@@ -25,8 +25,7 @@ const initialState: MessagesState = {
 export const fetchMessages = createAsyncThunk(
 	"messages/fetchMessages",
 	async (conversationId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { data, error } = await supabase
 			.from("messages")
@@ -51,7 +50,6 @@ export const sendMessage = createAsyncThunk(
 		{ dispatch },
 	) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		// Get or create conversation
 		const conversationResult = await dispatch(
@@ -88,7 +86,6 @@ export const markMessagesAsRead = createAsyncThunk(
 	"messages/markMessagesAsRead",
 	async (conversationId: string) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { error } = await supabase
 			.from("messages")

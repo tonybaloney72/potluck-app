@@ -44,7 +44,6 @@ export const fetchUserEvents = createAsyncThunk(
 	"events/fetchUserEvents",
 	async () => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		// Get events where user is a participant
 		const { data: participants, error: participantsError } = await supabase
@@ -92,8 +91,7 @@ export const fetchUserEvents = createAsyncThunk(
 export const fetchEventById = createAsyncThunk(
 	"events/fetchEventById",
 	async (eventId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		// Fetch event with creator
 		const { data: event, error: eventError } = await supabase
@@ -210,7 +208,6 @@ export const createEvent = createAsyncThunk(
 		invitedUserIds?: string[];
 	}) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data: event, error } = await supabase
 			.from("events")
@@ -298,8 +295,7 @@ export const updateEvent = createAsyncThunk(
 		eventId: string;
 		updates: Partial<Event>;
 	}) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { data: event, error } = await supabase
 			.from("events")
@@ -322,8 +318,7 @@ export const updateEvent = createAsyncThunk(
 export const deleteEvent = createAsyncThunk(
 	"events/deleteEvent",
 	async (eventId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { error } = await supabase.from("events").delete().eq("id", eventId);
 
@@ -344,8 +339,7 @@ export const addParticipant = createAsyncThunk(
 		userId: string;
 		role?: "host" | "co_host" | "contributor" | "guest";
 	}) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { data: participant, error } = await supabase
 			.from("event_participants")
@@ -379,7 +373,6 @@ export const updateRSVP = createAsyncThunk(
 		rsvpStatus: RSVPStatus;
 	}) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const updateData: any = {
 			rsvp_status: rsvpStatus,
@@ -412,8 +405,7 @@ export const updateRSVP = createAsyncThunk(
 export const removeParticipant = createAsyncThunk(
 	"events/removeParticipant",
 	async ({ eventId, userId }: { eventId: string; userId: string }) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { error } = await supabase
 			.from("event_participants")
@@ -441,7 +433,6 @@ export const addContribution = createAsyncThunk(
 		description?: string;
 	}) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data: contribution, error } = await supabase
 			.from("contributions")
@@ -475,8 +466,7 @@ export const updateContribution = createAsyncThunk(
 		contributionId: string;
 		updates: Partial<Contribution>;
 	}) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { data: contribution, error } = await supabase
 			.from("contributions")
@@ -499,8 +489,7 @@ export const updateContribution = createAsyncThunk(
 export const deleteContribution = createAsyncThunk(
 	"events/deleteContribution",
 	async (contributionId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { error } = await supabase
 			.from("contributions")
@@ -517,7 +506,6 @@ export const addComment = createAsyncThunk(
 	"events/addComment",
 	async ({ eventId, content }: { eventId: string; content: string }) => {
 		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
 
 		const { data: comment, error } = await supabase
 			.from("event_comments")
@@ -543,8 +531,7 @@ export const addComment = createAsyncThunk(
 export const deleteComment = createAsyncThunk(
 	"events/deleteComment",
 	async (commentId: string) => {
-		const user = await requireAuth();
-		if (!user) throw new Error("Not authenticated");
+		await requireAuth();
 
 		const { error } = await supabase
 			.from("event_comments")
