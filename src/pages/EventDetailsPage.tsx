@@ -12,7 +12,6 @@ import {
 } from "../store/slices/eventsSlice";
 import { motion } from "motion/react";
 import { Button } from "../components/common/Button";
-import { EditEventModal } from "../components/events/EditEventModal";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { deleteEvent } from "../store/slices/eventsSlice";
 import {
@@ -42,7 +41,6 @@ export const EventDetailPage = () => {
 		quantity: "",
 		description: "",
 	});
-	const [showEditModal, setShowEditModal] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	useEffect(() => {
@@ -169,12 +167,6 @@ export const EventDetailPage = () => {
 					</button>
 					{isEventCreator && (
 						<div className='flex gap-2'>
-							<Button
-								variant='secondary'
-								onClick={() => setShowEditModal(true)}
-								className='text-sm'>
-								Edit Event
-							</Button>
 							<Button
 								variant='secondary'
 								onClick={() => setShowDeleteConfirm(true)}
@@ -539,19 +531,6 @@ export const EventDetailPage = () => {
 						<p className='text-tertiary'>No comments yet.</p>
 					)}
 				</motion.div>
-				{/* Edit Modal */}
-				{showEditModal && currentEvent && (
-					<EditEventModal
-						event={currentEvent}
-						onClose={() => setShowEditModal(false)}
-						onSuccess={() => {
-							setShowEditModal(false);
-							if (eventId) {
-								dispatch(fetchEventById(eventId));
-							}
-						}}
-					/>
-				)}
 
 				{/* Delete Confirmation Modal */}
 				{showDeleteConfirm && (

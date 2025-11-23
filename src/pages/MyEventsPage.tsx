@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchUserEvents, setCurrentEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
-import { CreateEventModal } from "../components/events/CreateEventModal";
 import { EventCard } from "../components/events/EventCard";
 
 export const MyEventsPage = () => {
@@ -13,7 +12,6 @@ export const MyEventsPage = () => {
 		state => state.events,
 	);
 	const { user } = useAppSelector(state => state.auth);
-	const [showCreateModal, setShowCreateModal] = useState(false);
 	const lastFetchedUserId = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -68,7 +66,7 @@ export const MyEventsPage = () => {
 							<div className='text-sm text-tertiary'>Refreshing...</div>
 						)}
 					</div>
-					<Button onClick={() => setShowCreateModal(true)}>
+					<Button onClick={() => navigate("/create-event")}>
 						Create New Event
 					</Button>
 				</div>
@@ -96,20 +94,6 @@ export const MyEventsPage = () => {
 					onEventClick={handleEventClick}
 				/>
 			</div>
-
-			{/* Create Event Modal - We'll implement this in the next step */}
-			{showCreateModal && (
-				<CreateEventModal
-					onClose={() => setShowCreateModal(false)}
-					onSuccess={() => {
-						setShowCreateModal(false);
-						// Event is already added to state by createEvent.fulfilled
-						// Only refresh if we want to ensure we have the latest data
-						// This will be a background refresh (refreshingEvents) since events already exist
-						dispatch(fetchUserEvents());
-					}}
-				/>
-			)}
 		</div>
 	);
 };

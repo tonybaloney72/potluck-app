@@ -9,6 +9,7 @@ import { MessagesPage } from "../pages/MessagesPage";
 import { MyEventsPage } from "../pages/MyEventsPage";
 // import { HomePage } from "../pages/HomePage";
 import { EventDetailPage } from "../pages/EventDetailsPage";
+import { CreateEventPage } from "../pages/CreateEventPage";
 
 export function AppRoutes() {
 	return (
@@ -69,6 +70,16 @@ export function AppRoutes() {
 					<Layout>
 						<ProtectedRoute>
 							<EventDetailPage />
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/create-event'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<CreateEventPage />
 						</ProtectedRoute>
 					</Layout>
 				}

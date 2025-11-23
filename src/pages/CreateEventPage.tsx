@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useAppDispatch } from "../../store/hooks";
-import { createEvent } from "../../store/slices/eventsSlice";
-import { motion, AnimatePresence } from "motion/react";
-import { Button } from "../common/Button";
-import { Input } from "../common/Input";
-import { DatePicker } from "../common/DatePicker";
-import { FriendSelector } from "./FriendSelector";
+import { useNavigate } from "react-router";
+import { useAppDispatch } from "../store/hooks";
+import { createEvent } from "../store/slices/eventsSlice";
+import { Button } from "../components/common/Button";
+import { Input } from "../components/common/Input";
+import { DatePicker } from "../components/common/DatePicker";
+import { FriendSelector } from "../components/events/FriendSelector";
 
 interface CreateEventFormData {
 	title: string;
@@ -19,15 +19,8 @@ interface CreateEventFormData {
 	is_public: boolean;
 }
 
-interface CreateEventModalProps {
-	onClose: () => void;
-	onSuccess: () => void;
-}
-
-export const CreateEventModal = ({
-	onClose,
-	onSuccess,
-}: CreateEventModalProps) => {
+export const CreateEventPage = () => {
+	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -43,27 +36,6 @@ export const CreateEventModal = ({
 			is_public: false,
 		},
 	});
-
-	// Handle Esc key press to close modal
-	useEffect(() => {
-		const handleEscKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape" && !loading) {
-				onClose();
-			}
-		};
-
-		document.addEventListener("keydown", handleEscKey);
-		return () => {
-			document.removeEventListener("keydown", handleEscKey);
-		};
-	}, [onClose, loading]);
-
-	// Handle click outside modal to close
-	const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (e.target === e.currentTarget && !loading) {
-			onClose();
-		}
-	};
 
 	const onSubmit = async (data: CreateEventFormData) => {
 		setLoading(true);
@@ -85,7 +57,8 @@ export const CreateEventModal = ({
 			);
 
 			if (createEvent.fulfilled.match(result)) {
-				onSuccess();
+				// Redirect to the newly created event
+				navigate(`/events/${result.payload.id}`);
 			} else {
 				setError(result.error?.message || "Failed to create event");
 			}
@@ -97,27 +70,27 @@ export const CreateEventModal = ({
 	};
 
 	return (
-		<AnimatePresence>
-			<div
-				className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'
-				onClick={handleBackdropClick}>
-				<motion.div
-					initial={{ opacity: 0, scale: 0.95 }}
-					animate={{ opacity: 1, scale: 1 }}
-					exit={{ opacity: 0, scale: 0.95 }}
-					onClick={e => e.stopPropagation()}
-					className='bg-primary rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto'>
-					<div className='flex justify-between items-center mb-6'>
-						<h2 className='text-2xl font-bold text-primary'>
-							Create New Event
-						</h2>
-						<button
-							onClick={onClose}
-							className='text-tertiary hover:text-secondary hover:cursor-pointer'>
-							✕
-						</button>
-					</div>
+		<div className='min-h-screen bg-secondary p-8'>
+			<div className='max-w-2xl mx-auto'>
+				{/* Back Button */}
+				<button
+					onClick={() => navigate(-1)}
+					className='mb-6 text-accent hover:underline hover:cursor-pointer'>
+					← Back
+				</button>
 
+				{/* Page Header */}
+				<div className='bg-primary rounded-lg shadow-md p-6 mb-6'>
+					<h1 className='text-3xl font-bold text-primary mb-2'>
+						Create New Event
+					</h1>
+					<p className='text-secondary'>
+						Fill out the form below to create your event
+					</p>
+				</div>
+
+				{/* Form */}
+				<div className='bg-primary rounded-lg shadow-md p-6'>
 					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
 						<Input
 							label='Event Title *'
@@ -162,7 +135,7 @@ export const CreateEventModal = ({
 									})}
 									className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent'
 									style={{
-										colorScheme: "dark light", // Helps with dark mode styling
+										colorScheme: "dark light",
 									}}
 								/>
 								{errors.event_time && (
@@ -191,27 +164,13 @@ export const CreateEventModal = ({
 							type='url'
 						/>
 
-						{/* <div className='flex items-center'>
-							<input
-								type='checkbox'
-								id='is_public'
-								{...register("is_public")}
-								className='mr-2'
-							/>
-							<label
-								htmlFor='is_public'
-								className='text-sm text-gray-700 dark:text-gray-300'>
-								Make this event public (visible to everyone)
-							</label>
-						</div> */}
-
 						{error && <p className='text-sm text-red-500'>{error}</p>}
 
 						<div className='flex justify-end gap-4 pt-4'>
 							<Button
 								type='button'
 								variant='secondary'
-								onClick={onClose}
+								onClick={() => navigate(-1)}
 								disabled={loading}>
 								Cancel
 							</Button>
@@ -220,8 +179,8 @@ export const CreateEventModal = ({
 							</Button>
 						</div>
 					</form>
-				</motion.div>
+				</div>
 			</div>
-		</AnimatePresence>
+		</div>
 	);
 };
