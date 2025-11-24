@@ -11,6 +11,7 @@ import { EventDetailPage } from "../pages/EventDetailsPage";
 import { CreateEventPage } from "../pages/CreateEventPage";
 import { ForgotPassword } from "../pages/ForgotPassword";
 import { PasswordReset } from "../pages/PasswordReset";
+import { EmailVerificationPage } from "../pages/EmailVerificationPage";
 
 export function AppRoutes() {
 	return (
@@ -79,6 +80,7 @@ export function AppRoutes() {
 			<Route path='/register' element={<RegisterPage />} />
 			<Route path='/forgot-password' element={<ForgotPassword />} />
 			<Route path='/reset-password' element={<PasswordReset />} />
+			<Route path='/email-verification' element={<EmailVerificationPage />} />
 
 			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>

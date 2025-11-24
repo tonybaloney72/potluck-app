@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { useAppSelector } from "../../store/hooks";
+import { useAppSelector, useAppDispatch } from "../../store/hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaUser } from "react-icons/fa";
 import type { Profile } from "../../types";
+import { fetchFriendships } from "../../store/slices/friendsSlice";
 
 interface FriendSelectorModalProps {
 	isOpen: boolean;
@@ -17,6 +18,7 @@ export const FriendSelectorModal = ({
 	onSelectFriend,
 	excludeIds = [],
 }: FriendSelectorModalProps) => {
+	const dispatch = useAppDispatch();
 	const { friendships } = useAppSelector(state => state.friends);
 	const { profile } = useAppSelector(state => state.auth);
 
@@ -32,6 +34,14 @@ export const FriendSelectorModal = ({
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
+
+	useEffect(() => {
+		if (profile && friendships.length === 0) {
+			dispatch(fetchFriendships());
+		}
+	}, [dispatch, profile, friendships.length]);
+
+	console.log(friendships);
 
 	// Only accepted friends, not self, and not in excludeIds
 	const friends =
@@ -53,7 +63,9 @@ export const FriendSelectorModal = ({
 					})
 					.filter(
 						(f): f is Profile =>
-							f !== undefined && f.id !== profile.id && !excludeIds.includes(f.id),
+							f !== undefined &&
+							f.id !== profile.id &&
+							!excludeIds.includes(f.id),
 					)
 			: [];
 

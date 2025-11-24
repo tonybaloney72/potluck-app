@@ -217,6 +217,8 @@ export const EventDetailPage = () => {
 
 	const eventDateTime = formatDateTime(currentEvent.event_datetime);
 
+	console.log(currentEvent.participants);
+
 	// const userContributions = currentEvent.contributions?.filter(
 	// 	c => c.user_id === user?.id,
 	// );

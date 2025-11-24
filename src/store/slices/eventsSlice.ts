@@ -739,14 +739,13 @@ const eventsSlice = createSlice({
 		},
 
 		// Real-time: Remove participant (from other users)
-		removeParticipantRealtime: (
-			state,
-			action: PayloadAction<{ eventId: string; userId: string }>,
-		) => {
-			const { eventId, userId } = action.payload;
+		removeParticipantRealtime: (state, action: PayloadAction<string>) => {
+			const userId = action.payload;
 
 			// Remove from events array
-			const event = state.events.find(e => e.id === eventId);
+			const event = state.events.find(e =>
+				e.participants?.some(p => p.user_id === userId),
+			);
 			if (event && event.participants) {
 				event.participants = event.participants.filter(
 					p => p.user_id !== userId,
@@ -754,10 +753,7 @@ const eventsSlice = createSlice({
 			}
 
 			// Remove from currentEvent
-			if (
-				state.currentEvent?.id === eventId &&
-				state.currentEvent.participants
-			) {
+			if (state.currentEvent?.participants) {
 				state.currentEvent.participants =
 					state.currentEvent.participants.filter(p => p.user_id !== userId);
 			}

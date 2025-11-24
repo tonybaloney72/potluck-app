@@ -49,7 +49,7 @@ export const RegisterPage = () => {
 		const { confirmPassword, ...signUpData } = data;
 		const result = await dispatch(signUp(signUpData));
 		if (signUp.fulfilled.match(result)) {
-			navigate("/");
+			navigate("/email-verification");
 		}
 	};
 

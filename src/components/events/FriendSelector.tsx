@@ -7,11 +7,13 @@ import type { Profile } from "../../types";
 interface FriendSelectorProps {
 	selectedFriends: string[];
 	onSelectionChange: (friendIds: string[]) => void;
+	excludeIds?: string[];
 }
 
 export const FriendSelector = ({
 	selectedFriends,
 	onSelectionChange,
+	excludeIds = [],
 }: FriendSelectorProps) => {
 	const dispatch = useAppDispatch();
 	const { friendships } = useAppSelector(state => state.friends);
@@ -35,17 +37,18 @@ export const FriendSelector = ({
 							(f.user_id === profile.id || f.friend_id === profile.id),
 					)
 					.map(f => {
-						// If current user is the requester (user_id), the friend is friend_id
-						// If current user is the friend (friend_id), the other person is user_id
 						if (f.user_id === profile.id) {
-							return f.friend; // The other person's profile
+							return f.friend;
 						} else {
-							return f.user; // The other person's profile
+							return f.user;
 						}
 					})
 					.filter(
 						(f): f is Profile =>
-							f !== null && f !== undefined && f.id !== profile.id,
+							f !== null &&
+							f !== undefined &&
+							f.id !== profile.id &&
+							!excludeIds?.includes(f.id), // Add excludeIds check
 					)
 			: [];
 
