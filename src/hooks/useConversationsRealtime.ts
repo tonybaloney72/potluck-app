@@ -1,6 +1,7 @@
 // src/hooks/useConversationsRealtime.ts
 import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { store } from "../store";
 import { supabase } from "../services/supabase";
 import {
 	addConversation,
@@ -39,7 +40,7 @@ export function useConversationsRealtime() {
 	const fetchLastMessage = async (
 		conversationId: string,
 	): Promise<Message | undefined> => {
-		const { data: lastMessageData } = await supabase
+		const { data: lastMessageData, error } = await supabase
 			.from("messages")
 			.select(`*, sender:profiles!messages_sender_id_fkey(*)`)
 			.eq("conversation_id", conversationId)
@@ -47,7 +48,27 @@ export function useConversationsRealtime() {
 			.limit(1)
 			.single();
 
-		return lastMessageData as Message | undefined;
+		// Handle case where no message exists yet (new conversation)
+		if (error || !lastMessageData) {
+			return undefined;
+		}
+
+		return lastMessageData as Message;
+	};
+
+	// Helper function to fetch unread count
+	const fetchUnreadCount = async (
+		conversationId: string,
+		userId: string,
+	): Promise<number> => {
+		const { count } = await supabase
+			.from("messages")
+			.select("*", { count: "exact", head: true })
+			.eq("conversation_id", conversationId)
+			.eq("read", false)
+			.neq("sender_id", userId);
+
+		return count || 0;
 	};
 
 	// Subscription 1: INSERT where user is user1
@@ -58,9 +79,12 @@ export function useConversationsRealtime() {
 		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
 			if (payload.eventType === "INSERT" && payload.new) {
 				const conversation = await enrichConversation(payload.new);
+				const lastMessage = await fetchLastMessage(payload.new.id);
+
 				dispatch(
 					addConversation({
 						...conversation,
+						last_message: lastMessage,
 						unread_count: 0,
 					}),
 				);
@@ -76,9 +100,12 @@ export function useConversationsRealtime() {
 		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
 			if (payload.eventType === "INSERT" && payload.new) {
 				const conversation = await enrichConversation(payload.new);
+				const lastMessage = await fetchLastMessage(payload.new.id);
+
 				dispatch(
 					addConversation({
 						...conversation,
+						last_message: lastMessage,
 						unread_count: 0,
 					}),
 				);
@@ -101,12 +128,34 @@ export function useConversationsRealtime() {
 					lastMessage = await fetchLastMessage(payload.new.id);
 				}
 
-				dispatch(
-					updateConversation({
-						...conversation,
-						last_message: lastMessage,
-					}),
+				// Check if conversation exists in state - if not, add it (upsert pattern)
+				const state = store.getState();
+				const exists = state.conversations.conversations.some(
+					c => c.id === payload.new.id,
 				);
+
+				if (exists) {
+					dispatch(
+						updateConversation({
+							...conversation,
+							last_message: lastMessage,
+						}),
+					);
+				} else {
+					// Conversation doesn't exist, add it (handles case where UPDATE fires before INSERT)
+					// Fetch unread count for accurate state
+					const unreadCount = user
+						? await fetchUnreadCount(payload.new.id, user.id)
+						: 0;
+
+					dispatch(
+						addConversation({
+							...conversation,
+							last_message: lastMessage,
+							unread_count: unreadCount,
+						}),
+					);
+				}
 			}
 		},
 	});
@@ -126,12 +175,34 @@ export function useConversationsRealtime() {
 					lastMessage = await fetchLastMessage(payload.new.id);
 				}
 
-				dispatch(
-					updateConversation({
-						...conversation,
-						last_message: lastMessage,
-					}),
+				// Check if conversation exists in state - if not, add it (upsert pattern)
+				const state = store.getState();
+				const exists = state.conversations.conversations.some(
+					c => c.id === payload.new.id,
 				);
+
+				if (exists) {
+					dispatch(
+						updateConversation({
+							...conversation,
+							last_message: lastMessage,
+						}),
+					);
+				} else {
+					// Conversation doesn't exist, add it (handles case where UPDATE fires before INSERT)
+					// Fetch unread count for accurate state
+					const unreadCount = user
+						? await fetchUnreadCount(payload.new.id, user.id)
+						: 0;
+
+					dispatch(
+						addConversation({
+							...conversation,
+							last_message: lastMessage,
+							unread_count: unreadCount,
+						}),
+					);
+				}
 			}
 		},
 	});

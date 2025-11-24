@@ -1,13 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { store } from "../store";
 import { addMessage, updateMessage } from "../store/slices/messagesSlice";
 import {
 	updateConversationLastMessage,
 	incrementUnreadCount,
+	addConversation,
 } from "../store/slices/conversationsSlice";
 import { supabase } from "../services/supabase";
-import type { Message } from "../types";
+import type { Message, Conversation } from "../types";
 
 export function useMessagesRealtime(currentConversationId: string | null) {
 	const dispatch = useAppDispatch();
@@ -77,17 +79,59 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 						.eq("read", false);
 				}
 
-				// Update conversation last message
-				dispatch(
-					updateConversationLastMessage({
-						conversationId: newMessage.conversation_id,
-						message,
-					}),
+				// Check if conversation exists in state - if not, add it
+				const state = store.getState();
+				const conversationExists = state.conversations.conversations.some(
+					c => c.id === newMessage.conversation_id,
 				);
 
-				// Increment unread count if not viewing this conversation
-				if (currentConversationIdRef.current !== newMessage.conversation_id) {
-					dispatch(incrementUnreadCount(newMessage.conversation_id));
+				if (!conversationExists) {
+					// Conversation doesn't exist in list, add it
+					// Fetch full conversation data with profiles
+					const { data: fullConversation } = await supabase
+						.from("conversations")
+						.select(
+							`
+						*,
+						user1:profiles!conversations_user1_id_fkey(*),
+						user2:profiles!conversations_user2_id_fkey(*)
+					`,
+						)
+						.eq("id", newMessage.conversation_id)
+						.single();
+
+					if (fullConversation) {
+						// Fetch unread count
+						const { count: unreadCount } = await supabase
+							.from("messages")
+							.select("*", { count: "exact", head: true })
+							.eq("conversation_id", newMessage.conversation_id)
+							.eq("read", false)
+							.neq("sender_id", currentUserId);
+
+						dispatch(
+							addConversation({
+								...fullConversation,
+								last_message: message,
+								unread_count: unreadCount || 0,
+							} as Conversation),
+						);
+					}
+				} else {
+					// Conversation exists, just update last message
+					dispatch(
+						updateConversationLastMessage({
+							conversationId: newMessage.conversation_id,
+							message,
+						}),
+					);
+
+					// Increment unread count if not viewing this conversation
+					if (
+						currentConversationIdRef.current !== newMessage.conversation_id
+					) {
+						dispatch(incrementUnreadCount(newMessage.conversation_id));
+					}
 				}
 			}
 		},

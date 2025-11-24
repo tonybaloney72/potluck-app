@@ -168,11 +168,28 @@ export const MessagesPage = () => {
 	useEffect(() => {
 		// Handle navigation from NotificationDropdown with conversationId
 		if (location.state?.conversationId && hasLoaded) {
-			setSelectedConversationId(location.state.conversationId);
-			// Clear the location state after using it
-			window.history.replaceState({}, document.title);
+			const conversationId = location.state.conversationId;
+
+			// Check if conversation exists in state
+			const conversationExists = conversations.some(
+				c => c.id === conversationId,
+			);
+
+			if (!conversationExists) {
+				// Conversation doesn't exist, fetch conversations first
+				dispatch(fetchConversations()).then(() => {
+					setSelectedConversationId(conversationId);
+					// Clear the location state after using it
+					window.history.replaceState({}, document.title);
+				});
+			} else {
+				// Conversation exists, just select it
+				setSelectedConversationId(conversationId);
+				// Clear the location state after using it
+				window.history.replaceState({}, document.title);
+			}
 		}
-	}, [location.state, hasLoaded]);
+	}, [location.state, hasLoaded, conversations, dispatch]);
 
 	const onSubmit = async (data: MessageFormData) => {
 		if (!selectedConversationId) return;
