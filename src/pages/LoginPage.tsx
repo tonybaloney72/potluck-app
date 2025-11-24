@@ -68,6 +68,14 @@ export const LoginPage = () => {
 							Sign In
 						</Button>
 					</form>
+					<div className='text-right'>
+						<button
+							type='button'
+							onClick={() => navigate("/forgot-password")}
+							className='text-sm text-accent hover:text-accent-secondary hover:underline'>
+							Forgot Password?
+						</button>
+					</div>
 					<p className='text-center text-sm text-secondary'>
 						Don't have an account?{" "}
 						<Link

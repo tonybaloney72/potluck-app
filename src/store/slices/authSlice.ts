@@ -98,6 +98,29 @@ export const updateProfile = createAsyncThunk(
 	},
 );
 
+export const resetPassword = createAsyncThunk(
+	"auth/resetPassword",
+	async (email: string) => {
+		const { error } = await supabase.auth.resetPasswordForEmail(email, {
+			redirectTo: `${window.location.origin}/reset-password`,
+		});
+		if (error) throw error;
+		return email;
+	},
+);
+
+export const updatePassword = createAsyncThunk(
+	"auth/updatePassword",
+	async (newPassword: string) => {
+		const { data, error } = await supabase.auth.updateUser({
+			password: newPassword,
+		});
+
+		if (error) throw error;
+		return data.user;
+	},
+);
+
 const authSlice = createSlice({
 	name: "auth",
 	initialState,
@@ -171,6 +194,35 @@ const authSlice = createSlice({
 		builder.addCase(updateProfile.fulfilled, (state, action) => {
 			state.profile = action.payload;
 		});
+
+		builder
+			.addCase(resetPassword.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(resetPassword.fulfilled, state => {
+				state.loading = false;
+				//Success - email sent
+			})
+			.addCase(resetPassword.rejected, (state, action) => {
+				state.loading = false;
+				state.error =
+					action.error.message || "Failed to send password reset email";
+			});
+
+		builder
+			.addCase(updatePassword.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(updatePassword.fulfilled, state => {
+				state.loading = false;
+				// Password updated successfully
+			})
+			.addCase(updatePassword.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to update password";
+			});
 	},
 });
 
