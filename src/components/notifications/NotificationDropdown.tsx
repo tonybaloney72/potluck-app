@@ -76,6 +76,9 @@ export const NotificationDropdown = () => {
 			navigate("/messages", {
 				state: { conversationId: notification.related_id },
 			});
+		} else if (notification.type === "event_invitation") {
+			dispatch(markNotificationAsRead(notification.id));
+			navigate(`/events/${notification.related_id}`);
 		}
 		setIsOpen(false);
 	};

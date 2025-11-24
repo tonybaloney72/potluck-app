@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { signUp } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
+import { motion, AnimatePresence } from "motion/react";
 
 // Zod schema: name cannot contain numbers, same validation as ProfilePage
 const registerSchema = z
@@ -53,48 +54,59 @@ export const RegisterPage = () => {
 	};
 
 	return (
-		<div className='flex items-center justify-center bg-primary'>
-			<div className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
-				<h1 className='text-3xl font-bold text-center text-primary'>Sign Up</h1>
-				<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-					<Input
-						label='Name'
-						type='text'
-						{...register("name")}
-						error={errors.name?.message}
-					/>
-					<Input
-						label='Email'
-						type='email'
-						{...register("email")}
-						error={errors.email?.message}
-					/>
-					<Input
-						label='Password'
-						type='password'
-						{...register("password")}
-						error={errors.password?.message}
-					/>
-					<Input
-						label='Confirm Password'
-						type='password'
-						{...register("confirmPassword")}
-						error={errors.confirmPassword?.message}
-					/>
-					<Button type='submit' loading={loading} className='w-full'>
+		<div className='h-screen flex items-center justify-center bg-primary'>
+			<AnimatePresence>
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					exit={{ opacity: 0, y: -20 }}
+					transition={{ duration: 0.3 }}
+					className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
+					<h1 className='text-3xl font-bold text-center text-primary'>
 						Sign Up
-					</Button>
-					{error && <p className='text-sm text-red-500 text-center'>{error}</p>}
-				</form>
-				<p className='text-center text-sm text-secondary'>
-					Already have an account?{" "}
-					<Link
-						to='/login'
-						className='text-accent hover:text-accent-secondary hover:underline'>
-						Sign in
-					</Link>
-				</p>
-			</div>
+					</h1>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+						<Input
+							label='Name'
+							type='text'
+							{...register("name")}
+							error={errors.name?.message}
+						/>
+						<Input
+							label='Email'
+							type='email'
+							{...register("email")}
+							error={errors.email?.message}
+						/>
+						<Input
+							label='Password'
+							type='password'
+							{...register("password")}
+							error={errors.password?.message}
+						/>
+						<Input
+							label='Confirm Password'
+							type='password'
+							{...register("confirmPassword")}
+							error={errors.confirmPassword?.message}
+						/>
+						<Button type='submit' loading={loading} className='w-full'>
+							Sign Up
+						</Button>
+						{error && (
+							<p className='text-sm text-red-500 text-center'>{error}</p>
+						)}
+					</form>
+					<p className='text-center text-sm text-secondary'>
+						Already have an account?{" "}
+						<Link
+							to='/login'
+							className='text-accent hover:text-accent-secondary hover:underline'>
+							Sign in
+						</Link>
+					</p>
+				</motion.div>
+			</AnimatePresence>
 		</div>
 	);
 };

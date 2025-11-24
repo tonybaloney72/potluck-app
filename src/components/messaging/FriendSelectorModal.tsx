@@ -8,12 +8,14 @@ interface FriendSelectorModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSelectFriend: (friendId: string) => void;
+	excludeIds?: string[]; // Optional list of friend IDs to exclude
 }
 
 export const FriendSelectorModal = ({
 	isOpen,
 	onClose,
 	onSelectFriend,
+	excludeIds = [],
 }: FriendSelectorModalProps) => {
 	const { friendships } = useAppSelector(state => state.friends);
 	const { profile } = useAppSelector(state => state.auth);
@@ -31,7 +33,7 @@ export const FriendSelectorModal = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
-	// Only accepted friends, and not self
+	// Only accepted friends, not self, and not in excludeIds
 	const friends =
 		profile && friendships
 			? friendships
@@ -49,7 +51,10 @@ export const FriendSelectorModal = ({
 							return f.user; // The other person's profile
 						}
 					})
-					.filter((f): f is Profile => f !== undefined && f.id !== profile.id)
+					.filter(
+						(f): f is Profile =>
+							f !== undefined && f.id !== profile.id && !excludeIds.includes(f.id),
+					)
 			: [];
 
 	return (

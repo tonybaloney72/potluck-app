@@ -8,6 +8,8 @@ import {
 	deleteCommentRealtime,
 	addContributionRealtime,
 	deleteContributionRealtime,
+	addParticipantRealtime,
+	removeParticipantRealtime,
 } from "../store/slices/eventsSlice";
 import { supabase } from "../services/supabase";
 import type { EventParticipant, EventComment, Contribution } from "../types";
@@ -193,6 +195,80 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				if (contributionExists) {
 					// Just pass the ID - reducer will find which event contains it
 					dispatch(deleteContributionRealtime(deletedContributionId));
+				}
+			}
+		},
+	});
+
+	// Subscription 6: Listen for new participants (when someone is invited)
+	useRealtimeSubscription({
+		channelName: `event_participants:${eventId}:insert`,
+		table: "event_participants",
+		filter: `event_id=eq.${eventId}`, // Filters work well for INSERT events
+		onInsert: async (payload: { eventType: "INSERT"; new: any }) => {
+			if (
+				payload.eventType === "INSERT" &&
+				payload.new &&
+				eventIdRef.current === payload.new.event_id
+			) {
+				const newParticipant = payload.new;
+
+				// Ignore participants added by current user (they're handled optimistically)
+				if (newParticipant.user_id === user?.id) {
+					return;
+				}
+
+				// Fetch user profile for the participant
+				const { data: userProfile } = await supabase
+					.from("profiles")
+					.select("id, name, avatar_url")
+					.eq("id", newParticipant.user_id)
+					.single();
+
+				const participant: EventParticipant = {
+					...newParticipant,
+					user: userProfile || undefined,
+				};
+
+				dispatch(
+					addParticipantRealtime({
+						eventId: newParticipant.event_id,
+						participant,
+					}),
+				);
+			}
+		},
+	});
+
+	// Subscription 7: Listen for removed participants
+	// Note: No filter - filters don't work reliably for DELETE events, we check manually
+	useRealtimeSubscription({
+		channelName: `event_participants:${user?.id}:delete`,
+		table: "event_participants",
+		// No filter - we'll check manually in the callback
+		onDelete: (payload: {
+			eventType: "DELETE";
+			old: { event_id: string; user_id: string } | null;
+		}) => {
+			if (payload.eventType === "DELETE" && payload.old) {
+				const deletedParticipant = payload.old;
+
+				// Check if this participant exists in the current event being viewed
+				const state = store.getState();
+				const event = state.events.currentEvent;
+				const participantExists = event?.participants?.some(
+					p =>
+						p.user_id === deletedParticipant.user_id &&
+						event.id === deletedParticipant.event_id,
+				);
+
+				if (participantExists) {
+					dispatch(
+						removeParticipantRealtime({
+							eventId: deletedParticipant.event_id,
+							userId: deletedParticipant.user_id,
+						}),
+					);
 				}
 			}
 		},

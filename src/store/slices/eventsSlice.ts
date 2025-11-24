@@ -701,6 +701,67 @@ const eventsSlice = createSlice({
 					state.currentEvent.contributions.filter(c => c.id !== contributionId);
 			}
 		},
+
+		// Real-time: Add participant (from other users)
+		addParticipantRealtime: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				participant: EventParticipant;
+			}>,
+		) => {
+			const { eventId, participant } = action.payload;
+
+			// Add to events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event && event.participants) {
+				// Check if participant already exists (avoid duplicates)
+				const exists = event.participants.some(
+					p => p.id === participant.id || p.user_id === participant.user_id,
+				);
+				if (!exists) {
+					event.participants.push(participant);
+				}
+			}
+
+			// Add to currentEvent
+			if (
+				state.currentEvent?.id === eventId &&
+				state.currentEvent.participants
+			) {
+				const exists = state.currentEvent.participants.some(
+					p => p.id === participant.id || p.user_id === participant.user_id,
+				);
+				if (!exists) {
+					state.currentEvent.participants.push(participant);
+				}
+			}
+		},
+
+		// Real-time: Remove participant (from other users)
+		removeParticipantRealtime: (
+			state,
+			action: PayloadAction<{ eventId: string; userId: string }>,
+		) => {
+			const { eventId, userId } = action.payload;
+
+			// Remove from events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event && event.participants) {
+				event.participants = event.participants.filter(
+					p => p.user_id !== userId,
+				);
+			}
+
+			// Remove from currentEvent
+			if (
+				state.currentEvent?.id === eventId &&
+				state.currentEvent.participants
+			) {
+				state.currentEvent.participants =
+					state.currentEvent.participants.filter(p => p.user_id !== userId);
+			}
+		},
 	},
 	extraReducers: builder => {
 		// Fetch user events
@@ -987,5 +1048,7 @@ export const {
 	deleteCommentRealtime,
 	addContributionRealtime,
 	deleteContributionRealtime,
+	addParticipantRealtime,
+	removeParticipantRealtime,
 } = eventsSlice.actions;
 export default eventsSlice.reducer;

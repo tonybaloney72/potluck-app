@@ -9,6 +9,8 @@ import {
 	addContribution,
 	// updateContribution,
 	deleteContribution,
+	addParticipant,
+	removeParticipant,
 } from "../store/slices/eventsSlice";
 import { motion } from "motion/react";
 import { Button } from "../components/common/Button";
@@ -18,8 +20,9 @@ import {
 	generateGoogleCalendarUrl,
 	downloadAppleCalendar,
 } from "../utils/calendar";
-import { FaApple, FaGoogle } from "react-icons/fa";
+import { FaApple, FaGoogle, FaTimes } from "react-icons/fa";
 import { useEventDetailsRealtime } from "../hooks/useEventDetailsRealtime";
+import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
 
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -43,6 +46,16 @@ export const EventDetailPage = () => {
 		description: "",
 	});
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [showFriendSelector, setShowFriendSelector] = useState(false);
+	const [addingParticipant, setAddingParticipant] = useState(false);
+	const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+	const [contributionToDelete, setContributionToDelete] = useState<
+		string | null
+	>(null);
+	const [participantToRemove, setParticipantToRemove] = useState<{
+		userId: string;
+		userName: string;
+	} | null>(null);
 
 	useEventDetailsRealtime(eventId || null);
 
@@ -116,9 +129,16 @@ export const EventDetailPage = () => {
 		}
 	};
 
-	const handleDeleteComment = async (commentId: string) => {
-		await dispatch(deleteComment(commentId));
-		// No need to refetch - state is updated optimistically
+	const handleDeleteComment = (commentId: string) => {
+		setCommentToDelete(commentId);
+	};
+
+	const handleConfirmDeleteComment = async () => {
+		if (commentToDelete) {
+			await dispatch(deleteComment(commentToDelete));
+			setCommentToDelete(null);
+			// No need to refetch - state is updated optimistically
+		}
 	};
 
 	const handleAddContribution = async () => {
@@ -142,9 +162,46 @@ export const EventDetailPage = () => {
 		}
 	};
 
-	const handleDeleteContribution = async (contributionId: string) => {
-		await dispatch(deleteContribution(contributionId));
-		// No need to refetch - state is updated optimistically
+	const handleDeleteContribution = (contributionId: string) => {
+		setContributionToDelete(contributionId);
+	};
+
+	const handleConfirmDeleteContribution = async () => {
+		if (contributionToDelete) {
+			await dispatch(deleteContribution(contributionToDelete));
+			setContributionToDelete(null);
+			// No need to refetch - state is updated optimistically
+		}
+	};
+
+	const handleRemoveParticipant = (userId: string, userName: string) => {
+		setParticipantToRemove({ userId, userName });
+	};
+
+	const handleConfirmRemoveParticipant = async () => {
+		if (participantToRemove && eventId) {
+			await dispatch(
+				removeParticipant({
+					eventId,
+					userId: participantToRemove.userId,
+				}),
+			);
+			setParticipantToRemove(null);
+			// No need to refetch - state is updated optimistically
+		}
+	};
+
+	const handleAddParticipant = async (friendId: string) => {
+		if (eventId && !addingParticipant) {
+			setAddingParticipant(true);
+			try {
+				await dispatch(addParticipant({ eventId, userId: friendId }));
+				setShowFriendSelector(false);
+			} finally {
+				setAddingParticipant(false);
+			}
+			// No need to refetch - state is updated optimistically
+		}
 	};
 
 	const handleDeleteEvent = async () => {
@@ -317,15 +374,27 @@ export const EventDetailPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.15 }}
 					className='bg-primary rounded-lg shadow-md p-6 mb-6'>
-					<h2 className='text-2xl font-semibold text-primary mb-4'>
-						Attendees ({currentEvent.participants?.length || 0})
-					</h2>
+					<div className='flex justify-between items-center mb-4'>
+						<h2 className='text-2xl font-semibold text-primary'>
+							Attendees ({currentEvent.participants?.length || 0})
+						</h2>
+						{currentUserParticipant &&
+							["host", "co_host"].includes(currentUserParticipant.role) && (
+								<Button
+									onClick={() => setShowFriendSelector(true)}
+									disabled={addingParticipant}
+									loading={addingParticipant}
+									className='text-sm'>
+									Add
+								</Button>
+							)}
+					</div>
 					{currentEvent.participants && currentEvent.participants.length > 0 ? (
 						<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
 							{currentEvent.participants.map(participant => (
 								<div
 									key={participant.id}
-									className='p-3 bg-secondary rounded-lg flex items-center justify-between'>
+									className='p-3 bg-secondary rounded-lg flex items-center justify-between relative'>
 									<div className='flex items-center gap-3'>
 										{participant.user?.avatar_url ? (
 											<img
@@ -350,6 +419,21 @@ export const EventDetailPage = () => {
 											</p>
 										</div>
 									</div>
+									{currentUserParticipant &&
+										["host", "co_host"].includes(currentUserParticipant.role) &&
+										participant.user_id !== user?.id && (
+											<button
+												onClick={() =>
+													handleRemoveParticipant(
+														participant.user_id,
+														participant.user?.name || "Unknown",
+													)
+												}
+												className='text-red-500 hover:text-red-700 text-sm p-1 rounded-full hover:bg-red-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+												title='Remove attendee'>
+												<FaTimes className='w-4 h-4' />
+											</button>
+										)}
 								</div>
 							))}
 						</div>
@@ -462,7 +546,7 @@ export const EventDetailPage = () => {
 										<button
 											onClick={() => handleDeleteContribution(contribution.id)}
 											disabled={deletingContribution === contribution.id}
-											className='text-red-500 hover:text-red-700 text-sm ml-4 disabled:opacity-50 disabled:cursor-not-allowed'>
+											className='text-red-500 hover:text-red-700 text-sm ml-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'>
 											{deletingContribution === contribution.id
 												? "Deleting..."
 												: "Delete"}
@@ -524,7 +608,7 @@ export const EventDetailPage = () => {
 											<button
 												onClick={() => handleDeleteComment(comment.id)}
 												disabled={deletingComment === comment.id}
-												className='text-red-500 hover:text-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed'>
+												className='text-red-500 hover:text-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'>
 												{deletingComment === comment.id
 													? "Deleting..."
 													: "Delete"}
@@ -540,7 +624,7 @@ export const EventDetailPage = () => {
 					)}
 				</motion.div>
 
-				{/* Delete Confirmation Modal */}
+				{/* Delete Event Confirmation Modal */}
 				{showDeleteConfirm && (
 					<ConfirmModal
 						isOpen={showDeleteConfirm}
@@ -552,6 +636,53 @@ export const EventDetailPage = () => {
 						confirmVariant='secondary'
 					/>
 				)}
+
+				{/* Delete Contribution Confirmation Modal */}
+				{contributionToDelete && (
+					<ConfirmModal
+						isOpen={!!contributionToDelete}
+						onClose={() => setContributionToDelete(null)}
+						onConfirm={handleConfirmDeleteContribution}
+						title='Delete Contribution'
+						message='Are you sure you want to delete this contribution? This action cannot be undone.'
+						confirmText='Delete'
+						confirmVariant='secondary'
+					/>
+				)}
+
+				{/* Delete Comment Confirmation Modal */}
+				{commentToDelete && (
+					<ConfirmModal
+						isOpen={!!commentToDelete}
+						onClose={() => setCommentToDelete(null)}
+						onConfirm={handleConfirmDeleteComment}
+						title='Delete Comment'
+						message='Are you sure you want to delete this comment? This action cannot be undone.'
+						confirmText='Delete'
+						confirmVariant='secondary'
+					/>
+				)}
+
+				{/* Remove Participant Confirmation Modal */}
+				{participantToRemove && (
+					<ConfirmModal
+						isOpen={!!participantToRemove}
+						onClose={() => setParticipantToRemove(null)}
+						onConfirm={handleConfirmRemoveParticipant}
+						title='Remove Attendee'
+						message={`Are you sure you want to remove ${participantToRemove.userName} from this event? This action cannot be undone.`}
+						confirmText='Remove'
+						confirmVariant='secondary'
+					/>
+				)}
+
+				{/* Friend Selector Modal */}
+				<FriendSelectorModal
+					isOpen={showFriendSelector}
+					onClose={() => setShowFriendSelector(false)}
+					onSelectFriend={handleAddParticipant}
+					excludeIds={currentEvent.participants?.map(p => p.user_id) || []}
+				/>
 			</div>
 		</div>
 	);
