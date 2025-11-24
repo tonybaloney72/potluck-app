@@ -21,6 +21,7 @@ interface EventsState {
 	updatingRSVP: RSVPStatus | null; // Track which RSVP status is being updated
 	addingComment: boolean;
 	addingContribution: boolean;
+	addingParticipant: boolean;
 	deletingComment: string | null; // ID of comment being deleted
 	deletingContribution: string | null; // ID of contribution being deleted
 	error: string | null;
@@ -34,6 +35,7 @@ const initialState: EventsState = {
 	updatingRSVP: null,
 	addingComment: false,
 	addingContribution: false,
+	addingParticipant: false,
 	deletingComment: null,
 	deletingContribution: null,
 	error: null,
@@ -275,10 +277,20 @@ export const createEvent = createAsyncThunk(
 
 		if (fetchError) {
 			// If fetch fails, return the event without participants (better than nothing)
-			return event as Event;
+			// But ensure comments and contributions arrays are initialized
+			return {
+				...event,
+				comments: [],
+				contributions: [],
+			} as Event;
 		}
 
-		return fullEvent as Event;
+		// Ensure comments and contributions arrays are initialized (they won't exist for a new event)
+		return {
+			...fullEvent,
+			comments: fullEvent.comments || [],
+			contributions: fullEvent.contributions || [],
+		} as Event;
 	},
 );
 
@@ -604,7 +616,10 @@ const eventsSlice = createSlice({
 
 			// Add to events array
 			const event = state.events.find(e => e.id === eventId);
-			if (event && event.comments) {
+			if (event) {
+				if (!event.comments) {
+					event.comments = [];
+				}
 				// Check if comment already exists (avoid duplicates)
 				const exists = event.comments.some(c => c.id === comment.id);
 				if (!exists) {
@@ -613,7 +628,10 @@ const eventsSlice = createSlice({
 			}
 
 			// Add to currentEvent
-			if (state.currentEvent?.id === eventId && state.currentEvent.comments) {
+			if (state.currentEvent?.id === eventId) {
+				if (!state.currentEvent.comments) {
+					state.currentEvent.comments = [];
+				}
 				const exists = state.currentEvent.comments.some(
 					c => c.id === comment.id,
 				);
@@ -656,7 +674,10 @@ const eventsSlice = createSlice({
 
 			// Add to events array
 			const event = state.events.find(e => e.id === eventId);
-			if (event && event.contributions) {
+			if (event) {
+				if (!event.contributions) {
+					event.contributions = [];
+				}
 				// Check if contribution already exists (avoid duplicates)
 				const exists = event.contributions.some(c => c.id === contribution.id);
 				if (!exists) {
@@ -665,10 +686,10 @@ const eventsSlice = createSlice({
 			}
 
 			// Add to currentEvent
-			if (
-				state.currentEvent?.id === eventId &&
-				state.currentEvent.contributions
-			) {
+			if (state.currentEvent?.id === eventId) {
+				if (!state.currentEvent.contributions) {
+					state.currentEvent.contributions = [];
+				}
 				const exists = state.currentEvent.contributions.some(
 					c => c.id === contribution.id,
 				);
@@ -740,22 +761,23 @@ const eventsSlice = createSlice({
 
 		// Real-time: Remove participant (from other users)
 		removeParticipantRealtime: (state, action: PayloadAction<string>) => {
-			const userId = action.payload;
+			// Just participantId (participant record ID), like optimistic and comments
+			const participantId = action.payload;
 
 			// Remove from events array
 			const event = state.events.find(e =>
-				e.participants?.some(p => p.user_id === userId),
+				e.participants?.some(p => p.id === participantId),
 			);
 			if (event && event.participants) {
 				event.participants = event.participants.filter(
-					p => p.user_id !== userId,
+					p => p.id !== participantId,
 				);
 			}
 
 			// Remove from currentEvent
 			if (state.currentEvent?.participants) {
 				state.currentEvent.participants =
-					state.currentEvent.participants.filter(p => p.user_id !== userId);
+					state.currentEvent.participants.filter(p => p.id !== participantId);
 			}
 		},
 	},
@@ -847,18 +869,27 @@ const eventsSlice = createSlice({
 		});
 
 		// Add participant
-		builder.addCase(addParticipant.fulfilled, (state, action) => {
-			const event = state.events.find(e => e.id === action.payload.eventId);
-			if (event && event.participants) {
-				event.participants.push(action.payload.participant);
-			}
-			if (
-				state.currentEvent?.id === action.payload.eventId &&
-				state.currentEvent.participants
-			) {
-				state.currentEvent.participants.push(action.payload.participant);
-			}
-		});
+		builder
+			.addCase(addParticipant.pending, state => {
+				state.addingParticipant = true;
+				state.error = null;
+			})
+			.addCase(addParticipant.fulfilled, (state, action) => {
+				state.addingParticipant = false;
+				const event = state.events.find(e => e.id === action.payload.eventId);
+				if (event && event.participants) {
+					event.participants.push(action.payload.participant);
+				}
+				if (
+					state.currentEvent?.id === action.payload.eventId &&
+					state.currentEvent.participants
+				) {
+					state.currentEvent.participants.push(action.payload.participant);
+				}
+			})
+			.addCase(addParticipant.rejected, state => {
+				state.addingParticipant = false;
+			});
 
 		// Update RSVP
 		builder
@@ -921,13 +952,16 @@ const eventsSlice = createSlice({
 			.addCase(addContribution.fulfilled, (state, action) => {
 				state.addingContribution = false;
 				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event && event.contributions) {
+				if (event) {
+					if (!event.contributions) {
+						event.contributions = [];
+					}
 					event.contributions.push(action.payload.contribution);
 				}
-				if (
-					state.currentEvent?.id === action.payload.eventId &&
-					state.currentEvent.contributions
-				) {
+				if (state.currentEvent?.id === action.payload.eventId) {
+					if (!state.currentEvent.contributions) {
+						state.currentEvent.contributions = [];
+					}
 					state.currentEvent.contributions.push(action.payload.contribution);
 				}
 			})
@@ -995,13 +1029,16 @@ const eventsSlice = createSlice({
 			.addCase(addComment.fulfilled, (state, action) => {
 				state.addingComment = false;
 				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event && event.comments) {
+				if (event) {
+					if (!event.comments) {
+						event.comments = [];
+					}
 					event.comments.push(action.payload.comment);
 				}
-				if (
-					state.currentEvent?.id === action.payload.eventId &&
-					state.currentEvent.comments
-				) {
+				if (state.currentEvent?.id === action.payload.eventId) {
+					if (!state.currentEvent.comments) {
+						state.currentEvent.comments = [];
+					}
 					state.currentEvent.comments.push(action.payload.comment);
 				}
 			})

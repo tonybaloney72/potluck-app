@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchEventById,
@@ -24,6 +27,28 @@ import { FaApple, FaGoogle, FaTimes } from "react-icons/fa";
 import { useEventDetailsRealtime } from "../hooks/useEventDetailsRealtime";
 import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
 
+// Confirmation modal type - consolidated state
+type ConfirmationModal =
+	| { type: "deleteEvent" }
+	| { type: "deleteComment"; commentId: string }
+	| { type: "deleteContribution"; contributionId: string }
+	| { type: "removeParticipant"; userId: string; userName: string }
+	| null;
+
+// Form schemas
+const commentSchema = z.object({
+	content: z.string().min(1, "Comment cannot be empty"),
+});
+
+const contributionSchema = z.object({
+	itemName: z.string().min(1, "Item name is required"),
+	quantity: z.string().optional(),
+	description: z.string().optional(),
+});
+
+type CommentFormData = z.infer<typeof commentSchema>;
+type ContributionFormData = z.infer<typeof contributionSchema>;
+
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
 	const navigate = useNavigate();
@@ -34,28 +59,36 @@ export const EventDetailPage = () => {
 		updatingRSVP,
 		addingComment,
 		addingContribution,
+		addingParticipant,
 		deletingComment,
 		deletingContribution,
 	} = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
-	const [commentText, setCommentText] = useState("");
+
+	// Consolidated confirmation modal state
+	const [confirmationModal, setConfirmationModal] =
+		useState<ConfirmationModal>(null);
+
+	// Simple boolean toggles (keeping as requested)
 	const [showContributionForm, setShowContributionForm] = useState(false);
-	const [contributionForm, setContributionForm] = useState({
-		itemName: "",
-		quantity: "",
-		description: "",
-	});
-	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [showFriendSelector, setShowFriendSelector] = useState(false);
-	const [addingParticipant, setAddingParticipant] = useState(false);
-	const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-	const [contributionToDelete, setContributionToDelete] = useState<
-		string | null
-	>(null);
-	const [participantToRemove, setParticipantToRemove] = useState<{
-		userId: string;
-		userName: string;
-	} | null>(null);
+
+	// Form management with react-hook-form
+	const commentForm = useForm<CommentFormData>({
+		resolver: zodResolver(commentSchema),
+		defaultValues: {
+			content: "",
+		},
+	});
+
+	const contributionForm = useForm<ContributionFormData>({
+		resolver: zodResolver(contributionSchema),
+		defaultValues: {
+			itemName: "",
+			quantity: "",
+			description: "",
+		},
+	});
 
 	useEventDetailsRealtime(eventId || null);
 
@@ -121,94 +154,125 @@ export const EventDetailPage = () => {
 		}
 	};
 
-	const handleAddComment = async () => {
-		if (eventId && commentText.trim()) {
-			await dispatch(addComment({ eventId, content: commentText }));
-			setCommentText("");
-			// No need to refetch - state is updated optimistically
+	// Unified delete handler - sets confirmation modal
+	const handleDelete = (
+		type:
+			| "deleteEvent"
+			| "deleteComment"
+			| "deleteContribution"
+			| "removeParticipant",
+		data?: {
+			commentId?: string;
+			contributionId?: string;
+			userId?: string;
+			userName?: string;
+		},
+	) => {
+		switch (type) {
+			case "deleteEvent":
+				setConfirmationModal({ type: "deleteEvent" });
+				break;
+			case "deleteComment":
+				if (data?.commentId) {
+					setConfirmationModal({
+						type: "deleteComment",
+						commentId: data.commentId,
+					});
+				}
+				break;
+			case "deleteContribution":
+				if (data?.contributionId) {
+					setConfirmationModal({
+						type: "deleteContribution",
+						contributionId: data.contributionId,
+					});
+				}
+				break;
+			case "removeParticipant":
+				if (data?.userId && data?.userName) {
+					setConfirmationModal({
+						type: "removeParticipant",
+						userId: data.userId,
+						userName: data.userName,
+					});
+				}
+				break;
 		}
 	};
 
-	const handleDeleteComment = (commentId: string) => {
-		setCommentToDelete(commentId);
-	};
+	// Unified confirm delete handler
+	const handleConfirmDelete = async () => {
+		if (!confirmationModal || !eventId) return;
 
-	const handleConfirmDeleteComment = async () => {
-		if (commentToDelete) {
-			await dispatch(deleteComment(commentToDelete));
-			setCommentToDelete(null);
-			// No need to refetch - state is updated optimistically
-		}
-	};
-
-	const handleAddContribution = async () => {
-		if (
-			eventId &&
-			contributionForm.itemName.trim() &&
-			currentUserParticipant &&
-			["host", "co_host", "contributor"].includes(currentUserParticipant.role)
-		) {
-			await dispatch(
-				addContribution({
-					eventId,
-					itemName: contributionForm.itemName,
-					quantity: contributionForm.quantity || undefined,
-					description: contributionForm.description || undefined,
-				}),
-			);
-			setContributionForm({ itemName: "", quantity: "", description: "" });
-			setShowContributionForm(false);
-			// No need to refetch - state is updated optimistically
-		}
-	};
-
-	const handleDeleteContribution = (contributionId: string) => {
-		setContributionToDelete(contributionId);
-	};
-
-	const handleConfirmDeleteContribution = async () => {
-		if (contributionToDelete) {
-			await dispatch(deleteContribution(contributionToDelete));
-			setContributionToDelete(null);
-			// No need to refetch - state is updated optimistically
-		}
-	};
-
-	const handleRemoveParticipant = (userId: string, userName: string) => {
-		setParticipantToRemove({ userId, userName });
-	};
-
-	const handleConfirmRemoveParticipant = async () => {
-		if (participantToRemove && eventId) {
-			await dispatch(
-				removeParticipant({
-					eventId,
-					userId: participantToRemove.userId,
-				}),
-			);
-			setParticipantToRemove(null);
-			// No need to refetch - state is updated optimistically
-		}
-	};
-
-	const handleAddParticipant = async (friendId: string) => {
-		if (eventId && !addingParticipant) {
-			setAddingParticipant(true);
-			try {
-				await dispatch(addParticipant({ eventId, userId: friendId }));
-				setShowFriendSelector(false);
-			} finally {
-				setAddingParticipant(false);
+		switch (confirmationModal.type) {
+			case "deleteEvent": {
+				const result = await dispatch(deleteEvent(eventId));
+				if (deleteEvent.fulfilled.match(result)) {
+					navigate("/");
+				}
+				break;
 			}
-			// No need to refetch - state is updated optimistically
+			case "deleteComment":
+				await dispatch(deleteComment(confirmationModal.commentId));
+				break;
+			case "deleteContribution":
+				await dispatch(deleteContribution(confirmationModal.contributionId));
+				break;
+			case "removeParticipant":
+				await dispatch(
+					removeParticipant({ eventId, userId: confirmationModal.userId }),
+				);
+				break;
 		}
+		setConfirmationModal(null);
+		// No need to refetch - state is updated optimistically
 	};
 
-	const handleDeleteEvent = async () => {
-		if (eventId) {
-			const result = await dispatch(deleteEvent(eventId));
-			if (deleteEvent.fulfilled.match(result)) {
-				navigate("/");
+	// Unified add handler
+	const handleAdd = async (
+		type: "comment" | "contribution" | "participant",
+		data: CommentFormData | ContributionFormData | string,
+	) => {
+		if (!eventId) return;
+
+		switch (type) {
+			case "comment": {
+				const commentData = data as CommentFormData;
+				await dispatch(addComment({ eventId, content: commentData.content }));
+				commentForm.reset();
+				// No need to refetch - state is updated optimistically
+				break;
+			}
+			case "contribution": {
+				const contributionData = data as ContributionFormData;
+				if (
+					currentUserParticipant &&
+					["host", "co_host", "contributor"].includes(
+						currentUserParticipant.role,
+					)
+				) {
+					await dispatch(
+						addContribution({
+							eventId,
+							itemName: contributionData.itemName,
+							quantity: contributionData.quantity || undefined,
+							description: contributionData.description || undefined,
+						}),
+					);
+					contributionForm.reset();
+					setShowContributionForm(false);
+					// No need to refetch - state is updated optimistically
+				}
+				break;
+			}
+			case "participant": {
+				const friendId = data as string;
+				if (!addingParticipant) {
+					await dispatch(addParticipant({ eventId, userId: friendId }));
+					setShowFriendSelector(false);
+					// No need to refetch - state is updated optimistically
+				}
+				break;
 			}
 		}
 	};
@@ -216,8 +280,6 @@ export const EventDetailPage = () => {
 	const isEventCreator = currentEvent.created_by === user?.id;
 
 	const eventDateTime = formatDateTime(currentEvent.event_datetime);
-
-	console.log(currentEvent.participants);
 
 	// const userContributions = currentEvent.contributions?.filter(
 	// 	c => c.user_id === user?.id,
@@ -237,7 +299,7 @@ export const EventDetailPage = () => {
 						<div className='flex gap-2'>
 							<Button
 								variant='secondary'
-								onClick={() => setShowDeleteConfirm(true)}
+								onClick={() => handleDelete("deleteEvent")}
 								className='text-sm text-red-600 hover:text-red-700'>
 								Delete Event
 							</Button>
@@ -426,10 +488,10 @@ export const EventDetailPage = () => {
 										participant.user_id !== user?.id && (
 											<button
 												onClick={() =>
-													handleRemoveParticipant(
-														participant.user_id,
-														participant.user?.name || "Unknown",
-													)
+													handleDelete("removeParticipant", {
+														userId: participant.user_id,
+														userName: participant.user?.name || "Unknown",
+													})
 												}
 												className='text-red-500 hover:text-red-700 text-sm p-1 rounded-full hover:bg-red-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
 												title='Remove attendee'>
@@ -466,51 +528,42 @@ export const EventDetailPage = () => {
 					</div>
 
 					{showContributionForm && (
-						<div className='mb-4 p-4 bg-secondary rounded-lg'>
+						<form
+							onSubmit={contributionForm.handleSubmit(data =>
+								handleAdd("contribution", data),
+							)}
+							className='mb-4 p-4 bg-secondary rounded-lg'>
 							<input
 								type='text'
 								placeholder='Item name *'
-								value={contributionForm.itemName}
-								onChange={e =>
-									setContributionForm({
-										...contributionForm,
-										itemName: e.target.value,
-									})
-								}
+								{...contributionForm.register("itemName")}
 								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 							/>
+							{contributionForm.formState.errors.itemName && (
+								<p className='text-red-500 text-sm mb-2'>
+									{contributionForm.formState.errors.itemName.message}
+								</p>
+							)}
 							<input
 								type='text'
 								placeholder='Quantity (optional)'
-								value={contributionForm.quantity}
-								onChange={e =>
-									setContributionForm({
-										...contributionForm,
-										quantity: e.target.value,
-									})
-								}
+								{...contributionForm.register("quantity")}
 								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 							/>
 							<textarea
 								placeholder='Description (optional)'
-								value={contributionForm.description}
-								onChange={e =>
-									setContributionForm({
-										...contributionForm,
-										description: e.target.value,
-									})
-								}
+								{...contributionForm.register("description")}
 								className='w-full mb-2 px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
 								rows={2}
 							/>
 							<Button
-								onClick={handleAddContribution}
+								type='submit'
 								disabled={addingContribution}
 								loading={addingContribution}
 								className='text-sm'>
 								Add Contribution
 							</Button>
-						</div>
+						</form>
 					)}
 
 					{currentEvent.contributions &&
@@ -546,7 +599,11 @@ export const EventDetailPage = () => {
 										currentUserParticipant?.role === "host" ||
 										currentUserParticipant?.role === "co_host") && (
 										<button
-											onClick={() => handleDeleteContribution(contribution.id)}
+											onClick={() =>
+												handleDelete("deleteContribution", {
+													contributionId: contribution.id,
+												})
+											}
 											disabled={deletingContribution === contribution.id}
 											className='text-red-500 hover:text-red-700 text-sm ml-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'>
 											{deletingContribution === contribution.id
@@ -571,21 +628,29 @@ export const EventDetailPage = () => {
 
 					{/* Add Comment Form */}
 					{currentUserParticipant && (
-						<div className='mb-6'>
+						<form
+							onSubmit={commentForm.handleSubmit(data =>
+								handleAdd("comment", data),
+							)}
+							className='mb-6'>
 							<textarea
-								value={commentText}
-								onChange={e => setCommentText(e.target.value)}
+								{...commentForm.register("content")}
 								placeholder='Add a comment...'
 								className='w-full px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
 								rows={3}
 							/>
+							{commentForm.formState.errors.content && (
+								<p className='text-red-500 text-sm mb-2'>
+									{commentForm.formState.errors.content.message}
+								</p>
+							)}
 							<Button
-								onClick={handleAddComment}
-								disabled={!commentText.trim() || addingComment}
+								type='submit'
+								disabled={addingComment}
 								loading={addingComment}>
 								Post Comment
 							</Button>
-						</div>
+						</form>
 					)}
 
 					{/* Comments List */}
@@ -608,7 +673,11 @@ export const EventDetailPage = () => {
 											currentUserParticipant?.role === "host" ||
 											currentUserParticipant?.role === "co_host") && (
 											<button
-												onClick={() => handleDeleteComment(comment.id)}
+												onClick={() =>
+													handleDelete("deleteComment", {
+														commentId: comment.id,
+													})
+												}
 												disabled={deletingComment === comment.id}
 												className='text-red-500 hover:text-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'>
 												{deletingComment === comment.id
@@ -626,54 +695,35 @@ export const EventDetailPage = () => {
 					)}
 				</motion.div>
 
-				{/* Delete Event Confirmation Modal */}
-				{showDeleteConfirm && (
+				{/* Consolidated Confirmation Modal */}
+				{confirmationModal && (
 					<ConfirmModal
-						isOpen={showDeleteConfirm}
-						onClose={() => setShowDeleteConfirm(false)}
-						onConfirm={handleDeleteEvent}
-						title='Delete Event'
-						message='Are you sure you want to delete this event? This action cannot be undone.'
-						confirmText='Delete'
-						confirmVariant='secondary'
-					/>
-				)}
-
-				{/* Delete Contribution Confirmation Modal */}
-				{contributionToDelete && (
-					<ConfirmModal
-						isOpen={!!contributionToDelete}
-						onClose={() => setContributionToDelete(null)}
-						onConfirm={handleConfirmDeleteContribution}
-						title='Delete Contribution'
-						message='Are you sure you want to delete this contribution? This action cannot be undone.'
-						confirmText='Delete'
-						confirmVariant='secondary'
-					/>
-				)}
-
-				{/* Delete Comment Confirmation Modal */}
-				{commentToDelete && (
-					<ConfirmModal
-						isOpen={!!commentToDelete}
-						onClose={() => setCommentToDelete(null)}
-						onConfirm={handleConfirmDeleteComment}
-						title='Delete Comment'
-						message='Are you sure you want to delete this comment? This action cannot be undone.'
-						confirmText='Delete'
-						confirmVariant='secondary'
-					/>
-				)}
-
-				{/* Remove Participant Confirmation Modal */}
-				{participantToRemove && (
-					<ConfirmModal
-						isOpen={!!participantToRemove}
-						onClose={() => setParticipantToRemove(null)}
-						onConfirm={handleConfirmRemoveParticipant}
-						title='Remove Attendee'
-						message={`Are you sure you want to remove ${participantToRemove.userName} from this event? This action cannot be undone.`}
-						confirmText='Remove'
+						isOpen={!!confirmationModal}
+						onClose={() => setConfirmationModal(null)}
+						onConfirm={handleConfirmDelete}
+						title={
+							confirmationModal.type === "deleteEvent"
+								? "Delete Event"
+								: confirmationModal.type === "deleteComment"
+								? "Delete Comment"
+								: confirmationModal.type === "deleteContribution"
+								? "Delete Contribution"
+								: "Remove Attendee"
+						}
+						message={
+							confirmationModal.type === "deleteEvent"
+								? "Are you sure you want to delete this event? This action cannot be undone."
+								: confirmationModal.type === "deleteComment"
+								? "Are you sure you want to delete this comment? This action cannot be undone."
+								: confirmationModal.type === "deleteContribution"
+								? "Are you sure you want to delete this contribution? This action cannot be undone."
+								: `Are you sure you want to remove ${confirmationModal.userName} from this event? This action cannot be undone.`
+						}
+						confirmText={
+							confirmationModal.type === "removeParticipant"
+								? "Remove"
+								: "Delete"
+						}
 						confirmVariant='secondary'
 					/>
 				)}
@@ -682,7 +732,7 @@ export const EventDetailPage = () => {
 				<FriendSelectorModal
 					isOpen={showFriendSelector}
 					onClose={() => setShowFriendSelector(false)}
-					onSelectFriend={handleAddParticipant}
+					onSelectFriend={friendId => handleAdd("participant", friendId)}
 					excludeIds={currentEvent.participants?.map(p => p.user_id) || []}
 				/>
 			</div>

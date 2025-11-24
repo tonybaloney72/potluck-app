@@ -40,9 +40,6 @@ export const FriendSelectorModal = ({
 			dispatch(fetchFriendships());
 		}
 	}, [dispatch, profile, friendships.length]);
-
-	console.log(friendships);
-
 	// Only accepted friends, not self, and not in excludeIds
 	const friends =
 		profile && friendships

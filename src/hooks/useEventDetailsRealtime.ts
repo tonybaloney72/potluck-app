@@ -248,27 +248,20 @@ export function useEventDetailsRealtime(eventId: string | null) {
 		// No filter - we'll check manually in the callback
 		onDelete: (payload: {
 			eventType: "DELETE";
-			old: { event_id: string; user_id: string } | null;
+			old: { id: string } | null; // Only need id (participant record ID), not user_id or event_id
 		}) => {
 			if (payload.eventType === "DELETE" && payload.old) {
-				const deletedParticipant = payload.old;
+				const deletedParticipantId = payload.old.id;
 
-				// Check if this participant exists in the current event being viewed
+				// Check if this participant exists in currentEvent (only process if viewing that event)
 				const state = store.getState();
-				const event = state.events.currentEvent;
-				const participantExists = event?.participants?.some(
-					p =>
-						p.user_id === deletedParticipant.user_id &&
-						event.id === deletedParticipant.event_id,
+				const participantExists = state.events.currentEvent?.participants?.some(
+					p => p.id === deletedParticipantId,
 				);
 
 				if (participantExists) {
-					dispatch(
-						removeParticipantRealtime({
-							eventId: deletedParticipant.event_id,
-							userId: deletedParticipant.user_id,
-						}),
-					);
+					// Just pass the participant record ID - reducer will find which event contains it
+					dispatch(removeParticipantRealtime(deletedParticipantId));
 				}
 			}
 		},
