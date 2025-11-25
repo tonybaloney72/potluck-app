@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { signUp } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
+import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
 
 // Zod schema: name cannot contain numbers, same validation as ProfilePage
@@ -93,12 +94,12 @@ export const RegisterPage = () => {
 							{...register("confirmPassword")}
 							error={errors.confirmPassword?.message}
 						/>
+						{error && (
+							<ErrorDisplay message={error} variant='inline' className='mb-4' />
+						)}
 						<Button type='submit' loading={loading} className='w-full'>
 							Sign Up
 						</Button>
-						{error && (
-							<p className='text-sm text-red-500 text-center'>{error}</p>
-						)}
 					</form>
 					<p className='text-center text-sm text-secondary'>
 						Already have an account?{" "}

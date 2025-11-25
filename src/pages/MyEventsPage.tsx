@@ -1,20 +1,31 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { fetchUserEvents, setCurrentEvent } from "../store/slices/eventsSlice";
+import {
+	fetchUserEvents,
+	setCurrentEvent,
+	retryFetchEvents,
+	clearError,
+} from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
+import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { FaCalendarTimes } from "react-icons/fa";
 import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
 
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { events, loading, refreshingEvents } = useAppSelector(
+	const { events, loading, refreshingEvents, error } = useAppSelector(
 		state => state.events,
 	);
 	const { user } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
+
+	const handleRetry = () => {
+		dispatch(clearError());
+		dispatch(retryFetchEvents());
+	};
 
 	useEffect(() => {
 		// Only fetch if:
@@ -52,6 +63,28 @@ export const MyEventsPage = () => {
 
 	const isInitialLoading = loading && events.length === 0;
 
+	// Show error if we have an error and no events
+	if (error && events.length === 0 && !loading) {
+		return (
+			<div className='bg-secondary p-8'>
+				<div className='max-w-7xl mx-auto'>
+					<div className='flex justify-between items-center mb-8'>
+						<h1 className='text-3xl font-bold text-primary'>My Events</h1>
+						<Button onClick={() => navigate("/create-event")}>
+							Create New Event
+						</Button>
+					</div>
+					<ErrorDisplay
+						title='Failed to load events'
+						message={error}
+						onRetry={handleRetry}
+						variant='block'
+					/>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className='bg-secondary p-8'>
 			<div className='max-w-7xl mx-auto'>
@@ -66,6 +99,15 @@ export const MyEventsPage = () => {
 						Create New Event
 					</Button>
 				</div>
+
+				{error && events.length > 0 && (
+					<ErrorDisplay
+						message={error}
+						onRetry={handleRetry}
+						variant='inline'
+						className='mb-4'
+					/>
+				)}
 
 				{isInitialLoading ? (
 					// Show skeleton loaders for all three sections during initial load

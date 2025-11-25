@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { signIn } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
+import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
 
 interface LoginFormData {
@@ -40,6 +41,9 @@ export const LoginPage = () => {
 					className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
 					<h1 className='text-3xl font-bold text-center text-primary'>Login</h1>
 					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+						{error && (
+							<ErrorDisplay message={error} variant='inline' className='mb-4' />
+						)}
 						<Input
 							label='Email'
 							type='email'
@@ -50,7 +54,7 @@ export const LoginPage = () => {
 									message: "Invalid email address",
 								},
 							})}
-							error={errors.email?.message || error || undefined}
+							error={errors.email?.message}
 						/>
 						<Input
 							label='Password'

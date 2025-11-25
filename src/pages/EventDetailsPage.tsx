@@ -13,7 +13,9 @@ import {
 	deleteEvent,
 	updateEvent,
 	updateParticipantRole,
+	clearError,
 } from "../store/slices/eventsSlice";
+import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Button } from "../components/common/Button";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { useEventDetailsRealtime } from "../hooks/useEventDetailsRealtime";
@@ -49,6 +51,7 @@ export const EventDetailPage = () => {
 		deletingContribution,
 		updatingEvent,
 		updatingRole,
+		error,
 	} = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 
@@ -82,15 +85,36 @@ export const EventDetailPage = () => {
 		return <SkeletonEventDetails />;
 	}
 
-	// Only show "not found" if we've finished loading and still don't have the event
+	// Early return if no event after loading is complete
 	if (!currentEvent) {
 		return (
-			<div className='flex items-center justify-center'>
-				<div className='text-lg text-red-500'>Event not found</div>
+			<div className='bg-secondary p-8'>
+				<div className='max-w-4xl mx-auto'>
+					{error ? (
+						<ErrorDisplay
+							title='Failed to load event'
+							message={error}
+							onRetry={() => {
+								dispatch(clearError());
+								if (eventId) {
+									dispatch(fetchEventById(eventId));
+								}
+							}}
+							variant='fullscreen'
+						/>
+					) : (
+						<ErrorDisplay
+							title='Event not found'
+							message='The event you are looking for does not exist or has been deleted.'
+							variant='fullscreen'
+						/>
+					)}
+				</div>
 			</div>
 		);
 	}
 
+	// At this point, TypeScript knows currentEvent is not null due to early return above
 	// Find current user's participant record
 	const currentUserParticipant = currentEvent.participants?.find(
 		p => p.user_id === user?.id,
@@ -156,7 +180,7 @@ export const EventDetailPage = () => {
 			case "removeParticipant":
 				if (data?.userId && data?.userName) {
 					// Prevent removing hosts
-					const participantToRemove = currentEvent.participants?.find(
+					const participantToRemove = currentEvent?.participants?.find(
 						p => p.user_id === data.userId,
 					);
 					if (participantToRemove?.role === "host") {
@@ -191,6 +215,7 @@ export const EventDetailPage = () => {
 				await dispatch(deleteContribution(confirmationModal.contributionId));
 				break;
 			case "removeParticipant": {
+				if (!currentEvent) return;
 				// Prevent removing hosts
 				const participantToRemove = currentEvent.participants?.find(
 					p => p.user_id === confirmationModal.userId,
@@ -285,6 +310,7 @@ export const EventDetailPage = () => {
 		if (!eventId) return;
 
 		// Find the participant to check their current role
+		if (!currentEvent) return;
 		const participant = currentEvent.participants?.find(
 			p => p.id === participantId,
 		);

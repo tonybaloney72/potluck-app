@@ -14,6 +14,7 @@ import type {
 } from "../../types";
 import { requireAuth } from "../../utils/auth";
 import { getEventHostId } from "../../utils/events";
+import { getOperationErrorMessage } from "../../utils/errors";
 
 interface EventsState {
 	events: Event[];
@@ -947,7 +948,7 @@ const eventsSlice = createSlice({
 			.addCase(fetchUserEvents.rejected, (state, action) => {
 				state.loading = false;
 				state.refreshingEvents = false;
-				state.error = action.error.message || "Failed to fetch events";
+				state.error = getOperationErrorMessage("fetchEvents", action.error);
 			});
 
 		// Fetch event by ID
@@ -967,7 +968,7 @@ const eventsSlice = createSlice({
 			})
 			.addCase(fetchEventById.rejected, (state, action) => {
 				state.loading = false;
-				state.error = action.error.message || "Failed to fetch event";
+				state.error = getOperationErrorMessage("fetchEvent", action.error);
 			});
 
 		// Create event
@@ -991,7 +992,7 @@ const eventsSlice = createSlice({
 			.addCase(createEvent.rejected, (state, action) => {
 				state.loading = false;
 				state.refreshingEvents = false;
-				state.error = action.error.message || "Failed to create event";
+				state.error = getOperationErrorMessage("createEvent", action.error);
 			});
 
 		// Update event
@@ -1025,7 +1026,7 @@ const eventsSlice = createSlice({
 			})
 			.addCase(updateEvent.rejected, (state, action) => {
 				state.updatingEvent = false;
-				state.error = action.error.message || "Failed to update event";
+				state.error = getOperationErrorMessage("updateEvent", action.error);
 			});
 
 		// Delete event
@@ -1146,8 +1147,10 @@ const eventsSlice = createSlice({
 			})
 			.addCase(updateParticipantRole.rejected, (state, action) => {
 				state.updatingRole = null;
-				state.error =
-					action.error.message || "Failed to update participant role";
+				state.error = getOperationErrorMessage(
+					"updateParticipantRole",
+					action.error,
+				);
 			});
 
 		// Add contribution
@@ -1278,6 +1281,21 @@ const eventsSlice = createSlice({
 			});
 	},
 });
+
+// Retry actions for error recovery
+export const retryFetchEvents = createAsyncThunk(
+	"events/retryFetchEvents",
+	async (_, { dispatch }) => {
+		return dispatch(fetchUserEvents()).unwrap();
+	},
+);
+
+export const retryFetchEvent = createAsyncThunk(
+	"events/retryFetchEvent",
+	async (eventId: string, { dispatch }) => {
+		return dispatch(fetchEventById(eventId)).unwrap();
+	},
+);
 
 export const {
 	setCurrentEvent,
