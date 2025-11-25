@@ -4,8 +4,9 @@ import { EmptyState } from "../common/EmptyState";
 import { Avatar } from "../common/Avatar";
 import { DeleteButton } from "../common/DeleteButton";
 import { Button } from "../common/Button";
-import type { Event, EventParticipant } from "../../types";
+import type { Event, EventParticipant, EventRole } from "../../types";
 import { hasManagePermission } from "../../utils/events";
+import { RoleSelector } from "./RoleSelector";
 
 interface ParticipantsSectionProps {
 	event: Event;
@@ -13,7 +14,13 @@ interface ParticipantsSectionProps {
 	currentUserId: string | undefined;
 	onAddParticipant: () => void;
 	onRemoveParticipant: (userId: string, userName: string) => void;
+	onUpdateParticipantRole: (
+		participantId: string,
+		userId: string,
+		role: EventRole,
+	) => void;
 	addingParticipant: boolean;
+	updatingRole?: string | null;
 }
 
 export const ParticipantsSection = ({
@@ -22,7 +29,9 @@ export const ParticipantsSection = ({
 	currentUserId,
 	onAddParticipant,
 	onRemoveParticipant,
+	onUpdateParticipantRole,
 	addingParticipant,
+	updatingRole,
 }: ParticipantsSectionProps) => {
 	const canManage = hasManagePermission(currentUserParticipant?.role);
 
@@ -55,15 +64,36 @@ export const ParticipantsSection = ({
 							<div
 								key={participant.id}
 								className='p-3 bg-secondary rounded-lg flex items-center justify-between relative'>
-								<div className='flex items-center gap-3'>
+								<div className='flex-1 flex items-center gap-3'>
 									<Avatar user={participant.user} size='md' />
-									<div>
+									<div className='flex-1'>
 										<p className='font-semibold text-primary'>
 											{participant.user?.name || "Unknown"}
 										</p>
-										<p className='text-xs text-tertiary capitalize'>
-											{participant.role} • {participant.rsvp_status}
-										</p>
+										<div className='flex items-center gap-2'>
+											{canManage && isNotCurrentUser ? (
+												<RoleSelector
+													value={participant.role}
+													onChange={role => {
+														onUpdateParticipantRole(
+															participant.id,
+															participant.user_id,
+															role,
+														);
+													}}
+													disabled={updatingRole === participant.id}
+													className='text-xs py-1'
+												/>
+											) : (
+												<p className='text-xs text-tertiary capitalize'>
+													{participant.role}
+												</p>
+											)}
+											<span className='text-xs text-tertiary'>•</span>
+											<p className='text-xs text-tertiary capitalize'>
+												{participant.rsvp_status}
+											</p>
+										</div>
 									</div>
 								</div>
 								{canManage && isNotCurrentUser && (

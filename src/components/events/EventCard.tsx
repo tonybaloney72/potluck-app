@@ -44,13 +44,13 @@ export const EventCard = ({
 							key={event.id}
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow'
+							className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow flex flex-col'
 							onClick={() => onEventClick(event.id)}>
 							<h3 className='text-xl font-semibold text-primary mb-2'>
 								{event.title}
 							</h3>
 							{event.theme && (
-								<span className='inline-block px-2 py-1 text-xs bg-accent/20 text-accent rounded mb-2'>
+								<span className='inline-block text-xs bg-accent/20 text-primary rounded mb-2'>
 									{event.theme}
 								</span>
 							)}
@@ -62,7 +62,7 @@ export const EventCard = ({
 							<p className='text-secondary mb-4 line-clamp-2'>
 								{event.description || "No description"}
 							</p>
-							<div className='space-y-1 text-sm text-tertiary'>
+							<div className='space-y-1 text-sm text-tertiary mt-auto'>
 								<p>
 									📅{" "}
 									{(() => {

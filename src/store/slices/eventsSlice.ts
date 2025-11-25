@@ -10,6 +10,7 @@ import type {
 	Contribution,
 	EventComment,
 	RSVPStatus,
+	EventRole,
 } from "../../types";
 import { requireAuth } from "../../utils/auth";
 
@@ -26,6 +27,7 @@ interface EventsState {
 	deletingContribution: string | null; // ID of contribution being deleted
 	updatingEvent: boolean;
 	error: string | null;
+	updatingRole: string | null;
 }
 
 const initialState: EventsState = {
@@ -41,6 +43,7 @@ const initialState: EventsState = {
 	deletingContribution: null,
 	updatingEvent: false,
 	error: null,
+	updatingRole: null,
 };
 
 // Fetch all events for the current user (hosted and invited)
@@ -554,6 +557,38 @@ export const deleteComment = createAsyncThunk(
 	},
 );
 
+// Update participant role
+export const updateParticipantRole = createAsyncThunk(
+	"events/updateParticipantRole",
+	async ({
+		eventId,
+		userId,
+		role,
+	}: {
+		eventId: string;
+		userId: string;
+		role: "guest" | "contributor" | "co_host"; // Cannot change to/from "host"
+	}) => {
+		await requireAuth();
+
+		const { data: participant, error } = await supabase
+			.from("event_participants")
+			.update({ role })
+			.eq("event_id", eventId)
+			.eq("user_id", userId)
+			.select(
+				`
+				*,
+				user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+			`,
+			)
+			.single();
+
+		if (error) throw error;
+		return { eventId, participant: participant as EventParticipant };
+	},
+);
+
 const eventsSlice = createSlice({
 	name: "events",
 	initialState,
@@ -759,6 +794,38 @@ const eventsSlice = createSlice({
 			if (state.currentEvent?.contributions) {
 				state.currentEvent.contributions =
 					state.currentEvent.contributions.filter(c => c.id !== contributionId);
+			}
+		},
+
+		updateParticipantRoleRealtime: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				participantId: string;
+				role: EventRole;
+			}>,
+		) => {
+			const { eventId, participantId, role } = action.payload;
+
+			// Update in currentEvent
+			if (state.currentEvent?.id === eventId) {
+				const participant = state.currentEvent.participants?.find(
+					p => p.id === participantId,
+				);
+				if (participant) {
+					participant.role = role;
+				}
+			}
+
+			// Update in events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event?.participants) {
+				const participant = event.participants.find(
+					p => p.id === participantId,
+				);
+				if (participant) {
+					participant.role = role;
+				}
 			}
 		},
 
@@ -1005,6 +1072,45 @@ const eventsSlice = createSlice({
 			}
 		});
 
+		builder
+			.addCase(updateParticipantRole.pending, (state, action) => {
+				state.updatingRole = action.meta.arg.userId;
+			})
+			.addCase(updateParticipantRole.fulfilled, (state, action) => {
+				state.updatingRole = null;
+				const { eventId, participant } = action.payload;
+
+				// Update in currentEvent
+				if (state.currentEvent?.id === eventId) {
+					const index = state.currentEvent.participants?.findIndex(
+						p => p.id === participant.id,
+					);
+					if (
+						index !== undefined &&
+						index !== -1 &&
+						state.currentEvent.participants
+					) {
+						state.currentEvent.participants[index] = participant;
+					}
+				}
+
+				// Update in events array
+				const event = state.events.find(e => e.id === eventId);
+				if (event?.participants) {
+					const index = event.participants.findIndex(
+						p => p.id === participant.id,
+					);
+					if (index !== -1) {
+						event.participants[index] = participant;
+					}
+				}
+			})
+			.addCase(updateParticipantRole.rejected, (state, action) => {
+				state.updatingRole = null;
+				state.error =
+					action.error.message || "Failed to update participant role";
+			});
+
 		// Add contribution
 		builder
 			.addCase(addContribution.pending, state => {
@@ -1146,5 +1252,6 @@ export const {
 	addParticipantRealtime,
 	removeParticipantRealtime,
 	updateEventRealtime,
+	updateParticipantRoleRealtime,
 } = eventsSlice.actions;
 export default eventsSlice.reducer;

@@ -11,9 +11,15 @@ import {
 	addParticipantRealtime,
 	removeParticipantRealtime,
 	updateEventRealtime,
+	updateParticipantRoleRealtime,
 } from "../store/slices/eventsSlice";
 import { supabase } from "../services/supabase";
-import type { EventParticipant, EventComment, Contribution } from "../types";
+import type {
+	EventParticipant,
+	EventComment,
+	Contribution,
+	EventRole,
+} from "../types";
 
 export function useEventDetailsRealtime(eventId: string | null) {
 	const dispatch = useAppDispatch();
@@ -196,6 +202,44 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				if (contributionExists) {
 					// Just pass the ID - reducer will find which event contains it
 					dispatch(deleteContributionRealtime(deletedContributionId));
+				}
+			}
+		},
+	});
+
+	useRealtimeSubscription({
+		channelName: `event:${eventId}:participants:roles`,
+		table: "event_participants",
+		filter: `event_id=eq.${eventId}`,
+		onUpdate: async payload => {
+			if (
+				payload.eventType === "UPDATE" &&
+				payload.new &&
+				payload.old &&
+				eventIdRef.current === payload.new.event_id
+			) {
+				// Check if role actually changed
+				if (payload.old.role !== payload.new.role) {
+					// Fetch user profile if not present
+					if (!payload.new.user) {
+						const { data: userProfile } = await supabase
+							.from("profiles")
+							.select("id, name, avatar_url")
+							.eq("id", payload.new.user_id)
+							.single();
+
+						if (userProfile) {
+							payload.new.user = userProfile;
+						}
+					}
+
+					dispatch(
+						updateParticipantRoleRealtime({
+							eventId: payload.new.event_id,
+							participantId: payload.new.id,
+							role: payload.new.role as EventRole,
+						}),
+					);
 				}
 			}
 		},

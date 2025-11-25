@@ -1,15 +1,22 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "../../store/hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaUser } from "react-icons/fa";
 import type { Profile } from "../../types";
 import { fetchFriendships } from "../../store/slices/friendsSlice";
+import { RoleSelector } from "../events/RoleSelector";
+import type { EventRole } from "../../types";
 
 interface FriendSelectorModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSelectFriend: (friendId: string) => void;
-	excludeIds?: string[]; // Optional list of friend IDs to exclude
+	onSelectFriend: (
+		friendId: string,
+		role: "guest" | "contributor" | "co_host",
+	) => void;
+	excludeIds?: string[];
+	enableRoleSelection?: boolean;
+	initialRole?: "guest" | "contributor" | "co_host";
 }
 
 export const FriendSelectorModal = ({
@@ -17,10 +24,26 @@ export const FriendSelectorModal = ({
 	onClose,
 	onSelectFriend,
 	excludeIds = [],
+	enableRoleSelection = false,
+	initialRole = "guest",
 }: FriendSelectorModalProps) => {
 	const dispatch = useAppDispatch();
 	const { friendships } = useAppSelector(state => state.friends);
 	const { profile } = useAppSelector(state => state.auth);
+	const [selectedRoles, setSelectedRoles] = useState<Record<string, EventRole>>(
+		{},
+	);
+
+	useEffect(() => {
+		if (isOpen && enableRoleSelection) {
+			// Initialize all friends with the initial role
+			const initialRoles: Record<string, EventRole> = {};
+			// We'll populate this after friends are loaded
+			setSelectedRoles(initialRoles);
+		} else if (!isOpen) {
+			setSelectedRoles({});
+		}
+	}, [isOpen, enableRoleSelection, initialRole]);
 
 	// Allow esc key to close the modal
 	useEffect(() => {
@@ -106,34 +129,55 @@ export const FriendSelectorModal = ({
 										<ul>
 											{friends.map(friend => (
 												<li key={friend.id}>
-													<button
-														className='flex items-center w-full gap-3 p-3 rounded-md hover:bg-tertiary transition mb-1'
-														onClick={() => {
-															onSelectFriend(friend.id);
-															onClose();
-														}}>
-														{friend.avatar_url ? (
-															<img
-																src={friend.avatar_url}
-																alt={friend.name || "User"}
-																className='w-10 h-10 rounded-full object-cover'
-															/>
-														) : (
-															<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-																<FaUser className='w-5 h-5' />
-															</div>
-														)}
-														<div className='min-w-0 text-left'>
-															<p className='font-medium truncate text-primary'>
-																{friend.name || "Unknown User"}
-															</p>
-															{friend.location && (
-																<p className='text-xs text-secondary truncate'>
-																	{friend.location}
-																</p>
+													<div className='flex flex-col gap-2'>
+														<button
+															className='flex items-center w-full gap-3 p-3 rounded-md hover:bg-tertiary transition mb-1'
+															onClick={() => {
+																const role = enableRoleSelection
+																	? selectedRoles[friend.id] || initialRole
+																	: "guest";
+																onSelectFriend(
+																	friend.id,
+																	role as "guest" | "contributor" | "co_host",
+																);
+																onClose();
+															}}>
+															{friend.avatar_url ? (
+																<img
+																	src={friend.avatar_url}
+																	alt={friend.name || "User"}
+																	className='w-10 h-10 rounded-full object-cover'
+																/>
+															) : (
+																<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+																	<FaUser className='w-5 h-5' />
+																</div>
 															)}
+															<div className='min-w-0 text-left'>
+																<p className='font-medium truncate text-primary'>
+																	{friend.name || "Unknown User"}
+																</p>
+																{friend.location && (
+																	<p className='text-xs text-secondary truncate'>
+																		{friend.location}
+																	</p>
+																)}
+															</div>
+														</button>
+													</div>
+													{enableRoleSelection && (
+														<div className='ml-13 px-3'>
+															<RoleSelector
+																value={selectedRoles[friend.id] || initialRole}
+																onChange={role => {
+																	setSelectedRoles(prev => ({
+																		...prev,
+																		[friend.id]: role,
+																	}));
+																}}
+															/>
 														</div>
-													</button>
+													)}
 												</li>
 											))}
 										</ul>

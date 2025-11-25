@@ -12,6 +12,7 @@ import {
 	removeParticipant,
 	deleteEvent,
 	updateEvent,
+	updateParticipantRole,
 } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { ConfirmModal } from "../components/common/ConfirmModal";
@@ -22,7 +23,7 @@ import { ParticipantsSection } from "../components/events/ParticipantsSection";
 import { ContributionsSection } from "../components/events/ContributionsSection";
 import { CommentsSection } from "../components/events/CommentsSection";
 import { canAddContributions, hasManagePermission } from "../utils/events";
-import type { RSVPStatus } from "../types";
+import type { EventRole, RSVPStatus } from "../types";
 
 // Confirmation modal type - consolidated state
 type ConfirmationModal =
@@ -46,6 +47,7 @@ export const EventDetailPage = () => {
 		deletingComment,
 		deletingContribution,
 		updatingEvent,
+		updatingRole,
 	} = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 
@@ -200,7 +202,7 @@ export const EventDetailPage = () => {
 		data:
 			| { content: string }
 			| { itemName: string; quantity?: string; description?: string }
-			| string,
+			| { friendId: string; role: EventRole },
 	) => {
 		if (!eventId) return;
 
@@ -232,9 +234,18 @@ export const EventDetailPage = () => {
 				break;
 			}
 			case "participant": {
-				const friendId = data as string;
+				const participantData = data as {
+					friendId: string;
+					role?: "guest" | "contributor" | "co_host";
+				};
 				if (!addingParticipant) {
-					await dispatch(addParticipant({ eventId, userId: friendId }));
+					await dispatch(
+						addParticipant({
+							eventId,
+							userId: participantData.friendId,
+							role: participantData.role || "guest",
+						}),
+					);
 					setShowFriendSelector(false);
 				}
 				break;
@@ -252,6 +263,31 @@ export const EventDetailPage = () => {
 	}) => {
 		if (!eventId) return;
 		await dispatch(updateEvent({ eventId, updates }));
+	};
+
+	const handleUpdateParticipantRole = async (
+		participantId: string,
+		userId: string,
+		role: EventRole,
+	) => {
+		if (!eventId) return;
+
+		// Prevent changing to/from "host" role
+		if (
+			role === "host" ||
+			currentEvent.participants?.find(p => p.id === participantId)?.role ===
+				"host"
+		) {
+			return;
+		}
+
+		await dispatch(
+			updateParticipantRole({
+				eventId,
+				userId,
+				role: role as "guest" | "contributor" | "co_host",
+			}),
+		);
 	};
 
 	const isEventCreator = currentEvent.created_by === user?.id;
@@ -302,6 +338,8 @@ export const EventDetailPage = () => {
 						handleDelete("removeParticipant", { userId, userName })
 					}
 					addingParticipant={addingParticipant}
+					onUpdateParticipantRole={handleUpdateParticipantRole}
+					updatingRole={updatingRole}
 				/>
 
 				{/* Contributions Section */}
@@ -367,7 +405,11 @@ export const EventDetailPage = () => {
 				<FriendSelectorModal
 					isOpen={showFriendSelector}
 					onClose={() => setShowFriendSelector(false)}
-					onSelectFriend={friendId => handleAdd("participant", friendId)}
+					onSelectFriend={(friendId, role) => {
+						handleAdd("participant", { friendId, role }); // Update this
+					}}
+					enableRoleSelection={true} // NEW
+					initialRole='guest' // NEW
 					excludeIds={currentEvent.participants?.map(p => p.user_id) || []}
 				/>
 			</div>

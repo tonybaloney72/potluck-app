@@ -63,7 +63,8 @@ export type NotificationType =
 	| "event_invitation"
 	| "event_updated"
 	| "event_cancelled"
-	| "event_reminder";
+	| "event_reminder"
+	| "rsvp";
 
 export interface Notification {
 	id: string;
