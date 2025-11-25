@@ -25,10 +25,10 @@ export const NotificationDropdown = () => {
 	const dropdownRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (isOpen && user && notifications.length === 0) {
+		if (user) {
 			dispatch(fetchNotifications());
 		}
-	}, [isOpen, user, notifications.length, dispatch]);
+	}, [user, dispatch]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {

@@ -10,6 +10,7 @@ import {
 	deleteContributionRealtime,
 	addParticipantRealtime,
 	removeParticipantRealtime,
+	updateEventRealtime,
 } from "../store/slices/eventsSlice";
 import { supabase } from "../services/supabase";
 import type { EventParticipant, EventComment, Contribution } from "../types";
@@ -263,6 +264,75 @@ export function useEventDetailsRealtime(eventId: string | null) {
 					// Just pass the participant record ID - reducer will find which event contains it
 					dispatch(removeParticipantRealtime(deletedParticipantId));
 				}
+			}
+		},
+	});
+
+	useRealtimeSubscription({
+		channelName: `events:${eventId}:update`,
+		table: "events",
+		// Filter can be added here, but we also check in callback for reliability
+		onUpdate: async (payload: { eventType: "UPDATE"; new: any; old: any }) => {
+			if (
+				payload.eventType === "UPDATE" &&
+				payload.new &&
+				eventIdRef.current === payload.new.id
+			) {
+				const updatedEvent = payload.new;
+
+				// Ignore updates from current user (they're handled optimistically)
+				// Note: We check if currentEvent exists and if we're currently updating
+				// to avoid processing our own optimistic updates
+				const state = store.getState();
+				const currentEvent = state.events.currentEvent;
+				const isCurrentlyUpdating = state.events.updatingEvent;
+				const isCurrentUserUpdate =
+					state.events.currentEvent?.created_by === user?.id &&
+					isCurrentlyUpdating;
+
+				// Skip if this is our own update (handled optimistically)
+				if (isCurrentUserUpdate) {
+					return;
+				}
+
+				if (
+					currentEvent?.id === updatedEvent.id &&
+					currentEvent?.updated_at === updatedEvent.updated_at &&
+					isCurrentlyUpdating
+				) {
+					return;
+				}
+
+				// Fetch creator profile if not already present (should already be there, but just in case)
+				let creatorProfile = updatedEvent.creator;
+				if (!creatorProfile || !creatorProfile.name) {
+					const { data: profile } = await supabase
+						.from("profiles")
+						.select("id, name, avatar_url")
+						.eq("id", updatedEvent.created_by)
+						.single();
+					creatorProfile = profile || undefined;
+				}
+
+				// Extract only the fields that can be updated (exclude id, created_by, etc.)
+				const updatedFields = {
+					title: updatedEvent.title,
+					theme: updatedEvent.theme,
+					description: updatedEvent.description,
+					event_datetime: updatedEvent.event_datetime,
+					location: updatedEvent.location,
+					location_url: updatedEvent.location_url,
+					updated_at: updatedEvent.updated_at,
+					// Include creator profile if we fetched it
+					...(creatorProfile && { creator: creatorProfile }),
+				};
+
+				dispatch(
+					updateEventRealtime({
+						eventId: updatedEvent.id,
+						updatedFields,
+					}),
+				);
 			}
 		},
 	});

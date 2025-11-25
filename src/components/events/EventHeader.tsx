@@ -1,0 +1,324 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "../common/Button";
+import { Input } from "../common/Input";
+import { DatePicker } from "../common/DatePicker";
+import { motion } from "motion/react";
+import { RSVPButtonGroup } from "./RSVPButtonGroup";
+import {
+	generateGoogleCalendarUrl,
+	downloadAppleCalendar,
+} from "../../utils/calendar";
+import { FaApple, FaGoogle, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import type { Event, EventParticipant, RSVPStatus } from "../../types";
+
+const eventUpdateSchema = z.object({
+	title: z.string().min(1, "Title is required"),
+	theme: z.string().optional(),
+	description: z.string().optional(),
+	event_datetime: z.string().min(1, "Date and time is required"),
+	location: z.string().optional(),
+	location_url: z
+		.string()
+		.url("Must be a valid URL")
+		.optional()
+		.or(z.literal("")),
+});
+
+type EventUpdateFormData = z.infer<typeof eventUpdateSchema>;
+
+interface EventHeaderProps {
+	event: Event;
+	currentUserParticipant: EventParticipant | undefined;
+	onRSVPChange: (status: RSVPStatus) => void;
+	updatingRSVP: RSVPStatus | null;
+	formatDateTime: (datetimeString: string) => { date: string; time: string };
+	canEdit: boolean;
+	onUpdateEvent: (updates: {
+		title?: string;
+		theme?: string | null;
+		description?: string | null;
+		event_datetime?: string;
+		location?: string | null;
+		location_url?: string | null;
+	}) => Promise<void>;
+	updatingEvent: boolean;
+}
+
+export const EventHeader = ({
+	event,
+	currentUserParticipant,
+	onRSVPChange,
+	updatingRSVP,
+	formatDateTime,
+	canEdit,
+	onUpdateEvent,
+	updatingEvent,
+}: EventHeaderProps) => {
+	const [isEditing, setIsEditing] = useState(false);
+	const eventDateTime = formatDateTime(event.event_datetime);
+
+	const eventUpdateForm = useForm<EventUpdateFormData>({
+		resolver: zodResolver(eventUpdateSchema),
+		defaultValues: {
+			title: event.title,
+			theme: event.theme || "",
+			description: event.description || "",
+			event_datetime: event.event_datetime,
+			location: event.location || "",
+			location_url: event.location_url || "",
+		},
+	});
+
+	useEffect(() => {
+		if (!isEditing) {
+			eventUpdateForm.reset({
+				title: event.title,
+				theme: event.theme || "",
+				description: event.description || "",
+				event_datetime: event.event_datetime,
+				location: event.location || "",
+				location_url: event.location_url || "",
+			});
+		}
+	}, [
+		isEditing,
+		event.id,
+		event.title,
+		event.theme,
+		event.description,
+		event.event_datetime,
+		event.location,
+		event.location_url,
+	]);
+
+	const handleEditClick = () => {
+		eventUpdateForm.reset({
+			title: event.title,
+			theme: event.theme || "",
+			description: event.description || "",
+			event_datetime: event.event_datetime,
+			location: event.location || "",
+			location_url: event.location_url || "",
+		});
+		setIsEditing(true);
+	};
+
+	const handleCancel = () => {
+		setIsEditing(false);
+		eventUpdateForm.reset();
+	};
+
+	const handleSubmit = async (data: EventUpdateFormData) => {
+		try {
+			await onUpdateEvent({
+				title: data.title,
+				theme: data.theme || null,
+				description: data.description || null,
+				event_datetime: data.event_datetime,
+				location: data.location || null,
+				location_url: data.location_url || null,
+			});
+		} catch (error) {
+			console.error("Failed to update event:", error);
+		}
+		setIsEditing(false);
+	};
+
+	return (
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			className='bg-primary rounded-lg shadow-md p-6 mb-6'>
+			{/* Title & Theme */}
+			<div className='flex justify-between items-start mb-4'>
+				<div>
+					{isEditing ? (
+						<div className='space-y-2 mb-2'>
+							<Input
+								label='Event Title *'
+								{...eventUpdateForm.register("title")}
+								error={eventUpdateForm.formState.errors.title?.message}
+								className='mb-2'
+							/>
+							<Input
+								label='Theme (optional)'
+								{...eventUpdateForm.register("theme")}
+								placeholder='e.g., Summer BBQ, Holiday Party'
+							/>
+						</div>
+					) : (
+						<>
+							<h1 className='text-3xl font-bold text-primary mb-2'>
+								{event.title}
+							</h1>
+							{event.theme && (
+								<div className='mt-2'>
+									<p className='text-sm text-tertiary'>Theme</p>
+									<span className='text-primary'>{event.theme}</span>
+								</div>
+							)}
+						</>
+					)}
+				</div>
+				<div className='flex flex-col gap-2'>
+					{event.creator && (
+						<div className='text-right'>
+							<p className='text-sm text-tertiary'>Hosted by</p>
+							<p className='font-semibold text-primary'>{event.creator.name}</p>
+						</div>
+					)}
+					<div className='flex gap-2 items-center'>
+						{canEdit && !isEditing && (
+							<Button
+								variant='secondary'
+								onClick={handleEditClick}
+								className='text-sm flex items-center gap-2'>
+								<FaEdit className='w-4 h-4' />
+								Edit Event
+							</Button>
+						)}
+						{!isEditing && (
+							<>
+								<a
+									href={generateGoogleCalendarUrl(event)}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='flex items-center gap-2 px-3 py-1.5 bg-accent-secondary hover:bg-accent text-white rounded-md text-sm transition'>
+									<FaGoogle className='w-4 h-4' />
+									<span>Google</span>
+								</a>
+								<button
+									onClick={() => downloadAppleCalendar(event)}
+									className='flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-tertiary text-white rounded-md text-sm transition cursor-pointer'>
+									<FaApple className='w-4 h-4' />
+									<span>Apple</span>
+								</button>
+							</>
+						)}
+					</div>
+				</div>
+			</div>
+
+			{/* Description */}
+			{isEditing ? (
+				<div>
+					<label className='block text-sm font-medium text-primary'>
+						Description
+					</label>
+					<textarea
+						{...eventUpdateForm.register("description")}
+						className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
+						rows={4}
+						placeholder='Event description...'
+					/>
+					{eventUpdateForm.formState.errors.description && (
+						<p className='text-red-500 text-sm mt-1'>
+							{eventUpdateForm.formState.errors.description.message}
+						</p>
+					)}
+				</div>
+			) : (
+				event.description && (
+					<div className='mb-4'>
+						<p className='text-sm text-tertiary'>Description</p>
+						<p className='text-primary'>{event.description}</p>
+					</div>
+				)
+			)}
+
+			{/* Date & Time */}
+			{isEditing ? (
+				<div className='space-y-4'>
+					<DatePicker
+						control={eventUpdateForm.control}
+						name='event_datetime'
+						label='Event Date & Time *'
+						error={eventUpdateForm.formState.errors.event_datetime}
+						required
+					/>
+					<Input
+						label='Location'
+						{...eventUpdateForm.register("location")}
+						placeholder='e.g., Central Park, New York'
+					/>
+					<Input
+						label='Location URL (optional)'
+						{...eventUpdateForm.register("location_url")}
+						placeholder='https://maps.google.com/...'
+						type='url'
+						error={eventUpdateForm.formState.errors.location_url?.message}
+					/>
+				</div>
+			) : (
+				<div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
+					<div>
+						<p className='text-tertiary'>Date & Time</p>
+						<p className='font-semibold text-primary'>
+							{eventDateTime.date} at {eventDateTime.time}
+						</p>
+					</div>
+					{event.location && (
+						<div>
+							<p className='text-tertiary'>Location</p>
+							{event.location_url ? (
+								<a
+									href={event.location_url}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='font-semibold text-accent hover:underline'>
+									{event.location} →
+								</a>
+							) : (
+								<p className='font-semibold text-primary'>{event.location}</p>
+							)}
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Save/Cancel Buttons */}
+			{isEditing && (
+				<div className='flex justify-end gap-2 mt-4 pt-4 border-t border-border'>
+					<Button
+						className='flex items-center gap-2'
+						type='button'
+						variant='secondary'
+						onClick={handleCancel}
+						disabled={updatingEvent}>
+						<FaTimes />
+						Cancel
+					</Button>
+					<Button
+						className='flex items-center gap-2'
+						type='button'
+						onClick={eventUpdateForm.handleSubmit(handleSubmit)}
+						loading={updatingEvent}
+						disabled={updatingEvent}>
+						<FaCheck />
+						Save Changes
+					</Button>
+				</div>
+			)}
+
+			{/* RSVP Button Group */}
+			{currentUserParticipant && !isEditing && (
+				<div className='mt-6 pt-6 border-t border-border'>
+					<p className='text-sm font-medium text-primary mb-2'>
+						Your RSVP Status:{" "}
+						<span className='capitalize'>
+							{currentUserParticipant.rsvp_status}
+						</span>
+					</p>
+					<RSVPButtonGroup
+						currentStatus={currentUserParticipant.rsvp_status}
+						onRSVPChange={onRSVPChange}
+						updatingRSVP={updatingRSVP}
+					/>
+				</div>
+			)}
+		</motion.div>
+	);
+};

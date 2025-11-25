@@ -24,6 +24,7 @@ interface EventsState {
 	addingParticipant: boolean;
 	deletingComment: string | null; // ID of comment being deleted
 	deletingContribution: string | null; // ID of contribution being deleted
+	updatingEvent: boolean;
 	error: string | null;
 }
 
@@ -38,6 +39,7 @@ const initialState: EventsState = {
 	addingParticipant: false,
 	deletingComment: null,
 	deletingContribution: null,
+	updatingEvent: false,
 	error: null,
 };
 
@@ -604,6 +606,43 @@ const eventsSlice = createSlice({
 			}
 		},
 
+		updateEventRealtime: (
+			state,
+			action: PayloadAction<{
+				eventId: string;
+				updatedFields: {
+					title?: string;
+					theme?: string | null;
+					description?: string | null;
+					event_datetime?: string;
+					location?: string | null;
+					location_url?: string | null;
+					updated_at?: string;
+				};
+			}>,
+		) => {
+			const { eventId, updatedFields } = action.payload;
+
+			// Update in events array
+			const event = state.events.find(e => e.id === eventId);
+			if (event) {
+				Object.assign(event, updatedFields);
+			}
+
+			// Update in currentEvent (preserve nested data)
+			if (state.currentEvent?.id === eventId) {
+				// Merge updated fields with existing event, preserving nested arrays
+				state.currentEvent = {
+					...state.currentEvent,
+					...updatedFields,
+					// Explicitly preserve nested data
+					participants: state.currentEvent.participants || [],
+					contributions: state.currentEvent.contributions || [],
+					comments: state.currentEvent.comments || [],
+				};
+			}
+		},
+
 		// Real-time: Add comment (from other users)
 		addCommentRealtime: (
 			state,
@@ -850,15 +889,38 @@ const eventsSlice = createSlice({
 			});
 
 		// Update event
-		builder.addCase(updateEvent.fulfilled, (state, action) => {
-			const index = state.events.findIndex(e => e.id === action.payload.id);
-			if (index !== -1) {
-				state.events[index] = action.payload;
-			}
-			if (state.currentEvent?.id === action.payload.id) {
-				state.currentEvent = action.payload;
-			}
-		});
+		builder
+			.addCase(updateEvent.pending, state => {
+				state.updatingEvent = true;
+				state.error = null;
+			})
+			.addCase(updateEvent.fulfilled, (state, action) => {
+				state.updatingEvent = false;
+				const updatedEvent = action.payload;
+				const index = state.events.findIndex(e => e.id === updatedEvent.id);
+				if (index !== -1) {
+					// Preserve nested data when updating events array
+					state.events[index] = {
+						...updatedEvent,
+						participants: state.events[index].participants || [],
+						contributions: state.events[index].contributions || [],
+						comments: state.events[index].comments || [],
+					};
+				}
+				if (state.currentEvent?.id === updatedEvent.id) {
+					// Preserve nested data when updating currentEvent
+					state.currentEvent = {
+						...updatedEvent,
+						participants: state.currentEvent.participants || [],
+						contributions: state.currentEvent.contributions || [],
+						comments: state.currentEvent.comments || [],
+					};
+				}
+			})
+			.addCase(updateEvent.rejected, (state, action) => {
+				state.updatingEvent = false;
+				state.error = action.error.message || "Failed to update event";
+			});
 
 		// Delete event
 		builder.addCase(deleteEvent.fulfilled, (state, action) => {
@@ -1083,5 +1145,6 @@ export const {
 	deleteContributionRealtime,
 	addParticipantRealtime,
 	removeParticipantRealtime,
+	updateEventRealtime,
 } = eventsSlice.actions;
 export default eventsSlice.reducer;
