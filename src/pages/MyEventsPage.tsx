@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchUserEvents, setCurrentEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
+import { FaCalendarTimes } from "react-icons/fa";
 
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
@@ -75,7 +76,14 @@ export const MyEventsPage = () => {
 				<EventCard
 					events={hostedEvents}
 					title="Events I'm Hosting"
-					emptyMessage="You're not hosting any events yet."
+					emptyStateProps={{
+						icon: <FaCalendarTimes className='w-16 h-16' />,
+						title: "No events yet",
+						message:
+							"You're not hosting any events yet. Create your first event to get started!",
+						actionLabel: "Create Event",
+						onAction: () => navigate("/create-event"),
+					}}
 					onEventClick={handleEventClick}
 				/>
 
@@ -83,14 +91,25 @@ export const MyEventsPage = () => {
 				<EventCard
 					events={attendingEvents}
 					title="Events I'm Attending"
-					emptyMessage="You're not attending any events yet."
+					emptyStateProps={{
+						icon: <FaCalendarTimes className='w-16 h-16' />,
+						title: "No events yet",
+						message:
+							"You're not attending any events yet. Check your invitations or browse upcoming events!",
+					}}
 					onEventClick={handleEventClick}
 				/>
+
 				{/* Invited Events Section */}
 				<EventCard
 					events={invitedEvents}
 					title="Events I'm Invited To"
-					emptyMessage="You're not invited to any events yet."
+					emptyStateProps={{
+						icon: <FaCalendarTimes className='w-16 h-16' />,
+						title: "No invitations yet",
+						message:
+							"You haven't received any event invitations yet. Share events with friends to invite them!",
+					}}
 					onEventClick={handleEventClick}
 				/>
 			</div>

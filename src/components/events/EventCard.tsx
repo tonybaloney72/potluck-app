@@ -1,10 +1,18 @@
 import { motion } from "motion/react";
 import type { Event } from "../../types";
+import { EmptyState } from "../common/EmptyState";
+import type { ReactNode } from "react";
 
 interface EventCardProps {
 	events: Event[];
 	title: string;
-	emptyMessage: string;
+	emptyStateProps?: {
+		icon?: ReactNode;
+		title?: string;
+		message: string;
+		actionLabel?: string;
+		onAction?: () => void;
+	};
 	onEventClick: (eventId: string) => void;
 	showCreator?: boolean;
 }
@@ -12,7 +20,7 @@ interface EventCardProps {
 export const EventCard = ({
 	events,
 	title,
-	emptyMessage,
+	emptyStateProps,
 	onEventClick,
 	showCreator = false,
 }: EventCardProps) => {
@@ -35,8 +43,16 @@ export const EventCard = ({
 	return (
 		<div className='mb-12'>
 			<h2 className='text-2xl font-semibold text-primary mb-4'>{title}</h2>
-			{events.length === 0 ? (
-				<p className='text-tertiary'>{emptyMessage}</p>
+			{events.length === 0 && emptyStateProps ? (
+				<EmptyState
+					icon={emptyStateProps.icon}
+					title={emptyStateProps.title}
+					message={emptyStateProps.message}
+					actionLabel={emptyStateProps.actionLabel}
+					onAction={emptyStateProps.onAction}
+				/>
+			) : events.length === 0 ? (
+				<p className='text-tertiary'>No events found.</p>
 			) : (
 				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 					{events.map(event => (

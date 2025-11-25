@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchFriendships,
@@ -19,13 +19,16 @@ import {
 	FaSearch,
 	FaUserPlus,
 	FaEnvelope,
+	FaUsers,
 } from "react-icons/fa";
 import { useDebounce } from "../hooks/useDebounce";
 import { FriendCard } from "../components/friends/FriendCard";
+import { EmptyState } from "../components/common/EmptyState";
 
 export const FriendsPage = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+	const searchInputRef = useRef<HTMLInputElement>(null);
 
 	const { friendships, loading, sendingRequest } = useAppSelector(
 		state => state.friends,
@@ -128,6 +131,7 @@ export const FriendsPage = () => {
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
 						className='pl-10'
+						ref={searchInputRef}
 					/>
 					<FaSearch className='absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary w-4 h-4' />
 				</div>
@@ -262,7 +266,13 @@ export const FriendsPage = () => {
 					Your Friends ({acceptedFriends.length})
 				</h2>
 				{acceptedFriends.length === 0 ? (
-					<p className='text-secondary'>No friends yet.</p>
+					<EmptyState
+						icon={<FaUsers className='w-16 h-16' />}
+						title='No friends yet'
+						message='Start connecting with others! Search for friends to add them to your network.'
+						actionLabel='Search Friends'
+						onAction={() => searchInputRef.current?.focus()}
+					/>
 				) : (
 					<div className='space-y-3'>
 						{acceptedFriends.map(friendship => {

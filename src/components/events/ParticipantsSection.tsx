@@ -7,6 +7,7 @@ import { Button } from "../common/Button";
 import type { Event, EventParticipant, EventRole } from "../../types";
 import { hasManagePermission } from "../../utils/events";
 import { RoleSelector } from "./RoleSelector";
+import { FaUsers } from "react-icons/fa";
 
 interface ParticipantsSectionProps {
 	event: Event;
@@ -119,7 +120,13 @@ export const ParticipantsSection = ({
 					})}
 				</div>
 			) : (
-				<EmptyState message='No attendees yet.' />
+				<EmptyState
+					icon={<FaUsers className='w-16 h-16' />}
+					title='No attendees yet'
+					message="This event doesn't have any attendees yet. Add friends to invite them to your event!"
+					actionLabel={canManage ? "Add Attendees" : undefined}
+					onAction={canManage ? onAddParticipant : undefined}
+				/>
 			)}
 		</AnimatedSection>
 	);

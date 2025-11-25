@@ -65,6 +65,9 @@ export const RegisterPage = () => {
 					<h1 className='text-3xl font-bold text-center text-primary'>
 						Sign Up
 					</h1>
+					<p className='text-center text-sm text-secondary'>
+						You will receive an email with a verification link from Supabase.
+					</p>
 					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
 						<Input
 							label='Name'

@@ -9,6 +9,7 @@ import { DeleteButton } from "../common/DeleteButton";
 import { Button } from "../common/Button";
 import type { Event, EventParticipant } from "../../types";
 import { canAddContributions, canDeleteItem } from "../../utils/events";
+import { FaGift } from "react-icons/fa";
 
 const contributionSchema = z.object({
 	itemName: z.string().min(1, "Item name is required"),
@@ -155,7 +156,11 @@ export const ContributionsSection = ({
 					})}
 				</div>
 			) : (
-				<EmptyState message='No contributions yet.' />
+				<EmptyState
+					icon={<FaGift className='w-16 h-16' />}
+					title='No contributions yet'
+					message='Be the first to add a contribution to this event!'
+				/>
 			)}
 		</AnimatedSection>
 	);

@@ -7,6 +7,7 @@ import { DeleteButton } from "../common/DeleteButton";
 import { Button } from "../common/Button";
 import type { Event, EventParticipant } from "../../types";
 import { canDeleteItem } from "../../utils/events";
+import { FaComment } from "react-icons/fa";
 
 const commentSchema = z.object({
 	content: z.string().min(1, "Comment cannot be empty"),
@@ -111,7 +112,11 @@ export const CommentsSection = ({
 					})}
 				</div>
 			) : (
-				<EmptyState message='No comments yet.' />
+				<EmptyState
+					icon={<FaComment className='w-16 h-16' />}
+					title='No comments yet'
+					message='Be the first to comment on this event!'
+				/>
 			)}
 		</AnimatedSection>
 	);

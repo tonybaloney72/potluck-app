@@ -15,7 +15,8 @@ import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
-import { FaUser, FaPaperPlane } from "react-icons/fa";
+import { EmptyState } from "../components/common/EmptyState";
+import { FaUser, FaPaperPlane, FaEnvelope, FaComment } from "react-icons/fa";
 import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
 import { BiSolidConversation } from "react-icons/bi";
 import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
@@ -270,12 +271,16 @@ export const MessagesPage = () => {
 					</div>
 				)}
 				{conversations.length === 0 ? (
-					<div className='text-center py-8'>
-						<p className='text-secondary mb-2'>No conversations yet.</p>
-						<p className='text-sm text-tertiary'>
-							Start a conversation from your Friends page!
-						</p>
-					</div>
+					<EmptyState
+						icon={<FaEnvelope className='w-16 h-16' />}
+						title='No conversations yet'
+						message='Start a conversation with your friends to begin messaging.'
+						actionLabel='New Conversation'
+						onAction={() => {
+							setShowFriendSelector(true);
+							setIsCreatingNewConversation(true);
+						}}
+					/>
 				) : (
 					<div className='space-y-2'>
 						{conversations.map(conversation => {
@@ -380,9 +385,16 @@ export const MessagesPage = () => {
 						</form>
 					</>
 				) : (
-					<div className='flex-1 flex items-center justify-center text-secondary'>
-						Select a conversation to start messaging
-					</div>
+					<EmptyState
+						icon={<FaComment className='w-16 h-16' />}
+						title='No conversation selected'
+						message='Select a conversation from the list to start messaging, or start a new conversation.'
+						actionLabel='New Conversation'
+						onAction={() => {
+							setShowFriendSelector(true);
+							setIsCreatingNewConversation(true);
+						}}
+					/>
 				)}
 			</div>
 		</div>
