@@ -8,7 +8,7 @@ Potluck App is a modern web application designed to simplify the organization of
 
 ## Features
 
-### Current Features (Phase 1, 2, 3 & 4.1-4.2 Complete)
+### Current Features (Phase 1, 2, 3, 4 & 5 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and location
@@ -22,18 +22,32 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **Real-time Messaging** - Instant message delivery and conversation updates
   - ✅ **Smart Notifications** - Message notifications that suppress when actively viewing a conversation
   - ✅ **Auto-scroll** - Automatically scrolls to newest messages
-- ✅ **Notifications System** - Real-time notification updates for friend requests and messages
+- ✅ **Notifications System** - Real-time notification updates for friend requests, messages, and event invitations
   - ✅ **Real-time Notifications** - Instant notification delivery via Supabase Realtime
   - ✅ **Notification Management** - Mark as read, delete, and navigate to related content
+- ✅ **Event Management** - Create, edit, and delete potluck events with full event details
+  - ✅ **Inline Event Editing** - Edit event title, theme, description, location, and date/time directly from event page
+  - ✅ **Real-time Event Updates** - Instant synchronization of event changes across all viewers
+  - ✅ **Calendar Integration** - Add events to Google Calendar or download for Apple Calendar
+- ✅ **RSVP System** - Attendees can RSVP with status (going, maybe, not going, pending)
+  - ✅ **Real-time RSVP Updates** - See RSVP status changes instantly across all viewers
+- ✅ **Contribution Tracking** - Coordinate who's bringing what to events
+  - ✅ **Add/Remove Contributions** - Track item names, quantities, and descriptions
+  - ✅ **Real-time Contributions** - See contributions added or removed instantly
+  - ⚠️ **Role-Based Access** - Currently only hosts can add contributions (full role system in progress)
+- ✅ **Event Comments** - Discussion threads for each event
+  - ✅ **Real-time Comments** - See new comments appear instantly as they're posted
+  - ✅ **Comment Management** - Add and delete your own comments (hosts can delete any)
+- ✅ **Role-Based Permissions (Partial)** - Basic role system with host permissions
+  - ✅ **Host Permissions** - Hosts can edit events, delete events, add/remove participants, and manage contributions/comments
+  - ✅ **Role Assignment** - Roles are assigned when users are invited (default: guest)
+  - ⚠️ **Role Management UI** - Role assignment and modification UI coming soon
 
 ### Coming Soon
 
-- 🔄 **Event Management** - Create, edit, and manage potluck events
-- 🔄 **RSVP System** - Let attendees confirm their participation
-- 🔄 **Contribution Tracking** - Coordinate who's bringing what
-- 🔄 **Role-Based Permissions** - Creators, co-creators, contributors, and guests
-- 🔄 **Event Notifications** - Real-time updates for event changes
-- 🔄 **Event Comments** - Discussion threads for each event
+- 🔄 **Advanced Role Management** - Assign and modify user roles when inviting or after event creation
+- 🔄 **Role-Based Contributions** - Allow all roles except 'guest' to add contributions
+- 🔄 **RSVP Notifications** - Host receives notifications when attendees RSVP
 
 ## Tech Stack
 
@@ -105,7 +119,7 @@ potluck-app/
 │   ├── context/        # React contexts (Theme, etc.)
 │   ├── features/       # Feature-specific code
 │   │   ├── auth/       # Authentication feature
-│   │   ├── events/     # Events feature (coming soon)
+│   │   ├── events/     # Events feature
 │   │   ├── friends/    # Friends feature
 │   │   └── messages/   # Messaging feature
 │   ├── hooks/          # Custom React hooks
@@ -136,12 +150,12 @@ This project is currently in active development.
 - ✅ Phase 1: Foundation (Supabase setup, routing, Redux store)
 - ✅ Phase 2: User Management (authentication, profiles, theme system)
 - ✅ Phase 3: Friends & Messaging (friends system, direct messaging)
-- ✅ Phase 4.1: Real-time Friends Updates (instant friend request synchronization)
-- ✅ Phase 4.2: Real-time Messages (instant messaging, smart notifications)
+- ✅ Phase 4: Notifications (notification system, real-time updates, notification UI)
+- ✅ Phase 5: Events Core (create, edit, delete events, RSVP system, contributions, comments)
 
 **In Progress:**
 
-- 🔄 Phase 4.3+: Event Management (create, edit, manage potluck events)
+- 🔄 Phase 6: Roles & Permissions (advanced role management, role assignment UI)
 
 ## Future Plans
 
