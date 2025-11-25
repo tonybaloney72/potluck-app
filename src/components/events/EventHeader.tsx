@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
+import { Textarea } from "../common/Textarea";
 import { DatePicker } from "../common/DatePicker";
 import { motion } from "motion/react";
 import { RSVPButtonGroup } from "./RSVPButtonGroup";
@@ -141,12 +142,18 @@ export const EventHeader = ({
 								label='Event Title *'
 								{...eventUpdateForm.register("title")}
 								error={eventUpdateForm.formState.errors.title?.message}
+								helperText='Give your event a memorable name'
+								maxLength={100}
+								showCharacterCount={true}
 								className='mb-2'
 							/>
 							<Input
 								label='Theme (optional)'
 								{...eventUpdateForm.register("theme")}
 								placeholder='e.g., Summer BBQ, Holiday Party'
+								helperText='Add a theme to help set the tone'
+								maxLength={50}
+								showCharacterCount={true}
 							/>
 						</div>
 					) : (
@@ -204,22 +211,15 @@ export const EventHeader = ({
 
 			{/* Description */}
 			{isEditing ? (
-				<div>
-					<label className='block text-sm font-medium text-primary'>
-						Description
-					</label>
-					<textarea
-						{...eventUpdateForm.register("description")}
-						className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
-						rows={4}
-						placeholder='Event description...'
-					/>
-					{eventUpdateForm.formState.errors.description && (
-						<p className='text-red-500 text-sm mt-1'>
-							{eventUpdateForm.formState.errors.description.message}
-						</p>
-					)}
-				</div>
+				<Textarea
+					label='Description'
+					{...eventUpdateForm.register("description")}
+					error={eventUpdateForm.formState.errors.description?.message}
+					placeholder='Describe your event...'
+					rows={4}
+					showCharacterCount={true}
+					maxLength={500}
+				/>
 			) : (
 				event.description && (
 					<div className='mb-4'>

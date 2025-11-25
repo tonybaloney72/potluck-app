@@ -87,6 +87,8 @@ export const RegisterPage = () => {
 							type='password'
 							{...register("password")}
 							error={errors.password?.message}
+							showPasswordStrength={true}
+							helperText='Password must be at least 6 characters'
 						/>
 						<Input
 							label='Confirm Password'

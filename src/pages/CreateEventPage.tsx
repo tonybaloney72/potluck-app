@@ -5,8 +5,10 @@ import { useAppDispatch } from "../store/hooks";
 import { createEvent, setCurrentEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
+import { Textarea } from "../components/common/Textarea";
 import { DatePicker } from "../components/common/DatePicker";
 import { FriendSelector } from "../components/events/FriendSelector";
+import { ErrorDisplay } from "../components/common/ErrorDisplay";
 
 interface CreateEventFormData {
 	title: string;
@@ -25,6 +27,16 @@ export const CreateEventPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
 
+	// Calculate default date/time (1 hour from now, rounded to nearest hour)
+	const getDefaultDateTime = () => {
+		const now = new Date();
+		now.setHours(now.getHours() + 1); // Default to 1 hour from now
+		now.setMinutes(0); // Round to nearest hour
+		now.setSeconds(0);
+		now.setMilliseconds(0);
+		return now.toISOString();
+	};
+
 	const {
 		register,
 		handleSubmit,
@@ -33,6 +45,7 @@ export const CreateEventPage = () => {
 	} = useForm<CreateEventFormData>({
 		defaultValues: {
 			is_public: false,
+			event_datetime: getDefaultDateTime(),
 		},
 	});
 
@@ -97,23 +110,27 @@ export const CreateEventPage = () => {
 							label='Event Title *'
 							{...register("title", { required: "Title is required" })}
 							error={errors.title?.message}
+							helperText='Give your event a memorable name'
+							maxLength={100}
+							showCharacterCount={true}
 						/>
 
-						<div>
-							<label className='block text-sm font-medium mb-1 text-primary'>
-								Description
-							</label>
-							<textarea
-								{...register("description")}
-								className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent'
-								rows={4}
-							/>
-						</div>
+						<Textarea
+							label='Description'
+							{...register("description")}
+							placeholder='Describe your event...'
+							rows={4}
+							showCharacterCount={true}
+							maxLength={500}
+						/>
 
 						<Input
 							label='Theme (optional)'
 							{...register("theme")}
 							placeholder='e.g., Summer BBQ, Holiday Party'
+							helperText='Add a theme to help set the tone'
+							maxLength={50}
+							showCharacterCount={true}
 						/>
 
 						<DatePicker
@@ -122,6 +139,7 @@ export const CreateEventPage = () => {
 							label='Event Date & Time'
 							error={errors.event_datetime}
 							required
+							helperText='Select a future date and time for your event'
 						/>
 
 						<FriendSelector
@@ -142,7 +160,9 @@ export const CreateEventPage = () => {
 							type='url'
 						/>
 
-						{error && <p className='text-sm text-red-500'>{error}</p>}
+						{error && (
+							<ErrorDisplay message={error} variant='inline' className='mb-4' />
+						)}
 
 						<div className='flex justify-end gap-4 pt-4'>
 							<Button

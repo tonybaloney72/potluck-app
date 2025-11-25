@@ -1,17 +1,16 @@
-import { forwardRef, useState, useRef, useLayoutEffect } from "react";
-import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
+import { forwardRef, useState, useLayoutEffect, useRef } from "react";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TextareaProps
+	extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
 	label?: string;
 	error?: string;
 	helperText?: string;
 	success?: boolean;
 	showCharacterCount?: boolean;
 	maxLength?: number;
-	showPasswordStrength?: boolean;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 	(
 		{
 			label,
@@ -20,16 +19,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 			success,
 			showCharacterCount,
 			maxLength,
-			showPasswordStrength,
 			value,
-			type,
 			className = "",
 			autoComplete,
 			...props
 		},
 		ref,
 	) => {
-		const inputRef = useRef<HTMLInputElement | null>(null);
+		const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+		const [isFocused, setIsFocused] = useState(false);
 		const [currentLength, setCurrentLength] = useState(() => {
 			// Initial length from value prop if available
 			if (value !== undefined && typeof value === "string") {
@@ -38,40 +36,34 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 			return 0;
 		});
 
-		// Use a ref to read the actual input value for character counting
+		// Use a ref to read the actual textarea value for character counting
 		// This works with React Hook Form's register() which manages value internally
 		// Use useLayoutEffect to ensure ref is set before attaching listeners
 		useLayoutEffect(() => {
 			if (!showCharacterCount) return;
 
-			const input = inputRef.current;
-			if (!input) return;
+			const textarea = textareaRef.current;
+			if (!textarea) return;
 
 			const updateLength = () => {
-				if (input) {
-					setCurrentLength(input.value.length);
+				if (textarea) {
+					setCurrentLength(textarea.value.length);
 				}
 			};
 
-			// Initial length from the actual input element
+			// Initial length from the actual textarea element
 			updateLength();
 
 			// Listen for input changes
-			input.addEventListener("input", updateLength);
+			textarea.addEventListener("input", updateLength);
 
 			// Cleanup
 			return () => {
-				if (input) {
-					input.removeEventListener("input", updateLength);
+				if (textarea) {
+					textarea.removeEventListener("input", updateLength);
 				}
 			};
 		}, [showCharacterCount]);
-
-		// For password strength, use the value prop if available, otherwise get from ref
-		const passwordValue =
-			value !== undefined && value !== null
-				? value
-				: inputRef.current?.value || "";
 
 		return (
 			<div className='w-full'>
@@ -80,20 +72,23 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 						{label}
 					</label>
 				)}
-				<input
+				<textarea
 					ref={node => {
 						if (typeof ref === "function") {
 							ref(node);
 						} else if (ref) {
 							ref.current = node;
 						}
-						inputRef.current = node;
+						textareaRef.current = node;
 					}}
-					type={type}
 					maxLength={maxLength}
-					className={`w-full px-4 py-2 bg-secondary border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 ${
+					onFocus={() => setIsFocused(true)}
+					onBlur={() => setIsFocused(false)}
+					className={`w-full px-4 py-2 bg-secondary border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 min-h-[100px] resize-y ${
 						error
 							? "border-red-500 focus:ring-red-500"
+							: isFocused
+							? "border-accent focus:ring-accent"
 							: "border-border focus:ring-accent"
 					} ${className}`}
 					autoComplete={autoComplete ?? "off"}
@@ -105,17 +100,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 						{helperText && !error && (
 							<p className='text-sm text-secondary'>{helperText}</p>
 						)}
-						{showPasswordStrength &&
-							type === "password" &&
-							typeof passwordValue === "string" && (
-								<PasswordStrengthIndicator password={passwordValue} />
-							)}
 					</div>
 					{showCharacterCount && maxLength && (
 						<span
 							className={`text-xs ml-2 ${
 								currentLength > maxLength * 0.9
 									? "text-orange-500"
+									: currentLength > maxLength * 0.75
+									? "text-yellow-500"
 									: "text-tertiary"
 							}`}>
 							{currentLength}/{maxLength}
@@ -127,4 +119,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 	},
 );
 
-Input.displayName = "Input";
+Textarea.displayName = "Textarea";

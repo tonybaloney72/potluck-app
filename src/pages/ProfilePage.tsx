@@ -106,12 +106,14 @@ export const ProfilePage = () => {
 					label='Name'
 					{...register("name")}
 					error={errors.name?.message}
+					helperText='Your display name (letters, spaces, hyphens, and apostrophes only)'
 				/>
 				<Input
 					label='Location'
 					placeholder='e.g., Los Angeles County'
 					{...register("location")}
 					error={errors.location?.message}
+					helperText='Optional: Your general location (letters, spaces, hyphens, and apostrophes only)'
 				/>
 
 				<Button

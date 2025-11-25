@@ -10,6 +10,7 @@ interface DatePickerProps {
 	label: string;
 	error?: FieldError;
 	required?: boolean;
+	helperText?: string;
 }
 
 export const DatePicker = ({
@@ -18,9 +19,10 @@ export const DatePicker = ({
 	label,
 	error,
 	required = false,
+	helperText,
 }: DatePickerProps) => {
 	return (
-		<div className='relative'>
+		<div className='relative w-full'>
 			<label className='block text-sm font-medium mb-1 text-primary'>
 				{label} {required && "*"}
 			</label>
@@ -43,7 +45,8 @@ export const DatePicker = ({
 
 					return (
 						<>
-							<div className={`w-full ${error ? "has-error" : ""}`}>
+							<div
+								className={`w-full ${error ? "has-error border-red-500" : ""}`}>
 								<DateTimePicker
 									onChange={handleDateTimeChange}
 									value={selectedDateTime}
@@ -56,6 +59,9 @@ export const DatePicker = ({
 							</div>
 							{error && (
 								<p className='mt-1 text-sm text-red-500'>{error.message}</p>
+							)}
+							{helperText && !error && (
+								<p className='mt-1 text-sm text-secondary'>{helperText}</p>
 							)}
 						</>
 					);
