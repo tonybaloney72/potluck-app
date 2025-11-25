@@ -59,6 +59,12 @@ export const ParticipantsSection = ({
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
 					{event.participants.map(participant => {
 						const isNotCurrentUser = participant.user_id !== currentUserId;
+						const isHost = participant.role === "host";
+						// Can only modify roles if user has manage permission, it's not the current user, and the participant is not a host
+						const canModifyRole = canManage && isNotCurrentUser && !isHost;
+						// Can only remove participants if user has manage permission, it's not the current user, and the participant is not a host
+						const canRemoveParticipant =
+							canManage && isNotCurrentUser && !isHost;
 
 						return (
 							<div
@@ -71,7 +77,7 @@ export const ParticipantsSection = ({
 											{participant.user?.name || "Unknown"}
 										</p>
 										<div className='flex items-center gap-2'>
-											{canManage && isNotCurrentUser ? (
+											{canModifyRole ? (
 												<RoleSelector
 													value={participant.role}
 													onChange={role => {
@@ -96,7 +102,7 @@ export const ParticipantsSection = ({
 										</div>
 									</div>
 								</div>
-								{canManage && isNotCurrentUser && (
+								{canRemoveParticipant && (
 									<DeleteButton
 										variant='icon'
 										onDelete={() =>

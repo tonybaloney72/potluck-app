@@ -158,6 +158,13 @@ export const EventDetailPage = () => {
 				break;
 			case "removeParticipant":
 				if (data?.userId && data?.userName) {
+					// Prevent removing hosts
+					const participantToRemove = currentEvent.participants?.find(
+						p => p.user_id === data.userId,
+					);
+					if (participantToRemove?.role === "host") {
+						return; // Don't allow removing the host
+					}
 					setConfirmationModal({
 						type: "removeParticipant",
 						userId: data.userId,
@@ -186,11 +193,19 @@ export const EventDetailPage = () => {
 			case "deleteContribution":
 				await dispatch(deleteContribution(confirmationModal.contributionId));
 				break;
-			case "removeParticipant":
+			case "removeParticipant": {
+				// Prevent removing hosts
+				const participantToRemove = currentEvent.participants?.find(
+					p => p.user_id === confirmationModal.userId,
+				);
+				if (participantToRemove?.role === "host") {
+					return; // Don't allow removing the host
+				}
 				await dispatch(
 					removeParticipant({ eventId, userId: confirmationModal.userId }),
 				);
 				break;
+			}
 		}
 		setConfirmationModal(null);
 		// No need to refetch - state is updated optimistically
@@ -272,12 +287,13 @@ export const EventDetailPage = () => {
 	) => {
 		if (!eventId) return;
 
-		// Prevent changing to/from "host" role
-		if (
-			role === "host" ||
-			currentEvent.participants?.find(p => p.id === participantId)?.role ===
-				"host"
-		) {
+		// Find the participant to check their current role
+		const participant = currentEvent.participants?.find(
+			p => p.id === participantId,
+		);
+
+		// Prevent changing to/from "host" role - hosts cannot be modified
+		if (!participant || participant.role === "host" || role === "host") {
 			return;
 		}
 
