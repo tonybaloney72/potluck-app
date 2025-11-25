@@ -14,7 +14,6 @@ import { markNotificationAsRead } from "../store/slices/notificationsSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { EmptyState } from "../components/common/EmptyState";
 import { FaUser, FaPaperPlane, FaEnvelope, FaComment } from "react-icons/fa";
 import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
@@ -22,6 +21,11 @@ import { BiSolidConversation } from "react-icons/bi";
 import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
 import { useConversationsRealtime } from "../hooks/useConversationsRealtime";
 import { supabase } from "../services/supabase";
+import {
+	SkeletonConversationItem,
+	SkeletonMessage,
+	Skeleton,
+} from "../components/common/Skeleton";
 
 interface MessageFormData {
 	content: string;
@@ -228,7 +232,48 @@ export const MessagesPage = () => {
 		!hasLoaded &&
 		conversations.length === 0
 	) {
-		return <LoadingSpinner fullScreen message='Loading conversations...' />;
+		return (
+			<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
+				{/* Conversations List Skeleton */}
+				<div className='w-1/3 border-r border-border pr-4 overflow-y-auto flex flex-col gap-4'>
+					<Skeleton variant='text' width='40%' height={24} />
+					<Skeleton
+						variant='rectangular'
+						width='100%'
+						height={36}
+						className='rounded-md mb-4'
+					/>
+					<div className='space-y-2'>
+						{Array.from({ length: 5 }).map((_, i) => (
+							<SkeletonConversationItem key={i} />
+						))}
+					</div>
+				</div>
+
+				{/* Messages View Skeleton */}
+				<div className='flex-1 flex flex-col'>
+					<div className='flex-1 overflow-y-auto mb-4 space-y-4 pr-4'>
+						{Array.from({ length: 4 }).map((_, i) => (
+							<SkeletonMessage key={i} isOwn={i % 2 === 0} />
+						))}
+					</div>
+					<div className='flex gap-2'>
+						<Skeleton
+							variant='rectangular'
+							width='100%'
+							height={40}
+							className='rounded-md'
+						/>
+						<Skeleton
+							variant='rectangular'
+							width={40}
+							height={40}
+							className='rounded-md'
+						/>
+					</div>
+				</div>
+			</div>
+		);
 	}
 
 	const selectedConversation = conversations.find(

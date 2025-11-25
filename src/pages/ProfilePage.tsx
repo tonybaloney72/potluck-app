@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { updateProfile } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
-import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import { SkeletonProfilePage } from "../components/common/Skeleton";
 
 // Zod schema: no numbers allowed in name or location
 const profileSchema = z.object({
@@ -91,8 +91,9 @@ export const ProfilePage = () => {
 		}
 	};
 
-	if (!profile)
-		return <LoadingSpinner fullScreen message='Loading profile...' />;
+	if (!profile) {
+		return <SkeletonProfilePage />;
+	}
 
 	return (
 		<div className='max-w-2xl mx-auto p-8'>

@@ -11,7 +11,6 @@ import { useNavigate } from "react-router";
 import { searchUsers } from "../store/slices/usersSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import {
 	FaCheck,
@@ -24,6 +23,7 @@ import {
 import { useDebounce } from "../hooks/useDebounce";
 import { FriendCard } from "../components/friends/FriendCard";
 import { EmptyState } from "../components/common/EmptyState";
+import { Skeleton, SkeletonFriendCard } from "../components/common/Skeleton";
 
 export const FriendsPage = () => {
 	const dispatch = useAppDispatch();
@@ -107,7 +107,28 @@ export const FriendsPage = () => {
 	};
 
 	if (loading && friendships.length === 0) {
-		return <LoadingSpinner fullScreen />;
+		return (
+			<div className='max-w-4xl mx-auto p-8'>
+				<Skeleton variant='text' width='20%' height={32} className='mb-8' />
+
+				{/* Search section skeleton */}
+				<div className='mb-8'>
+					<Skeleton
+						variant='rectangular'
+						width='100%'
+						height={40}
+						className='rounded-md'
+					/>
+				</div>
+
+				{/* Friends list skeleton */}
+				<div className='space-y-3'>
+					{Array.from({ length: 5 }).map((_, i) => (
+						<SkeletonFriendCard key={i} />
+					))}
+				</div>
+			</div>
+		);
 	}
 
 	const acceptedFriends = friendships.filter(f => f.status === "accepted");
@@ -141,7 +162,9 @@ export const FriendsPage = () => {
 					<div className='mt-4'>
 						{searchLoading ? (
 							<div className='text-center py-4 text-secondary'>
-								Searching...
+								{Array.from({ length: 3 }).map((_, i) => (
+									<SkeletonFriendCard key={i} />
+								))}
 							</div>
 						) : searchResults.length === 0 ? (
 							<div className='text-center py-4 text-secondary'>

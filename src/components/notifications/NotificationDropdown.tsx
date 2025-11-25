@@ -9,7 +9,7 @@ import {
 } from "../../store/slices/notificationsSlice";
 import { fetchConversations } from "../../store/slices/conversationsSlice";
 import { FaBell, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
-import { LoadingSpinner } from "../common/LoadingSpinner";
+import { SkeletonNotificationItem } from "../common/Skeleton";
 import { motion, AnimatePresence } from "motion/react";
 import type { Notification } from "../../types";
 
@@ -169,8 +169,10 @@ export const NotificationDropdown = () => {
 							{/* Notifications List */}
 							<div className='overflow-y-auto flex-1'>
 								{loading && notifications.length === 0 ? (
-									<div className='p-8'>
-										<LoadingSpinner />
+									<div className='divide-y divide-border'>
+										{Array.from({ length: 3 }).map((_, i) => (
+											<SkeletonNotificationItem key={i} />
+										))}
 									</div>
 								) : notifications.length === 0 ? (
 									<div className='p-8 text-center text-secondary'>

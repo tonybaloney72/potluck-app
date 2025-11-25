@@ -5,6 +5,7 @@ import { fetchUserEvents, setCurrentEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
 import { FaCalendarTimes } from "react-icons/fa";
+import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
 
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
@@ -49,13 +50,7 @@ export const MyEventsPage = () => {
 		return userParticipant && userParticipant.rsvp_status !== "going";
 	});
 
-	if (loading) {
-		return (
-			<div className='flex items-center justify-center'>
-				<div className='text-lg'>Loading events...</div>
-			</div>
-		);
-	}
+	const isInitialLoading = loading && events.length === 0;
 
 	return (
 		<div className='bg-secondary p-8'>
@@ -72,46 +67,97 @@ export const MyEventsPage = () => {
 					</Button>
 				</div>
 
-				{/* Hosted Events Section */}
-				<EventCard
-					events={hostedEvents}
-					title="Events I'm Hosting"
-					emptyStateProps={{
-						icon: <FaCalendarTimes className='w-16 h-16' />,
-						title: "No events yet",
-						message:
-							"You're not hosting any events yet. Create your first event to get started!",
-						actionLabel: "Create Event",
-						onAction: () => navigate("/create-event"),
-					}}
-					onEventClick={handleEventClick}
-				/>
+				{isInitialLoading ? (
+					// Show skeleton loaders for all three sections during initial load
+					<div className='space-y-12'>
+						<div>
+							<Skeleton
+								variant='text'
+								width='30%'
+								height={28}
+								className='mb-4'
+							/>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+								{Array.from({ length: 3 }).map((_, i) => (
+									<SkeletonEventCard key={i} />
+								))}
+							</div>
+						</div>
+						<div>
+							<Skeleton
+								variant='text'
+								width='30%'
+								height={28}
+								className='mb-4'
+							/>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+								{Array.from({ length: 2 }).map((_, i) => (
+									<SkeletonEventCard key={i} />
+								))}
+							</div>
+						</div>
+						<div>
+							<Skeleton
+								variant='text'
+								width='30%'
+								height={28}
+								className='mb-4'
+							/>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+								{Array.from({ length: 2 }).map((_, i) => (
+									<SkeletonEventCard key={i} />
+								))}
+							</div>
+						</div>
+					</div>
+				) : (
+					// Show actual content after loading
+					<>
+						{/* Hosted Events Section */}
+						<EventCard
+							events={hostedEvents}
+							title="Events I'm Hosting"
+							emptyStateProps={{
+								icon: <FaCalendarTimes className='w-16 h-16' />,
+								title: "No events yet",
+								message:
+									"You're not hosting any events yet. Create your first event to get started!",
+								actionLabel: "Create Event",
+								onAction: () => navigate("/create-event"),
+							}}
+							onEventClick={handleEventClick}
+							loading={loading}
+						/>
 
-				{/* Attending Events Section */}
-				<EventCard
-					events={attendingEvents}
-					title="Events I'm Attending"
-					emptyStateProps={{
-						icon: <FaCalendarTimes className='w-16 h-16' />,
-						title: "No events yet",
-						message:
-							"You're not attending any events yet. Check your invitations or browse upcoming events!",
-					}}
-					onEventClick={handleEventClick}
-				/>
+						{/* Attending Events Section */}
+						<EventCard
+							events={attendingEvents}
+							title="Events I'm Attending"
+							emptyStateProps={{
+								icon: <FaCalendarTimes className='w-16 h-16' />,
+								title: "No events yet",
+								message:
+									"You're not attending any events yet. Check your invitations or browse upcoming events!",
+							}}
+							onEventClick={handleEventClick}
+							loading={loading}
+						/>
 
-				{/* Invited Events Section */}
-				<EventCard
-					events={invitedEvents}
-					title="Events I'm Invited To"
-					emptyStateProps={{
-						icon: <FaCalendarTimes className='w-16 h-16' />,
-						title: "No invitations yet",
-						message:
-							"You haven't received any event invitations yet. Share events with friends to invite them!",
-					}}
-					onEventClick={handleEventClick}
-				/>
+						{/* Invited Events Section */}
+						<EventCard
+							events={invitedEvents}
+							title="Events I'm Invited To"
+							emptyStateProps={{
+								icon: <FaCalendarTimes className='w-16 h-16' />,
+								title: "No invitations yet",
+								message:
+									"You haven't received any event invitations yet. Share events with friends to invite them!",
+							}}
+							onEventClick={handleEventClick}
+							loading={loading}
+						/>
+					</>
+				)}
 			</div>
 		</div>
 	);

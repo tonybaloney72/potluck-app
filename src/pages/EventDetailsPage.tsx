@@ -24,6 +24,7 @@ import { ContributionsSection } from "../components/events/ContributionsSection"
 import { CommentsSection } from "../components/events/CommentsSection";
 import { canAddContributions, hasManagePermission } from "../utils/events";
 import type { EventRole, RSVPStatus } from "../types";
+import { SkeletonEventDetails } from "../components/common/Skeleton";
 
 // Confirmation modal type - consolidated state
 type ConfirmationModal =
@@ -78,11 +79,7 @@ export const EventDetailPage = () => {
 	const isLoading = loading || (eventId && currentEvent?.id !== eventId);
 
 	if (isLoading) {
-		return (
-			<div className=' flex items-center justify-center'>
-				<div className='text-lg'>Loading event...</div>
-			</div>
-		);
+		return <SkeletonEventDetails />;
 	}
 
 	// Only show "not found" if we've finished loading and still don't have the event
