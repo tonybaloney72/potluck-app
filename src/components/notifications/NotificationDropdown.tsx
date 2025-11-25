@@ -81,6 +81,10 @@ export const NotificationDropdown = () => {
 		} else if (notification.type === "event_invitation") {
 			dispatch(markNotificationAsRead(notification.id));
 			navigate(`/events/${notification.related_id}`);
+		} else if (notification.type === "rsvp" && notification.related_id) {
+			// NEW: Navigate to event when RSVP notification is clicked
+			dispatch(markNotificationAsRead(notification.id));
+			navigate(`/events/${notification.related_id}`);
 		}
 		setIsOpen(false);
 	};
@@ -96,6 +100,7 @@ export const NotificationDropdown = () => {
 			case "event_updated":
 			case "event_cancelled":
 			case "event_reminder":
+			case "rsvp":
 				return "📅";
 			default:
 				return "🔔";

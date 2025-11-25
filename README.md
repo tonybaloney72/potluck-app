@@ -8,7 +8,7 @@ Potluck App is a modern web application designed to simplify the organization of
 
 ## Features
 
-### Current Features (Phase 1, 2, 3, 4 & 5 Complete)
+### Current Features (Phase 1, 2, 3, 4, 5 & 6 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and location
@@ -22,32 +22,30 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **Real-time Messaging** - Instant message delivery and conversation updates
   - ✅ **Smart Notifications** - Message notifications that suppress when actively viewing a conversation
   - ✅ **Auto-scroll** - Automatically scrolls to newest messages
-- ✅ **Notifications System** - Real-time notification updates for friend requests, messages, and event invitations
+- ✅ **Notifications System** - Real-time notification updates for friend requests, messages, event invitations, and RSVP updates
   - ✅ **Real-time Notifications** - Instant notification delivery via Supabase Realtime
   - ✅ **Notification Management** - Mark as read, delete, and navigate to related content
+  - ✅ **RSVP Notifications** - Hosts receive notifications when attendees RSVP to their events
 - ✅ **Event Management** - Create, edit, and delete potluck events with full event details
   - ✅ **Inline Event Editing** - Edit event title, theme, description, location, and date/time directly from event page
   - ✅ **Real-time Event Updates** - Instant synchronization of event changes across all viewers
   - ✅ **Calendar Integration** - Add events to Google Calendar or download for Apple Calendar
 - ✅ **RSVP System** - Attendees can RSVP with status (going, maybe, not going, pending)
   - ✅ **Real-time RSVP Updates** - See RSVP status changes instantly across all viewers
-- ✅ **Contribution Tracking** - Coordinate who's bringing what to events
+  - ✅ **Contribution Tracking** - Coordinate who's bringing what to events
   - ✅ **Add/Remove Contributions** - Track item names, quantities, and descriptions
   - ✅ **Real-time Contributions** - See contributions added or removed instantly
-  - ⚠️ **Role-Based Access** - Currently only hosts can add contributions (full role system in progress)
+  - ✅ **Role-Based Access** - Hosts, co-hosts, and contributors can add contributions (guests can view only)
 - ✅ **Event Comments** - Discussion threads for each event
   - ✅ **Real-time Comments** - See new comments appear instantly as they're posted
   - ✅ **Comment Management** - Add and delete your own comments (hosts can delete any)
-- ✅ **Role-Based Permissions (Partial)** - Basic role system with host permissions
+- ✅ **Role-Based Permissions** - Complete role system with granular permissions
   - ✅ **Host Permissions** - Hosts can edit events, delete events, add/remove participants, and manage contributions/comments
-  - ✅ **Role Assignment** - Roles are assigned when users are invited (default: guest)
-  - ⚠️ **Role Management UI** - Role assignment and modification UI coming soon
-
-### Coming Soon
-
-- 🔄 **Advanced Role Management** - Assign and modify user roles when inviting or after event creation
-- 🔄 **Role-Based Contributions** - Allow all roles except 'guest' to add contributions
-- 🔄 **RSVP Notifications** - Host receives notifications when attendees RSVP
+  - ✅ **Role Assignment** - Assign roles (host, co_host, contributor, guest) when inviting users to events
+  - ✅ **Role Modification** - Hosts and co-hosts can modify participant roles after event creation
+  - ✅ **Role Protection** - Host roles cannot be modified or removed by anyone
+  - ✅ **Role-Based Contributions** - All roles except 'guest' can add contributions (host, co_host, contributor)
+  - ✅ **RSVP Notifications** - Host receives real-time notifications when attendees RSVP to their events
 
 ## Tech Stack
 
@@ -152,10 +150,11 @@ This project is currently in active development.
 - ✅ Phase 3: Friends & Messaging (friends system, direct messaging)
 - ✅ Phase 4: Notifications (notification system, real-time updates, notification UI)
 - ✅ Phase 5: Events Core (create, edit, delete events, RSVP system, contributions, comments)
+- ✅ Phase 6: Roles & Permissions (role assignment, role modification, role-based contributions, RSVP notifications)
 
 **In Progress:**
 
-- 🔄 Phase 6: Roles & Permissions (advanced role management, role assignment UI)
+- 🔄 Phase 7: Polish & Optimization (to be started)
 
 ## Future Plans
 

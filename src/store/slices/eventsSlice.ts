@@ -13,6 +13,7 @@ import type {
 	EventRole,
 } from "../../types";
 import { requireAuth } from "../../utils/auth";
+import { getEventHostId } from "../../utils/events";
 
 interface EventsState {
 	events: Event[];
@@ -411,6 +412,44 @@ export const updateRSVP = createAsyncThunk(
 			.single();
 
 		if (error) throw error;
+
+		const { data: event } = await supabase
+			.from("events")
+			.select("title, created_by")
+			.eq("id", eventId)
+			.single();
+
+		// Get user profile for notification message
+		const { data: userProfile } = await supabase
+			.from("profiles")
+			.select("name")
+			.eq("id", user.id)
+			.single();
+
+		const hostId = await getEventHostId(eventId);
+
+		if (hostId && hostId !== user.id && event && userProfile) {
+			const rsvpStatusLabel =
+				rsvpStatus === "going"
+					? "going"
+					: rsvpStatus === "maybe"
+					? "maybe"
+					: rsvpStatus === "not_going"
+					? "not going"
+					: "pending";
+
+			// Create notification for the host
+			await supabase.from("notifications").insert({
+				user_id: hostId,
+				type: "rsvp",
+				title: "RSVP Update",
+				message: `${
+					userProfile.name || "Someone"
+				} is now ${rsvpStatusLabel} to "${event.title || "your event"}"`,
+				related_id: eventId,
+			});
+		}
+
 		return { eventId, participant: participant as EventParticipant };
 	},
 );
