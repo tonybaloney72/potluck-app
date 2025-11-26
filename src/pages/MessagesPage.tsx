@@ -371,8 +371,8 @@ export const MessagesPage = () => {
 				}`}>
 				{shouldShowMessagesView ? (
 					<>
-						{/* Mobile Header - Fixed at top with back arrow and user name on same row */}
-						<div className='md:hidden fixed top-0 left-0 right-0 bg-secondary border-b border-border shrink-0 flex items-center gap-3 px-4 py-3 max-h-[60px]'>
+						{/* Mobile Header - Back arrow and user name on same row */}
+						<div className='md:hidden shrink-0 flex items-center gap-3 px-4 py-2 md:py-3 bg-secondary border-b border-border'>
 							<button
 								onClick={handleBackToConversations}
 								className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center'>
@@ -397,7 +397,7 @@ export const MessagesPage = () => {
 						</div>
 
 						{/* Desktop Header */}
-						<div className='hidden md:flex items-center gap-3 mb-4 pb-4 border-b border-border'>
+						<div className='hidden md:flex items-center gap-3 pb-4 border-b border-border'>
 							{otherUser?.avatar_url ? (
 								<img
 									src={otherUser.avatar_url}
@@ -417,7 +417,7 @@ export const MessagesPage = () => {
 						</div>
 
 						{/* Messages Container - Only scrollable area */}
-						<div className='flex-1 overflow-y-auto space-y-2 md:space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent pr-0 md:pr-4 pt-1 md:pt-0 mt-[60px] md:mt-0 px-4 md:px-0 pb-[64px] md:pb-0'>
+						<div className='flex-1 overflow-y-auto space-y-2 md:space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent px-4 md:pr-4 md:pl-0 py-2 md:py-4'>
 							{messages.map(message => {
 								const isOwn = message.sender_id === profile?.id;
 								return (
@@ -439,10 +439,10 @@ export const MessagesPage = () => {
 							})}
 						</div>
 
-						{/* Input Form - Fixed at bottom on mobile */}
+						{/* Input Form */}
 						<form
 							onSubmit={handleSubmit(onSubmit)}
-							className='flex gap-2 shrink-0 fixed bottom-0 left-0 right-0 md:static bg-secondary border-t md:border-t-0 border-border p-2 md:py-4 max-h-[60px]'>
+							className='flex gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
 							<Input
 								placeholder='Type a message...'
 								autoComplete='off'
