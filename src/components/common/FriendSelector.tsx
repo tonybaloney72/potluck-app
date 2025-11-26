@@ -222,7 +222,7 @@ export const FriendSelector = ({
 					<FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10' />
 					<Input
 						type='text'
-						placeholder='Search friends by name or email...'
+						placeholder='Search friends'
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
 						onClick={handleInputClick}

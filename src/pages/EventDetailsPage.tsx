@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { FaArrowLeft, FaEdit, FaTimes } from "react-icons/fa";
 import {
 	fetchEventById,
 	updateRSVP,
@@ -62,6 +63,9 @@ export const EventDetailPage = () => {
 	// Track selected friends for the FriendSelector component
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 
+	// Track editing state for EventHeader
+	const [isEditing, setIsEditing] = useState(false);
+
 	useEventDetailsRealtime(eventId || null);
 
 	useEffect(() => {
@@ -101,7 +105,7 @@ export const EventDetailPage = () => {
 	// Early return if no event after loading is complete
 	if (!currentEvent) {
 		return (
-			<div className='bg-secondary p-8'>
+			<div className='bg-secondary p-4 md:p-8'>
 				<div className='max-w-4xl mx-auto'>
 					{error ? (
 						<ErrorDisplay
@@ -346,23 +350,45 @@ export const EventDetailPage = () => {
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
 	return (
-		<div className='bg-secondary p-8'>
+		<div className='bg-secondary p-4 md:p-8'>
 			<div className='max-w-4xl mx-auto'>
-				{/* Back Button and Delete */}
-				<div className='flex justify-between items-center mb-4'>
+				{/* Back Button, Edit, and Delete */}
+				<div className='flex justify-between items-center gap-3 mb-4'>
 					<button
 						onClick={() => navigate("/")}
-						className='mb-4 text-accent hover:underline hover:cursor-pointer'>
-						← Back to My Events
+						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center'>
+						<FaArrowLeft className='w-5 h-5 hover:cursor-pointer' />
 					</button>
-					{isEventCreator && (
+					{canEdit && (
 						<div className='flex gap-2'>
-							<Button
-								variant='secondary'
-								onClick={() => handleDelete("deleteEvent")}
-								className='text-sm text-red-600 hover:text-red-700'>
-								Delete Event
-							</Button>
+							{isEventCreator && isEditing && (
+								<Button
+									variant='secondary'
+									onClick={() => handleDelete("deleteEvent")}
+									className='text-sm text-red-600 hover:text-red-700 min-h-[44px]'>
+									Delete Event
+								</Button>
+							)}
+							{isEventCreator && isEditing && (
+								<Button
+									className='flex items-center justify-center gap-2  sm:w-auto min-h-[44px]'
+									type='button'
+									variant='secondary'
+									onClick={() => setIsEditing(false)}
+									disabled={updatingEvent}>
+									<FaTimes />
+									Cancel
+								</Button>
+							)}
+							{!isEditing && (
+								<Button
+									variant='secondary'
+									onClick={() => setIsEditing(true)}
+									className='text-sm flex items-center gap-2 min-h-[44px]'>
+									<FaEdit className='w-4 h-4' />
+									Edit Event
+								</Button>
+							)}
 						</div>
 					)}
 				</div>
@@ -377,6 +403,8 @@ export const EventDetailPage = () => {
 					canEdit={canEdit}
 					onUpdateEvent={handleUpdateEvent}
 					updatingEvent={updatingEvent}
+					isEditing={isEditing}
+					setIsEditing={setIsEditing}
 				/>
 
 				{/* Participants Section */}

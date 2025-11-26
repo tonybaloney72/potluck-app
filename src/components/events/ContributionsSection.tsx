@@ -52,7 +52,7 @@ export const ContributionsSection = ({
 	const canAdd = canAddContributions(currentUserParticipant?.role);
 
 	const actionButton = canAdd ? (
-		<Button onClick={() => setShowForm(!showForm)} className='text-sm'>
+		<Button onClick={() => setShowForm(!showForm)} className='text-sm min-h-[44px]'>
 			{showForm ? "Cancel" : "Add Contribution"}
 		</Button>
 	) : undefined;
@@ -69,7 +69,7 @@ export const ContributionsSection = ({
 	return (
 		<AnimatedSection
 			delay={0.1}
-			className='bg-primary rounded-lg shadow-md p-6 mb-6'>
+			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
 			<SectionHeader title='Contributions' actionButton={actionButton} />
 
 			{showForm && (
@@ -103,7 +103,7 @@ export const ContributionsSection = ({
 						type='submit'
 						disabled={addingContribution}
 						loading={addingContribution}
-						className='text-sm'>
+						className='text-sm w-full sm:w-auto min-h-[44px]'>
 						Add Contribution
 					</Button>
 				</form>

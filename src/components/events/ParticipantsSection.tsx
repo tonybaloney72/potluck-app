@@ -20,7 +20,6 @@ interface ParticipantsSectionProps {
 		role: EventRole,
 	) => void;
 	updatingRole?: string | null;
-	// FriendSelector props
 	selectedFriends: SelectedFriend[];
 	onSelectionChange: (friends: SelectedFriend[]) => void;
 	onFriendAdded?: (friendId: string, role: EventRole) => void;
@@ -42,7 +41,7 @@ export const ParticipantsSection = ({
 	return (
 		<AnimatedSection
 			delay={0.15}
-			className='bg-primary rounded-lg shadow-md p-6 mb-6'>
+			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
 			<SectionHeader
 				title='Attendees'
 				count={event.participants?.length || 0}
@@ -56,8 +55,6 @@ export const ParticipantsSection = ({
 						onSelectionChange={onSelectionChange}
 						onFriendAdded={onFriendAdded}
 						excludeIds={event.participants?.map(p => p.user_id) || []}
-						label='Add Attendees'
-						helperText='Search and select friends to invite to this event'
 						hideSelectedChips={true}
 					/>
 				</div>
@@ -77,14 +74,32 @@ export const ParticipantsSection = ({
 						return (
 							<div
 								key={participant.id}
-								className='p-3 bg-secondary rounded-lg flex items-center justify-between relative'>
-								<div className='flex-1 flex items-center gap-3'>
+								className='p-3 bg-secondary rounded-lg relative'>
+								{/* Delete button in top-right corner */}
+								{canRemoveParticipant && (
+									<div className='absolute top-2 right-2'>
+										<DeleteButton
+											variant='icon'
+											onDelete={() =>
+												onRemoveParticipant(
+													participant.user_id,
+													participant.user?.name || "Unknown",
+												)
+											}
+											label='Remove attendee'
+										/>
+									</div>
+								)}
+
+								{/* Main content */}
+								<div className='flex flex-col sm:flex-row sm:items-center gap-3 pr-8 sm:pr-0'>
 									<Avatar user={participant.user} size='md' />
-									<div className='flex-1'>
-										<p className='font-semibold text-primary'>
+									<div className='flex-1 min-w-0'>
+										<p className='font-semibold text-primary mb-1 sm:mb-0'>
 											{participant.user?.name || "Unknown"}
 										</p>
-										<div className='flex items-center gap-2'>
+										{/* Mobile: Stack role and RSVP vertically */}
+										<div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2'>
 											{canModifyRole ? (
 												<RoleSelector
 													value={participant.role}
@@ -96,32 +111,22 @@ export const ParticipantsSection = ({
 														);
 													}}
 													disabled={updatingRole === participant.id}
-													className='text-xs py-1'
+													className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
 												/>
 											) : (
 												<p className='text-xs text-tertiary capitalize'>
 													{participant.role}
 												</p>
 											)}
-											<span className='text-xs text-tertiary'>•</span>
+											<span className='hidden sm:inline text-xs text-tertiary'>
+												•
+											</span>
 											<p className='text-xs text-tertiary capitalize'>
 												{participant.rsvp_status}
 											</p>
 										</div>
 									</div>
 								</div>
-								{canRemoveParticipant && (
-									<DeleteButton
-										variant='icon'
-										onDelete={() =>
-											onRemoveParticipant(
-												participant.user_id,
-												participant.user?.name || "Unknown",
-											)
-										}
-										label='Remove attendee'
-									/>
-								)}
 							</div>
 						);
 					})}

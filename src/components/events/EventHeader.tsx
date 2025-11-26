@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,7 @@ import {
 	generateGoogleCalendarUrl,
 	downloadAppleCalendar,
 } from "../../utils/calendar";
-import { FaApple, FaGoogle, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import { FaApple, FaGoogle, FaCheck, FaTimes } from "react-icons/fa";
 import type { Event, EventParticipant, RSVPStatus } from "../../types";
 
 const eventUpdateSchema = z.object({
@@ -46,6 +46,8 @@ interface EventHeaderProps {
 		location_url?: string | null;
 	}) => Promise<void>;
 	updatingEvent: boolean;
+	isEditing: boolean;
+	setIsEditing: (isEditing: boolean) => void;
 }
 
 export const EventHeader = ({
@@ -54,11 +56,11 @@ export const EventHeader = ({
 	onRSVPChange,
 	updatingRSVP,
 	formatDateTime,
-	canEdit,
 	onUpdateEvent,
 	updatingEvent,
+	isEditing,
+	setIsEditing,
 }: EventHeaderProps) => {
-	const [isEditing, setIsEditing] = useState(false);
 	const eventDateTime = formatDateTime(event.event_datetime);
 
 	const eventUpdateForm = useForm<EventUpdateFormData>({
@@ -95,18 +97,6 @@ export const EventHeader = ({
 		event.location_url,
 	]);
 
-	const handleEditClick = () => {
-		eventUpdateForm.reset({
-			title: event.title,
-			theme: event.theme || "",
-			description: event.description || "",
-			event_datetime: event.event_datetime,
-			location: event.location || "",
-			location_url: event.location_url || "",
-		});
-		setIsEditing(true);
-	};
-
 	const handleCancel = () => {
 		setIsEditing(false);
 		eventUpdateForm.reset();
@@ -132,81 +122,69 @@ export const EventHeader = ({
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			className='bg-primary rounded-lg shadow-md p-6 mb-6'>
-			{/* Title & Theme */}
-			<div className='flex justify-between items-start mb-4'>
-				<div>
-					{isEditing ? (
-						<div className='space-y-2 mb-2'>
-							<Input
-								label='Event Title *'
-								{...eventUpdateForm.register("title")}
-								error={eventUpdateForm.formState.errors.title?.message}
-								helperText='Give your event a memorable name'
-								maxLength={100}
-								showCharacterCount={true}
-								className='mb-2'
-							/>
-							<Input
-								label='Theme (optional)'
-								{...eventUpdateForm.register("theme")}
-								placeholder='e.g., Summer BBQ, Holiday Party'
-								helperText='Add a theme to help set the tone'
-								maxLength={50}
-								showCharacterCount={true}
-							/>
-						</div>
-					) : (
-						<>
-							<h1 className='text-3xl font-bold text-primary mb-2'>
+			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
+			<div className='flex flex-col justify-between items-start gap-4 mb-4'>
+				{isEditing ? (
+					<div className='space-y-2 mb-2'>
+						<Input
+							label='Event Title *'
+							{...eventUpdateForm.register("title")}
+							error={eventUpdateForm.formState.errors.title?.message}
+							helperText='Give your event a memorable name'
+							maxLength={100}
+							showCharacterCount={true}
+							className='mb-2'
+						/>
+						<Input
+							label='Theme (optional)'
+							{...eventUpdateForm.register("theme")}
+							placeholder='e.g., Summer BBQ, Holiday Party'
+							helperText='Add a theme to help set the tone'
+							maxLength={50}
+							showCharacterCount={true}
+						/>
+					</div>
+				) : (
+					<>
+						<div className='flex justify-between items-center w-full'>
+							<h1 className='text-2xl md:text-3xl font-bold text-primary mb-2'>
 								{event.title}
 							</h1>
+							{event.creator && (
+								<div className='text-left sm:text-right'>
+									<p className='text-sm text-tertiary'>Hosted by</p>
+									<p className='font-semibold text-primary'>
+										{event.creator.name}
+									</p>
+								</div>
+							)}
+						</div>
+						<div className='flex justify-between items-center w-full'>
 							{event.theme && (
 								<div className='mt-2'>
 									<p className='text-sm text-tertiary'>Theme</p>
 									<span className='text-primary'>{event.theme}</span>
 								</div>
 							)}
-						</>
-					)}
-				</div>
-				<div className='flex flex-col gap-2'>
-					{event.creator && (
-						<div className='text-right'>
-							<p className='text-sm text-tertiary'>Hosted by</p>
-							<p className='font-semibold text-primary'>{event.creator.name}</p>
-						</div>
-					)}
-					<div className='flex gap-2 items-center'>
-						{canEdit && !isEditing && (
-							<Button
-								variant='secondary'
-								onClick={handleEditClick}
-								className='text-sm flex items-center gap-2'>
-								<FaEdit className='w-4 h-4' />
-								Edit Event
-							</Button>
-						)}
-						{!isEditing && (
-							<>
+							<div className='flex flex-wrap gap-2 items-center'>
 								<a
 									href={generateGoogleCalendarUrl(event)}
 									target='_blank'
 									rel='noopener noreferrer'
-									className='flex items-center gap-2 px-3 py-1.5 bg-accent-secondary hover:bg-accent text-white rounded-md text-sm transition'>
+									className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent text-white rounded-md text-sm transition min-h-[44px]'>
 									<FaGoogle className='w-4 h-4' />
-									<span>Google</span>
+									<span className='hidden md:block'>Google</span>
 								</a>
 								<button
 									onClick={() => downloadAppleCalendar(event)}
-									className='flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-tertiary text-white rounded-md text-sm transition cursor-pointer'>
+									className='flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-tertiary text-white rounded-md text-sm transition cursor-pointer min-h-[44px]'>
 									<FaApple className='w-4 h-4' />
-									<span>Apple</span>
+									<span className='hidden md:block'>Apple</span>
 								</button>
-							</>
-						)}
-					</div>
-				</div>
+							</div>
+						</div>
+					</>
+				)}
 			</div>
 
 			{/* Description */}
@@ -281,9 +259,9 @@ export const EventHeader = ({
 
 			{/* Save/Cancel Buttons */}
 			{isEditing && (
-				<div className='flex justify-end gap-2 mt-4 pt-4 border-t border-border'>
+				<div className='flex flex-col sm:flex-row justify-end gap-2 mt-4 pt-4 border-t border-border'>
 					<Button
-						className='flex items-center gap-2'
+						className='flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]'
 						type='button'
 						variant='secondary'
 						onClick={handleCancel}
@@ -292,7 +270,7 @@ export const EventHeader = ({
 						Cancel
 					</Button>
 					<Button
-						className='flex items-center gap-2'
+						className='flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]'
 						type='button'
 						onClick={eventUpdateForm.handleSubmit(handleSubmit)}
 						loading={updatingEvent}
@@ -305,7 +283,7 @@ export const EventHeader = ({
 
 			{/* RSVP Button Group */}
 			{currentUserParticipant && !isEditing && (
-				<div className='mt-6 pt-6 border-t border-border'>
+				<div className='mt-3 md:mt-6 pt-3 md:pt-6 border-t border-border'>
 					<p className='text-sm font-medium text-primary mb-2'>
 						Your RSVP Status:{" "}
 						<span className='capitalize'>

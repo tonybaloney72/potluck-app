@@ -49,8 +49,8 @@ export const CommentsSection = ({
 	return (
 		<AnimatedSection
 			delay={0.2}
-			className='bg-primary rounded-lg shadow-md p-6'>
-			<h2 className='text-2xl font-semibold text-primary mb-4'>Comments</h2>
+			className='bg-primary rounded-lg shadow-md p-4 md:p-6'>
+			<h2 className='text-xl md:text-2xl font-semibold text-primary mb-4'>Comments</h2>
 
 			{currentUserParticipant && (
 				<form
@@ -70,7 +70,8 @@ export const CommentsSection = ({
 					<Button
 						type='submit'
 						disabled={addingComment}
-						loading={addingComment}>
+						loading={addingComment}
+						className='w-full sm:w-auto min-h-[44px]'>
 						Post Comment
 					</Button>
 				</form>
