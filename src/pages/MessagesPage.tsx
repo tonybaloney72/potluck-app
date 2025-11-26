@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -42,9 +42,12 @@ interface MessageFormData {
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
 	const location = useLocation();
-	const { messages, loading, sending, error } = useAppSelector(
-		state => state.messages,
-	);
+	const {
+		messages: allMessages,
+		loading,
+		sending,
+		error,
+	} = useAppSelector(state => state.messages);
 	const {
 		conversations,
 		loading: conversationsLoading,
@@ -54,6 +57,9 @@ export const MessagesPage = () => {
 	const [selectedConversationId, setSelectedConversationId] = useState<
 		string | null
 	>(null);
+	const messages = selectedConversationId
+		? allMessages[selectedConversationId] || []
+		: [];
 
 	useMessagesRealtime(selectedConversationId);
 	useConversationsRealtime();
@@ -63,6 +69,8 @@ export const MessagesPage = () => {
 		useState(false);
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 	const [showMessagesView, setShowMessagesView] = useState(false);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const messagesContainerRef = useRef<HTMLDivElement>(null);
 	const {
 		register,
 		handleSubmit,
@@ -94,6 +102,7 @@ export const MessagesPage = () => {
 
 	useEffect(() => {
 		if (selectedConversationId && user) {
+			// Fetch new conversation's messages
 			dispatch(fetchMessages(selectedConversationId));
 			dispatch(markMessagesAsRead(selectedConversationId));
 
@@ -196,6 +205,15 @@ export const MessagesPage = () => {
 			document.body.classList.remove("hide-header-mobile");
 		};
 	}, [showMessagesView, selectedConversationId]);
+
+	// Auto-scroll to bottom when conversation changes or new message arrives
+	useEffect(() => {
+		if (messagesContainerRef.current && messages.length > 0) {
+			// Scroll immediately without animation
+			messagesContainerRef.current.scrollTop =
+				messagesContainerRef.current.scrollHeight;
+		}
+	}, [messages, selectedConversationId]);
 
 	// Show loading only on initial load when we have no data
 	if (
@@ -417,7 +435,9 @@ export const MessagesPage = () => {
 						</div>
 
 						{/* Messages Container - Only scrollable area */}
-						<div className='flex-1 overflow-y-auto space-y-2 md:space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent px-4 md:pr-4 md:pl-0 py-2 md:py-4'>
+						<div
+							ref={messagesContainerRef}
+							className='flex-1 overflow-y-auto space-y-2 md:space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent px-4 md:pr-4 md:pl-0 py-2 md:py-4'>
 							{messages.map(message => {
 								const isOwn = message.sender_id === profile?.id;
 								return (
@@ -437,6 +457,7 @@ export const MessagesPage = () => {
 									</div>
 								);
 							})}
+							<div ref={messagesEndRef} />
 						</div>
 
 						{/* Input Form */}

@@ -9,14 +9,14 @@ import { getOrCreateConversation } from "./conversationsSlice";
 import { requireAuth } from "../../utils/auth";
 
 interface MessagesState {
-	messages: Message[];
+	messages: { [conversationId: string]: Message[] };
 	loading: boolean;
 	sending: boolean;
 	error: string | null;
 }
 
 const initialState: MessagesState = {
-	messages: [],
+	messages: {},
 	loading: false,
 	sending: false,
 	error: null,
@@ -108,22 +108,43 @@ const messagesSlice = createSlice({
 		},
 		// Add message from realtime subscription
 		addMessage: (state, action: PayloadAction<Message>) => {
+			const conversationId = action.payload.conversation_id;
+			if (!state.messages[conversationId]) {
+				state.messages[conversationId] = [];
+			}
 			// Prevent duplicates
-			const exists = state.messages.some(m => m.id === action.payload.id);
+			const exists = state.messages[conversationId].some(
+				m => m.id === action.payload.id,
+			);
 			if (!exists) {
-				state.messages.push(action.payload);
+				state.messages[conversationId].push(action.payload);
 			}
 		},
 		// Update message from realtime subscription
 		updateMessage: (state, action: PayloadAction<Message>) => {
-			const index = state.messages.findIndex(m => m.id === action.payload.id);
+			const conversationId = action.payload.conversation_id;
+			if (!state.messages[conversationId]) return;
+			const index = state.messages[conversationId].findIndex(
+				m => m.id === action.payload.id,
+			);
 			if (index !== -1) {
-				state.messages[index] = action.payload;
+				state.messages[conversationId][index] = action.payload;
 			}
 		},
 		// Remove message from realtime subscription (if needed)
-		removeMessage: (state, action: PayloadAction<string>) => {
-			state.messages = state.messages.filter(m => m.id !== action.payload);
+		removeMessage: (
+			state,
+			action: PayloadAction<{ messageId: string; conversationId: string }>,
+		) => {
+			const { conversationId, messageId } = action.payload;
+			if (!state.messages[conversationId]) return;
+			state.messages[conversationId] = state.messages[conversationId].filter(
+				m => m.id !== messageId,
+			);
+		},
+		// Clear messages for a conversation (useful when switching)
+		clearMessages: (state, action: PayloadAction<string>) => {
+			delete state.messages[action.payload];
 		},
 	},
 	extraReducers: builder => {
@@ -135,7 +156,7 @@ const messagesSlice = createSlice({
 			})
 			.addCase(fetchMessages.fulfilled, (state, action) => {
 				state.loading = false;
-				state.messages = action.payload.messages;
+				state.messages[action.payload.conversationId] = action.payload.messages;
 			})
 			.addCase(fetchMessages.rejected, (state, action) => {
 				state.loading = false;
@@ -149,7 +170,17 @@ const messagesSlice = createSlice({
 			})
 			.addCase(sendMessage.fulfilled, (state, action) => {
 				state.sending = false;
-				state.messages.push(action.payload);
+				const conversationId = action.payload.conversation_id;
+				if (!state.messages[conversationId]) {
+					state.messages[conversationId] = [];
+				}
+				// Prevent duplicates
+				const exists = state.messages[conversationId].some(
+					m => m.id === action.payload.id,
+				);
+				if (!exists) {
+					state.messages[conversationId].push(action.payload);
+				}
 			})
 			.addCase(sendMessage.rejected, (state, action) => {
 				state.sending = false;
@@ -157,16 +188,24 @@ const messagesSlice = createSlice({
 			});
 
 		// Mark as read
-		builder.addCase(markMessagesAsRead.fulfilled, state => {
-			state.messages.forEach(msg => {
-				if (!msg.read) {
-					msg.read = true;
-				}
-			});
+		builder.addCase(markMessagesAsRead.fulfilled, (state, action) => {
+			const conversationId = action.payload;
+			if (state.messages[conversationId]) {
+				state.messages[conversationId].forEach(msg => {
+					if (!msg.read) {
+						msg.read = true;
+					}
+				});
+			}
 		});
 	},
 });
 
-export const { clearError, addMessage, updateMessage, removeMessage } =
-	messagesSlice.actions;
+export const {
+	clearError,
+	addMessage,
+	updateMessage,
+	removeMessage,
+	clearMessages,
+} = messagesSlice.actions;
 export default messagesSlice.reducer;
