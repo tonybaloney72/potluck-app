@@ -266,7 +266,7 @@ export const Header = () => {
 								</div>
 
 								{/* Navigation Links */}
-								<nav className='flex-1 p-4 space-y-2'>
+								<nav className='p-4 space-y-2'>
 									<Link
 										to='/'
 										onClick={handleMobileNavClick}

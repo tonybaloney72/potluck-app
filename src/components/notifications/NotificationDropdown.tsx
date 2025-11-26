@@ -137,7 +137,7 @@ export const NotificationDropdown = () => {
 
 						{/* Dropdown Content */}
 						<motion.div
-							className='absolute right-0 mt-2 w-96 max-h-[600px] bg-secondary border border-border rounded-lg shadow-xl z-50 flex flex-col'
+							className='fixed sm:absolute left-0 sm:left-auto sm:right-0 mt-3 w-full md:w-96 max-h-[600px] bg-secondary border border-border rounded-lg shadow-xl z-50 flex flex-col'
 							initial={{ opacity: 0, y: -10, scale: 0.95 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: -10, scale: 0.95 }}
