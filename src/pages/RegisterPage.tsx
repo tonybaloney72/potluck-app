@@ -62,14 +62,14 @@ export const RegisterPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
+					className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
 					<h1 className='text-3xl font-bold text-center text-primary'>
 						Sign Up
 					</h1>
 					<p className='text-center text-sm text-secondary'>
 						You will receive an email with a verification link from Supabase.
 					</p>
-					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4 w-full'>
 						<Input
 							label='Name'
 							type='text'

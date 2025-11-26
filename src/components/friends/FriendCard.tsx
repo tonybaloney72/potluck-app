@@ -9,7 +9,7 @@ interface FriendCardProps {
 
 export const FriendCard = ({ profile, subtitle, actions }: FriendCardProps) => {
 	return (
-		<div className='flex items-center justify-between p-4 bg-secondary border border-border rounded-lg'>
+		<div className='flex flex-col gap-3 md:flex-row md:gap-0 items-center justify-between p-3 md:p-4 bg-secondary border border-border rounded-lg'>
 			<div className='flex items-center gap-3'>
 				{profile?.avatar_url ? (
 					<img

@@ -80,7 +80,7 @@ export const PasswordReset = () => {
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow text-center'>
+					className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
 					<h1 className='text-2xl font-bold text-primary'>
 						Invalid or Expired Link
 					</h1>
@@ -106,14 +106,14 @@ export const PasswordReset = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
+					className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
 					<h1 className='text-3xl font-bold text-center text-primary'>
 						Reset Password
 					</h1>
 					<p className='text-sm text-secondary text-center'>
 						Enter your new password below.
 					</p>
-					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4 w-full'>
 						<Input
 							label='New Password'
 							type='password'
