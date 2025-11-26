@@ -16,9 +16,7 @@ import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { events, loading, refreshingEvents, error } = useAppSelector(
-		state => state.events,
-	);
+	const { events, loading, error } = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
 
@@ -91,9 +89,6 @@ export const MyEventsPage = () => {
 				<div className='flex justify-between items-center mb-8'>
 					<div className='flex items-center gap-3'>
 						<h1 className='text-3xl font-bold text-primary'>My Events</h1>
-						{refreshingEvents && (
-							<div className='text-sm text-tertiary'>Refreshing...</div>
-						)}
 					</div>
 					<Button onClick={() => navigate("/create-event")}>
 						Create New Event

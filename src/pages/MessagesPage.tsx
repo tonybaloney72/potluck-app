@@ -41,6 +41,7 @@ interface MessageFormData {
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
 	const location = useLocation();
+	console.log(!!location.state?.conversationId);
 	const {
 		messages: allMessages,
 		loading,
@@ -67,7 +68,12 @@ export const MessagesPage = () => {
 	const [isCreatingNewConversation, setIsCreatingNewConversation] =
 		useState(false);
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
-	const [showMessagesView, setShowMessagesView] = useState(false);
+	const [showMessagesView, setShowMessagesView] = useState(
+		location.state?.conversationId &&
+			conversations.some(c => c.id === location.state.conversationId)
+			? location.state.conversationId
+			: null,
+	);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 	const {
