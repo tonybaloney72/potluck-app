@@ -56,7 +56,7 @@ export const MessagesPage = () => {
 	const { profile, user } = useAppSelector(state => state.auth);
 	const [selectedConversationId, setSelectedConversationId] = useState<
 		string | null
-	>(null);
+	>(location.state?.conversationId || null);
 	const messages = selectedConversationId
 		? allMessages[selectedConversationId] || []
 		: [];
@@ -377,7 +377,58 @@ export const MessagesPage = () => {
 						? "fixed inset-0 md:static md:inset-auto flex flex-col"
 						: "hidden md:flex"
 				}`}>
-				{shouldShowMessagesView ? (
+				{selectedConversationId && !otherUser ? (
+					// Loading state when conversation is selected but not loaded yet
+					<div className='flex-1 flex flex-col'>
+						{/* Mobile Header Skeleton */}
+						<div className='md:hidden shrink-0 flex items-center gap-3 px-4 py-2 bg-secondary border-b border-border'>
+							<Skeleton
+								variant='rectangular'
+								width={44}
+								height={44}
+								className='rounded-md'
+							/>
+							<Skeleton
+								variant='rectangular'
+								width={32}
+								height={32}
+								className='rounded-full'
+							/>
+							<Skeleton variant='text' width={120} height={20} />
+						</div>
+						{/* Desktop Header Skeleton */}
+						<div className='hidden md:flex items-center gap-3 pb-4 border-b border-border'>
+							<Skeleton
+								variant='rectangular'
+								width={40}
+								height={40}
+								className='rounded-full'
+							/>
+							<Skeleton variant='text' width={150} height={20} />
+						</div>
+						{/* Messages Skeleton */}
+						<div className='flex-1 overflow-y-auto space-y-4 px-4 md:pr-4 md:pl-0 py-2 md:py-4'>
+							{Array.from({ length: 4 }).map((_, i) => (
+								<SkeletonMessage key={i} isOwn={i % 2 === 0} />
+							))}
+						</div>
+						{/* Input Skeleton */}
+						<div className='flex gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
+							<Skeleton
+								variant='rectangular'
+								width='100%'
+								height={40}
+								className='rounded-md'
+							/>
+							<Skeleton
+								variant='rectangular'
+								width={44}
+								height={44}
+								className='rounded-md'
+							/>
+						</div>
+					</div>
+				) : shouldShowMessagesView ? (
 					<>
 						{/* Mobile Header - Back arrow and user name on same row */}
 						<div className='md:hidden shrink-0 flex items-center gap-3 px-4 py-2 md:py-3 bg-secondary border-b border-border'>
