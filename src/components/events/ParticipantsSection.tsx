@@ -3,7 +3,7 @@ import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
 import { Avatar } from "../common/Avatar";
 import { DeleteButton } from "../common/DeleteButton";
-import { Button } from "../common/Button";
+import { FriendSelector, type SelectedFriend } from "../common/FriendSelector";
 import type { Event, EventParticipant, EventRole } from "../../types";
 import { hasManagePermission } from "../../utils/events";
 import { RoleSelector } from "./RoleSelector";
@@ -13,38 +13,31 @@ interface ParticipantsSectionProps {
 	event: Event;
 	currentUserParticipant: EventParticipant | undefined;
 	currentUserId: string | undefined;
-	onAddParticipant: () => void;
 	onRemoveParticipant: (userId: string, userName: string) => void;
 	onUpdateParticipantRole: (
 		participantId: string,
 		userId: string,
 		role: EventRole,
 	) => void;
-	addingParticipant: boolean;
 	updatingRole?: string | null;
+	// FriendSelector props
+	selectedFriends: SelectedFriend[];
+	onSelectionChange: (friends: SelectedFriend[]) => void;
+	onFriendAdded?: (friendId: string, role: EventRole) => void;
 }
 
 export const ParticipantsSection = ({
 	event,
 	currentUserParticipant,
 	currentUserId,
-	onAddParticipant,
 	onRemoveParticipant,
 	onUpdateParticipantRole,
-	addingParticipant,
 	updatingRole,
+	selectedFriends,
+	onSelectionChange,
+	onFriendAdded,
 }: ParticipantsSectionProps) => {
 	const canManage = hasManagePermission(currentUserParticipant?.role);
-
-	const actionButton = canManage ? (
-		<Button
-			onClick={onAddParticipant}
-			disabled={addingParticipant}
-			loading={addingParticipant}
-			className='text-sm'>
-			Add
-		</Button>
-	) : undefined;
 
 	return (
 		<AnimatedSection
@@ -53,8 +46,22 @@ export const ParticipantsSection = ({
 			<SectionHeader
 				title='Attendees'
 				count={event.participants?.length || 0}
-				actionButton={actionButton}
 			/>
+
+			{/* Friend Selector (only for users with manage permissions) */}
+			{canManage && (
+				<div className='mb-6'>
+					<FriendSelector
+						selectedFriends={selectedFriends}
+						onSelectionChange={onSelectionChange}
+						onFriendAdded={onFriendAdded}
+						excludeIds={event.participants?.map(p => p.user_id) || []}
+						label='Add Attendees'
+						helperText='Search and select friends to invite to this event'
+						hideSelectedChips={true}
+					/>
+				</div>
+			)}
 
 			{event.participants && event.participants.length > 0 ? (
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
@@ -124,8 +131,6 @@ export const ParticipantsSection = ({
 					icon={<FaUsers className='w-16 h-16' />}
 					title='No attendees yet'
 					message="This event doesn't have any attendees yet. Add friends to invite them to your event!"
-					actionLabel={canManage ? "Add Attendees" : undefined}
-					onAction={canManage ? onAddParticipant : undefined}
 				/>
 			)}
 		</AnimatedSection>

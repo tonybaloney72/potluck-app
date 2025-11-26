@@ -7,7 +7,10 @@ import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { Textarea } from "../components/common/Textarea";
 import { DatePicker } from "../components/common/DatePicker";
-import { FriendSelector } from "../components/events/FriendSelector";
+import {
+	FriendSelector,
+	type SelectedFriend,
+} from "../components/common/FriendSelector";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 
 interface CreateEventFormData {
@@ -25,7 +28,7 @@ export const CreateEventPage = () => {
 	const dispatch = useAppDispatch();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
+	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 
 	// Calculate default date/time (1 hour from now, rounded to nearest hour)
 	const getDefaultDateTime = () => {
@@ -54,6 +57,15 @@ export const CreateEventPage = () => {
 		setError(null);
 
 		try {
+			// Convert selectedFriends to invitedParticipants format with roles
+			const invitedParticipants =
+				selectedFriends.length > 0
+					? selectedFriends.map(friend => ({
+							userId: friend.friendId,
+							role: friend.role,
+					  }))
+					: undefined;
+
 			const result = await dispatch(
 				createEvent({
 					title: data.title,
@@ -63,7 +75,7 @@ export const CreateEventPage = () => {
 					location: data.location || undefined,
 					location_url: data.location_url || undefined,
 					is_public: data.is_public,
-					invitedUserIds: selectedFriendIds,
+					invitedParticipants,
 				}),
 			);
 
@@ -143,8 +155,9 @@ export const CreateEventPage = () => {
 						/>
 
 						<FriendSelector
-							selectedFriends={selectedFriendIds}
-							onSelectionChange={setSelectedFriendIds}
+							selectedFriends={selectedFriends}
+							onSelectionChange={setSelectedFriends}
+							helperText='Select friends to invite and assign their roles'
 						/>
 
 						<Input

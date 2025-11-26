@@ -19,7 +19,7 @@ import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Button } from "../components/common/Button";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { useEventDetailsRealtime } from "../hooks/useEventDetailsRealtime";
-import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
+import type { SelectedFriend } from "../components/common/FriendSelector";
 import { EventHeader } from "../components/events/EventHeader";
 import { ParticipantsSection } from "../components/events/ParticipantsSection";
 import { ContributionsSection } from "../components/events/ContributionsSection";
@@ -59,8 +59,8 @@ export const EventDetailPage = () => {
 	const [confirmationModal, setConfirmationModal] =
 		useState<ConfirmationModal>(null);
 
-	// Simple boolean toggles
-	const [showFriendSelector, setShowFriendSelector] = useState(false);
+	// Track selected friends for the FriendSelector component
+	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 
 	useEventDetailsRealtime(eventId || null);
 
@@ -75,6 +75,19 @@ export const EventDetailPage = () => {
 		// Fetch the event to get full details including comments and contributions
 		dispatch(fetchEventById(eventId));
 	}, [dispatch, eventId, currentEvent]);
+
+	// Filter out friends that have been added as participants
+	// This ensures they don't appear in the selected chips after being added
+	useEffect(() => {
+		if (currentEvent?.participants) {
+			const participantIds = new Set(
+				currentEvent.participants.map(p => p.user_id),
+			);
+			setSelectedFriends(prev =>
+				prev.filter(f => !participantIds.has(f.friendId)),
+			);
+		}
+	}, [currentEvent?.participants]);
 
 	// Show loading if:
 	// 1. We're actively loading, OR
@@ -283,7 +296,6 @@ export const EventDetailPage = () => {
 							role: participantData.role || "guest",
 						}),
 					);
-					setShowFriendSelector(false);
 				}
 				break;
 			}
@@ -372,13 +384,28 @@ export const EventDetailPage = () => {
 					event={currentEvent}
 					currentUserParticipant={currentUserParticipant}
 					currentUserId={user?.id}
-					onAddParticipant={() => setShowFriendSelector(true)}
 					onRemoveParticipant={(userId, userName) =>
 						handleDelete("removeParticipant", { userId, userName })
 					}
-					addingParticipant={addingParticipant}
 					onUpdateParticipantRole={handleUpdateParticipantRole}
 					updatingRole={updatingRole}
+					selectedFriends={selectedFriends}
+					onSelectionChange={setSelectedFriends}
+					onFriendAdded={async (friendId, role) => {
+						// Immediately dispatch addParticipant when a friend is added
+						if (eventId && !addingParticipant) {
+							await dispatch(
+								addParticipant({
+									eventId,
+									userId: friendId,
+									role: role || "guest",
+								}),
+							);
+							// Friend will appear in ParticipantsSection via real-time update
+							// They'll be automatically filtered out from selectedFriends
+							// via the useEffect that syncs with currentEvent.participants
+						}
+					}}
 				/>
 
 				{/* Contributions Section */}
@@ -439,18 +466,6 @@ export const EventDetailPage = () => {
 						confirmVariant='secondary'
 					/>
 				)}
-
-				{/* Friend Selector Modal */}
-				<FriendSelectorModal
-					isOpen={showFriendSelector}
-					onClose={() => setShowFriendSelector(false)}
-					onSelectFriend={(friendId, role) => {
-						handleAdd("participant", { friendId, role }); // Update this
-					}}
-					enableRoleSelection={true} // NEW
-					initialRole='guest' // NEW
-					excludeIds={currentEvent.participants?.map(p => p.user_id) || []}
-				/>
 			</div>
 		</div>
 	);

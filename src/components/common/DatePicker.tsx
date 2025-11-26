@@ -23,9 +23,13 @@ export const DatePicker = ({
 }: DatePickerProps) => {
 	return (
 		<div className='relative w-full'>
-			<label className='block text-sm font-medium mb-1 text-primary'>
+			<label className='block text-sm font-medium text-primary'>
 				{label} {required && "*"}
 			</label>
+
+			{helperText && !error && (
+				<p className='text-sm text-secondary mb-1'>{helperText}</p>
+			)}
 
 			<Controller
 				name={name}
@@ -59,9 +63,6 @@ export const DatePicker = ({
 							</div>
 							{error && (
 								<p className='mt-1 text-sm text-red-500'>{error.message}</p>
-							)}
-							{helperText && !error && (
-								<p className='mt-1 text-sm text-secondary'>{helperText}</p>
 							)}
 						</>
 					);

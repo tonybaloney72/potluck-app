@@ -213,6 +213,7 @@ export const createEvent = createAsyncThunk(
 		location_url?: string;
 		is_public?: boolean;
 		invitedUserIds?: string[];
+		invitedParticipants?: Array<{ userId: string; role: EventRole }>;
 	}) => {
 		const user = await requireAuth();
 
@@ -240,11 +241,38 @@ export const createEvent = createAsyncThunk(
 
 		// Add invited users as participants
 		// The database trigger will automatically create notifications for invited users
-		if (eventData.invitedUserIds && eventData.invitedUserIds.length > 0) {
+		if (
+			eventData.invitedParticipants &&
+			eventData.invitedParticipants.length > 0
+		) {
+			// Use invitedParticipants if provided (includes roles)
+			const participants = eventData.invitedParticipants.map(
+				({ userId, role }) => ({
+					event_id: event.id,
+					user_id: userId,
+					role: role || "guest",
+					rsvp_status: "pending",
+				}),
+			);
+
+			const { error: participantsError } = await supabase
+				.from("event_participants")
+				.insert(participants);
+
+			if (participantsError) {
+				console.error("Error adding participants:", participantsError);
+				// Don't throw - event was created successfully, just log the error
+			}
+			// Notifications are created automatically by the database trigger
+		} else if (
+			eventData.invitedUserIds &&
+			eventData.invitedUserIds.length > 0
+		) {
+			// Fallback to invitedUserIds for backward compatibility (defaults to guest)
 			const participants = eventData.invitedUserIds.map(userId => ({
 				event_id: event.id,
 				user_id: userId,
-				role: "guest", // Default role for invited users
+				role: "guest" as EventRole,
 				rsvp_status: "pending",
 			}));
 

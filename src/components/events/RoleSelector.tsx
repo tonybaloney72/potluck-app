@@ -79,7 +79,7 @@ export const RoleSelector = ({
 				type='button'
 				onClick={() => !disabled && setIsOpen(!isOpen)}
 				disabled={disabled}
-				className={`flex items-center justify-between gap-2 px-3 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-tertiary transition-colors min-w-[140px] ${className} hover:cursor-pointer`}
+				className={`flex items-center justify-between gap-2 px-3 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary transition-colors min-w-[140px] ${className} hover:cursor-pointer`}
 				aria-haspopup='listbox'
 				aria-expanded={isOpen}
 				aria-label={`Selected role: ${selectedRole?.label}`}>
@@ -97,7 +97,7 @@ export const RoleSelector = ({
 					<>
 						{/* Backdrop */}
 						<motion.div
-							className='fixed inset-0 z-40'
+							className='fixed inset-0 z-45'
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
@@ -106,7 +106,7 @@ export const RoleSelector = ({
 
 						{/* Dropdown Content */}
 						<motion.div
-							className='absolute top-full left-0 mt-1 bg-secondary border border-border rounded-md shadow-lg z-50 min-w-[200px] overflow-hidden'
+							className='absolute top-full left-0 mt-1 bg-secondary border border-border rounded-md shadow-lg z-60 min-w-[200px] overflow-hidden'
 							initial={{ opacity: 0, y: -10, scale: 0.95 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: -10, scale: 0.95 }}

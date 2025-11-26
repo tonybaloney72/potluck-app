@@ -76,9 +76,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 		return (
 			<div className='w-full'>
 				{label && (
-					<label className='block text-sm font-medium mb-1 text-primary'>
+					<label className='block text-sm font-medium text-primary'>
 						{label}
 					</label>
+				)}
+				{helperText && !error && (
+					<p className='text-sm text-secondary mb-1'>{helperText}</p>
 				)}
 				<input
 					ref={node => {
@@ -102,9 +105,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 				<div className='mt-1 flex justify-between items-start'>
 					<div className='flex-1'>
 						{error && <p className='text-sm text-red-500'>{error}</p>}
-						{helperText && !error && (
-							<p className='text-sm text-secondary'>{helperText}</p>
-						)}
 						{showPasswordStrength &&
 							type === "password" &&
 							typeof passwordValue === "string" && (

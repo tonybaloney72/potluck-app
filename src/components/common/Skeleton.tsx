@@ -44,7 +44,7 @@ export const Skeleton = ({
 };
 
 // Pre-configured skeleton components
-export const SkeletonText = ({
+const SkeletonText = ({
 	lines = 1,
 	className = "",
 }: {
@@ -62,17 +62,7 @@ export const SkeletonText = ({
 	</div>
 );
 
-export const SkeletonCard = ({ className = "" }: { className?: string }) => (
-	<div className={`p-4 border border-border rounded-lg ${className}`}>
-		<div className='flex items-center gap-3 mb-3'>
-			<Skeleton variant='circular' width={40} height={40} />
-			<Skeleton variant='text' width='60%' />
-		</div>
-		<SkeletonText lines={3} />
-	</div>
-);
-
-export const SkeletonAvatar = ({
+const SkeletonAvatar = ({
 	size = 40,
 	className = "",
 }: {

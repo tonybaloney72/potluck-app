@@ -26,7 +26,7 @@ export const generateGoogleCalendarUrl = (event: Event): string => {
 /**
  * Generate Apple Calendar (.ics file) data
  */
-export const generateAppleCalendarData = (event: Event): string => {
+const generateAppleCalendarData = (event: Event): string => {
 	const startDate = new Date(event.event_datetime);
 	const endDate = new Date(startDate);
 	endDate.setHours(endDate.getHours() + 2); // Default 2-hour duration

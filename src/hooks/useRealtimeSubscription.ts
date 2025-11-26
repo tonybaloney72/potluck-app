@@ -3,7 +3,7 @@ import { useAppSelector } from "../store/hooks";
 import { supabase } from "../services/supabase";
 import { requireSession } from "../utils/auth";
 
-export interface RealtimeSubscriptionConfig {
+interface RealtimeSubscriptionConfig {
 	channelName: string;
 	table: string;
 	filter?: string;
