@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { useEffect, useState, useRef, useLayoutEffect, useMemo } from "react";
 import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -16,8 +16,10 @@ import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { EmptyState } from "../components/common/EmptyState";
 import { FaUser, FaPaperPlane, FaEnvelope, FaComment } from "react-icons/fa";
-import { FriendSelectorModal } from "../components/messaging/FriendSelectorModal";
-import { BiSolidConversation } from "react-icons/bi";
+import {
+	FriendSelector,
+	type SelectedFriend,
+} from "../components/common/FriendSelector";
 import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
 import { useConversationsRealtime } from "../hooks/useConversationsRealtime";
 import { supabase } from "../services/supabase";
@@ -51,9 +53,9 @@ export const MessagesPage = () => {
 	useConversationsRealtime();
 
 	const [hasLoaded, setHasLoaded] = useState(false);
-	const [showFriendSelector, setShowFriendSelector] = useState(false);
 	const [isCreatingNewConversation, setIsCreatingNewConversation] =
 		useState(false);
+	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
 	const {
@@ -214,14 +216,24 @@ export const MessagesPage = () => {
 		reset();
 	};
 
-	const handleSelectFriend = async (friendId: string) => {
+	// Get existing conversation partner IDs to exclude from selector
+	const existingConversationPartnerIds = useMemo(() => {
+		if (!profile || !conversations) return [];
+		return conversations.map(c =>
+			c.user1_id === profile.id ? c.user2_id : c.user1_id,
+		);
+	}, [conversations, profile]);
+
+	const handleFriendAdded = async (friendId: string) => {
 		setIsCreatingNewConversation(true);
-		const result = await dispatch(getOrCreateConversation(friendId));
-		if (getOrCreateConversation.fulfilled.match(result)) {
-			setSelectedConversationId(result.payload.id);
-			setIsCreatingNewConversation(false);
-			setShowFriendSelector(false);
-		} else {
+		try {
+			const result = await dispatch(getOrCreateConversation(friendId));
+			if (getOrCreateConversation.fulfilled.match(result)) {
+				setSelectedConversationId(result.payload.id);
+				// Clear selection after successful conversation creation
+				setSelectedFriends([]);
+			}
+		} finally {
 			setIsCreatingNewConversation(false);
 		}
 	};
@@ -235,7 +247,7 @@ export const MessagesPage = () => {
 		return (
 			<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
 				{/* Conversations List Skeleton */}
-				<div className='w-1/3 border-r border-border pr-4 overflow-y-auto flex flex-col gap-4'>
+				<div className='w-1/3 border-r border-border px-4 overflow-y-auto flex flex-col gap-4'>
 					<Skeleton variant='text' width='40%' height={24} />
 					<Skeleton
 						variant='rectangular'
@@ -288,27 +300,24 @@ export const MessagesPage = () => {
 	return (
 		<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
 			{/* Conversations List */}
-			<div className='w-1/3 border-r border-border pr-4 overflow-y-auto flex flex-col gap-4'>
+			<div className='w-1/3 border-r border-border pr-4 pl-0.5 overflow-y-auto flex flex-col gap-4'>
 				<h2 className='text-xl font-semibold text-primary'>Conversations</h2>
-				<Button
-					className='flex items-center gap-2'
-					variant='secondary'
-					onClick={() => {
-						setShowFriendSelector(true);
-						setIsCreatingNewConversation(true);
-					}}
-					loading={isCreatingNewConversation && creatingConversation}
-					loadingText='Creating...'>
-					<BiSolidConversation />
-					New Conversation
-				</Button>
-				<FriendSelectorModal
-					isOpen={showFriendSelector}
-					onClose={() => {
-						setShowFriendSelector(false);
-						setIsCreatingNewConversation(false);
-					}}
-					onSelectFriend={handleSelectFriend}
+				{/* Friend Selector for starting new conversations */}
+				<FriendSelector
+					selectedFriends={selectedFriends}
+					onSelectionChange={setSelectedFriends}
+					onFriendAdded={handleFriendAdded}
+					excludeIds={existingConversationPartnerIds}
+					hideSelectedChips={true}
+					singleSelect={true}
+					label='Start New Conversation'
+					helperText='Search for a friend to start a conversation'
+					maxVisibleFriends={5}
+					className={
+						isCreatingNewConversation && creatingConversation
+							? "opacity-50 pointer-events-none"
+							: ""
+					}
 				/>
 				{error && (
 					<div className='mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg'>
@@ -320,11 +329,6 @@ export const MessagesPage = () => {
 						icon={<FaEnvelope className='w-16 h-16' />}
 						title='No conversations yet'
 						message='Start a conversation with your friends to begin messaging.'
-						actionLabel='New Conversation'
-						onAction={() => {
-							setShowFriendSelector(true);
-							setIsCreatingNewConversation(true);
-						}}
 					/>
 				) : (
 					<div className='space-y-2'>
@@ -433,12 +437,7 @@ export const MessagesPage = () => {
 					<EmptyState
 						icon={<FaComment className='w-16 h-16' />}
 						title='No conversation selected'
-						message='Select a conversation from the list to start messaging, or start a new conversation.'
-						actionLabel='New Conversation'
-						onAction={() => {
-							setShowFriendSelector(true);
-							setIsCreatingNewConversation(true);
-						}}
+						message='Select a conversation from the list to start messaging, or start a new conversation using the search above.'
 					/>
 				)}
 			</div>

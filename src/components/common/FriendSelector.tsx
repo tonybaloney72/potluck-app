@@ -38,6 +38,11 @@ interface FriendSelectorProps {
 	 * Useful when selected friends are displayed elsewhere (e.g., ParticipantsSection).
 	 */
 	hideSelectedChips?: boolean;
+	/**
+	 * Single-select mode. When true, the dropdown auto-closes after a friend is added.
+	 * Useful for single-select scenarios (e.g., MessagesPage).
+	 */
+	singleSelect?: boolean;
 }
 
 export const FriendSelector = ({
@@ -50,6 +55,7 @@ export const FriendSelector = ({
 	className = "",
 	onFriendAdded,
 	hideSelectedChips = false,
+	singleSelect = false,
 }: FriendSelectorProps) => {
 	const dispatch = useAppDispatch();
 	const { friendships } = useAppSelector(state => state.friends);
@@ -169,8 +175,12 @@ export const FriendSelector = ({
 			onFriendAdded(friendId, role);
 		}
 		onSelectionChange([...selectedFriends, { friendId, role }]);
-		// Clear search after adding but keep dropdown open
+		// Clear search after adding
 		setSearchQuery("");
+		// Auto-close dropdown if single-select mode
+		if (singleSelect) {
+			setIsOpen(false);
+		}
 	};
 
 	const handleInputClick = () => {
