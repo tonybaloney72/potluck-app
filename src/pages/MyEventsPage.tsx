@@ -64,11 +64,15 @@ export const MyEventsPage = () => {
 	// Show error if we have an error and no events
 	if (error && events.length === 0 && !loading) {
 		return (
-			<div className='bg-secondary p-8'>
+			<div className='bg-secondary p-4 md:p-8'>
 				<div className='max-w-7xl mx-auto'>
-					<div className='flex justify-between items-center mb-8'>
-						<h1 className='text-3xl font-bold text-primary'>My Events</h1>
-						<Button onClick={() => navigate("/create-event")}>
+					<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8'>
+						<h1 className='text-2xl md:text-3xl font-bold text-primary'>
+							My Events
+						</h1>
+						<Button
+							onClick={() => navigate("/create-event")}
+							className='w-full sm:w-auto min-h-[44px]'>
 							Create New Event
 						</Button>
 					</div>
@@ -84,13 +88,17 @@ export const MyEventsPage = () => {
 	}
 
 	return (
-		<div className='bg-secondary p-8'>
+		<div className='bg-secondary p-4 md:p-8'>
 			<div className='max-w-7xl mx-auto'>
-				<div className='flex justify-between items-center mb-8'>
+				<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8'>
 					<div className='flex items-center gap-3'>
-						<h1 className='text-3xl font-bold text-primary'>My Events</h1>
+						<h1 className='text-2xl md:text-3xl font-bold text-primary'>
+							My Events
+						</h1>
 					</div>
-					<Button onClick={() => navigate("/create-event")}>
+					<Button
+						onClick={() => navigate("/create-event")}
+						className='w-full sm:w-auto min-h-[44px]'>
 						Create New Event
 					</Button>
 				</div>
@@ -106,15 +114,15 @@ export const MyEventsPage = () => {
 
 				{isInitialLoading ? (
 					// Show skeleton loaders for all three sections during initial load
-					<div className='space-y-12'>
+					<div className='space-y-8 md:space-y-12'>
 						<div>
 							<Skeleton
 								variant='text'
 								width='30%'
 								height={28}
-								className='mb-4'
+								className='mb-3 md:mb-4'
 							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 								{Array.from({ length: 3 }).map((_, i) => (
 									<SkeletonEventCard key={i} />
 								))}
@@ -125,9 +133,9 @@ export const MyEventsPage = () => {
 								variant='text'
 								width='30%'
 								height={28}
-								className='mb-4'
+								className='mb-3 md:mb-4'
 							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 								{Array.from({ length: 2 }).map((_, i) => (
 									<SkeletonEventCard key={i} />
 								))}
@@ -138,9 +146,9 @@ export const MyEventsPage = () => {
 								variant='text'
 								width='30%'
 								height={28}
-								className='mb-4'
+								className='mb-3 md:mb-4'
 							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 								{Array.from({ length: 2 }).map((_, i) => (
 									<SkeletonEventCard key={i} />
 								))}

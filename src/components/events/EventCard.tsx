@@ -44,10 +44,12 @@ export const EventCard = ({
 	};
 
 	return (
-		<div className='mb-12'>
-			<h2 className='text-2xl font-semibold text-primary mb-4'>{title}</h2>
+		<div className='mb-8 md:mb-12'>
+			<h2 className='text-xl md:text-2xl font-semibold text-primary mb-3 md:mb-4'>
+				{title}
+			</h2>
 			{loading ? (
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 					{Array.from({ length: 3 }).map((_, i) => (
 						<SkeletonEventCard key={i} />
 					))}
@@ -63,15 +65,24 @@ export const EventCard = ({
 			) : events.length === 0 ? (
 				<p className='text-tertiary'>No events found.</p>
 			) : (
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 					{events.map(event => (
 						<motion.div
 							key={event.id}
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							className='bg-primary rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow flex flex-col'
-							onClick={() => onEventClick(event.id)}>
-							<h3 className='text-xl font-semibold text-primary mb-2'>
+							className='bg-primary rounded-lg shadow-md p-4 md:p-6 cursor-pointer hover:shadow-lg transition-shadow flex flex-col min-h-[44px]'
+							onClick={() => onEventClick(event.id)}
+							role='button'
+							tabIndex={0}
+							onKeyDown={e => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onEventClick(event.id);
+								}
+							}}
+							aria-label={`View event: ${event.title}`}>
+							<h3 className='text-lg md:text-xl font-semibold text-primary mb-2'>
 								{event.title}
 							</h3>
 							{event.theme && (
