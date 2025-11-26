@@ -41,7 +41,6 @@ interface MessageFormData {
 export const MessagesPage = () => {
 	const dispatch = useAppDispatch();
 	const location = useLocation();
-	console.log(!!location.state?.conversationId);
 	const {
 		messages: allMessages,
 		loading,

@@ -127,9 +127,7 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 					);
 
 					// Increment unread count if not viewing this conversation
-					if (
-						currentConversationIdRef.current !== newMessage.conversation_id
-					) {
+					if (currentConversationIdRef.current !== newMessage.conversation_id) {
 						dispatch(incrementUnreadCount(newMessage.conversation_id));
 					}
 				}
