@@ -10,7 +10,7 @@ import {
 	fetchConversations,
 	getOrCreateConversation,
 } from "../store/slices/conversationsSlice";
-import { markNotificationAsRead } from "../store/slices/notificationsSlice";
+import { markConversationNotificationsAsRead } from "../store/slices/notificationsSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
@@ -28,7 +28,6 @@ import {
 } from "../components/common/FriendSelector";
 import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
 import { useConversationsRealtime } from "../hooks/useConversationsRealtime";
-import { supabase } from "../services/supabase";
 import {
 	SkeletonConversationItem,
 	SkeletonMessage,
@@ -105,25 +104,8 @@ export const MessagesPage = () => {
 			// Fetch new conversation's messages
 			dispatch(fetchMessages(selectedConversationId));
 			dispatch(markMessagesAsRead(selectedConversationId));
-
 			// Mark message notifications as read for this conversation
-			// This handles existing notifications when selecting a conversation
-			supabase
-				.from("notifications")
-				.update({ read: true })
-				.eq("user_id", user.id)
-				.eq("type", "message")
-				.eq("related_id", selectedConversationId)
-				.eq("read", false)
-				.select()
-				.then(({ data: notifications }) => {
-					// Update Redux state for each notification
-					if (notifications) {
-						notifications.forEach(notification => {
-							dispatch(markNotificationAsRead(notification.id));
-						});
-					}
-				});
+			dispatch(markConversationNotificationsAsRead(selectedConversationId));
 		}
 	}, [selectedConversationId, dispatch, user]);
 
@@ -141,12 +123,14 @@ export const MessagesPage = () => {
 				// Conversation doesn't exist, fetch conversations first
 				dispatch(fetchConversations()).then(() => {
 					setSelectedConversationId(conversationId);
+					setShowMessagesView(true);
 					// Clear the location state after using it
 					window.history.replaceState({}, document.title);
 				});
 			} else {
 				// Conversation exists, just select it
 				setSelectedConversationId(conversationId);
+				setShowMessagesView(true);
 				// Clear the location state after using it
 				window.history.replaceState({}, document.title);
 			}
