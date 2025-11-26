@@ -71,7 +71,15 @@ export const EventCard = ({
 							key={event.id}
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							className='bg-primary rounded-lg shadow-md p-4 md:p-6 cursor-pointer hover:shadow-lg transition-shadow flex flex-col min-h-[44px]'
+							whileHover={{
+								y: -4,
+								transition: { duration: 0.2 },
+							}}
+							whileTap={{
+								scale: 0.98,
+								transition: { duration: 0.1 },
+							}}
+							className='bg-primary rounded-lg shadow-md p-4 md:p-6 cursor-pointer hover:shadow-xl transition-shadow flex flex-col min-h-[44px]'
 							onClick={() => onEventClick(event.id)}
 							role='button'
 							tabIndex={0}
