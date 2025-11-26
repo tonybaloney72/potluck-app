@@ -71,6 +71,26 @@ export const markAllNotificationsAsRead = createAsyncThunk(
 	},
 );
 
+// Mark notifications as read for a specific conversation
+export const markConversationNotificationsAsRead = createAsyncThunk(
+	"notifications/markConversationNotificationsAsRead",
+	async (conversationId: string) => {
+		const user = await requireAuth();
+
+		const { data, error } = await supabase
+			.from("notifications")
+			.update({ read: true })
+			.eq("user_id", user.id)
+			.eq("type", "message")
+			.eq("related_id", conversationId)
+			.eq("read", false)
+			.select();
+
+		if (error) throw error;
+		return data as Notification[];
+	},
+);
+
 // Delete a notification
 export const deleteNotification = createAsyncThunk(
 	"notifications/deleteNotification",
@@ -218,6 +238,31 @@ const notificationsSlice = createSlice({
 				state.error =
 					action.error.message || "Failed to mark all notifications as read";
 			});
+
+		// Mark conversation notifications as read
+		builder
+			.addCase(
+				markConversationNotificationsAsRead.fulfilled,
+				(state, action) => {
+					action.payload.forEach(notification => {
+						const index = state.notifications.findIndex(
+							n => n.id === notification.id,
+						);
+						if (index !== -1 && !state.notifications[index].read) {
+							state.notifications[index].read = true;
+							state.unreadCount = Math.max(0, state.unreadCount - 1);
+						}
+					});
+				},
+			)
+			.addCase(
+				markConversationNotificationsAsRead.rejected,
+				(state, action) => {
+					state.error =
+						action.error.message ||
+						"Failed to mark conversation notifications as read";
+				},
+			);
 
 		// Delete notification
 		builder

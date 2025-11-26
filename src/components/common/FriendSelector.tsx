@@ -50,7 +50,7 @@ export const FriendSelector = ({
 	onSelectionChange,
 	excludeIds = [],
 	maxVisibleFriends = 4,
-	label = "Invite Friends (optional)",
+	label = "",
 	helperText,
 	className = "",
 	onFriendAdded,
@@ -222,7 +222,7 @@ export const FriendSelector = ({
 					<FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10' />
 					<Input
 						type='text'
-						placeholder='Search friends by name, location, or email...'
+						placeholder='Search friends by name or email...'
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
 						onClick={handleInputClick}

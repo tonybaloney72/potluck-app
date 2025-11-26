@@ -219,3 +219,14 @@ html[data-theme="dark"] {
 		background-position: 1000px 0;
 	}
 }
+
+/* Hide header on mobile when in conversation view */
+body.hide-header-mobile header {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	body.hide-header-mobile header {
+		display: block;
+	}
+}

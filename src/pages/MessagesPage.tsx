@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useLayoutEffect, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -15,7 +15,13 @@ import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { EmptyState } from "../components/common/EmptyState";
-import { FaUser, FaPaperPlane, FaEnvelope, FaComment } from "react-icons/fa";
+import {
+	FaUser,
+	FaPaperPlane,
+	FaEnvelope,
+	FaComment,
+	FaArrowLeft,
+} from "react-icons/fa";
 import {
 	FriendSelector,
 	type SelectedFriend,
@@ -56,73 +62,13 @@ export const MessagesPage = () => {
 	const [isCreatingNewConversation, setIsCreatingNewConversation] =
 		useState(false);
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
-	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const messagesContainerRef = useRef<HTMLDivElement>(null);
+	const [showMessagesView, setShowMessagesView] = useState(false);
 	const {
 		register,
 		handleSubmit,
 		reset,
 		formState: { errors },
 	} = useForm<MessageFormData>();
-
-	// Track conversation and message count for scroll behavior
-	const lastConversationIdRef = useRef<string | null>(null);
-	const prevMessageCountRef = useRef(0);
-	const hasInitialScrolledRef = useRef(false);
-
-	// Scroll to bottom - immediate for initial load, smooth for new messages
-	const scrollToBottom = (immediate = false) => {
-		if (!messagesContainerRef.current) return;
-
-		const container = messagesContainerRef.current;
-
-		if (immediate) {
-			// Set scroll position immediately without animation
-			// Use scrollHeight to ensure we're at the very bottom
-			container.scrollTop = container.scrollHeight;
-		} else {
-			// Smooth scroll for new messages
-			messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-		}
-	};
-
-	// Set initial scroll position before browser paints (prevents visible jump)
-	useLayoutEffect(() => {
-		if (
-			messagesContainerRef.current &&
-			messages.length > 0 &&
-			!hasInitialScrolledRef.current
-		) {
-			// Set scroll position synchronously before paint
-			const container = messagesContainerRef.current;
-			container.scrollTop = container.scrollHeight;
-			hasInitialScrolledRef.current = true;
-		}
-	}, [messages.length, selectedConversationId]);
-
-	// Handle conversation changes and new messages
-	useEffect(() => {
-		// Reset tracking when conversation changes
-		if (lastConversationIdRef.current !== selectedConversationId) {
-			lastConversationIdRef.current = selectedConversationId;
-			prevMessageCountRef.current = 0;
-			hasInitialScrolledRef.current = false;
-		}
-
-		// Handle new messages (smooth scroll)
-		if (
-			messages.length > 0 &&
-			messagesContainerRef.current &&
-			hasInitialScrolledRef.current
-		) {
-			const hasNewMessage = messages.length > prevMessageCountRef.current;
-			if (hasNewMessage) {
-				// New message arrived: smooth scroll
-				scrollToBottom(false);
-			}
-			prevMessageCountRef.current = messages.length;
-		}
-	}, [messages, selectedConversationId]);
 
 	useEffect(() => {
 		dispatch(fetchConversations()).then(() => {
@@ -238,6 +184,19 @@ export const MessagesPage = () => {
 		}
 	};
 
+	// Hide main header on mobile when in messages view
+	useEffect(() => {
+		if (showMessagesView && selectedConversationId) {
+			document.body.classList.add("hide-header-mobile");
+		} else {
+			document.body.classList.remove("hide-header-mobile");
+		}
+
+		return () => {
+			document.body.classList.remove("hide-header-mobile");
+		};
+	}, [showMessagesView, selectedConversationId]);
+
 	// Show loading only on initial load when we have no data
 	if (
 		(conversationsLoading || loading) &&
@@ -245,9 +204,9 @@ export const MessagesPage = () => {
 		conversations.length === 0
 	) {
 		return (
-			<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
+			<div className='max-w-6xl mx-auto p-4 md:p-8 h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4'>
 				{/* Conversations List Skeleton */}
-				<div className='w-1/3 border-r border-border px-4 overflow-y-auto flex flex-col gap-4'>
+				<div className='w-full md:w-1/3 border-r-0 md:border-r border-border md:pr-4 pr-0 overflow-y-auto flex flex-col gap-4'>
 					<Skeleton variant='text' width='40%' height={24} />
 					<Skeleton
 						variant='rectangular'
@@ -263,7 +222,7 @@ export const MessagesPage = () => {
 				</div>
 
 				{/* Messages View Skeleton */}
-				<div className='flex-1 flex flex-col'>
+				<div className='hidden md:flex flex-1 flex-col'>
 					<div className='flex-1 overflow-y-auto mb-4 space-y-4 pr-4'>
 						{Array.from({ length: 4 }).map((_, i) => (
 							<SkeletonMessage key={i} isOwn={i % 2 === 0} />
@@ -297,11 +256,31 @@ export const MessagesPage = () => {
 			: selectedConversation.user1
 		: null;
 
+	// On mobile, show messages view when conversation is selected
+	// On desktop, always show both side-by-side
+	const shouldShowMessagesView = selectedConversationId && otherUser;
+
+	// Handle conversation selection - on mobile, switch to messages view
+	const handleConversationClick = (conversationId: string) => {
+		setSelectedConversationId(conversationId);
+		// On mobile (screens < md breakpoint), show messages view
+		// We'll use CSS to handle this, but set state for mobile behavior
+		setShowMessagesView(true);
+	};
+
+	// Handle back button on mobile
+	const handleBackToConversations = () => {
+		setShowMessagesView(false);
+		setSelectedConversationId(null);
+	};
+
 	return (
-		<div className='max-w-6xl mx-auto p-8 h-[calc(100vh-8rem)] flex gap-4'>
+		<div className='max-w-6xl mx-auto p-4 md:p-8 h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-4'>
 			{/* Conversations List */}
-			<div className='w-1/3 border-r border-border pr-4 pl-0.5 overflow-y-auto flex flex-col gap-4'>
-				<h2 className='text-xl font-semibold text-primary'>Conversations</h2>
+			<div
+				className={`w-full md:w-1/3 border-r-0 md:border-r border-border md:pr-4 pr-0 overflow-y-auto flex flex-col gap-4 ${
+					showMessagesView ? "hidden md:flex" : "flex"
+				}`}>
 				{/* Friend Selector for starting new conversations */}
 				<FriendSelector
 					selectedFriends={selectedFriends}
@@ -310,8 +289,6 @@ export const MessagesPage = () => {
 					excludeIds={existingConversationPartnerIds}
 					hideSelectedChips={true}
 					singleSelect={true}
-					label='Start New Conversation'
-					helperText='Search for a friend to start a conversation'
 					maxVisibleFriends={5}
 					className={
 						isCreatingNewConversation && creatingConversation
@@ -319,6 +296,7 @@ export const MessagesPage = () => {
 							: ""
 					}
 				/>
+				<h2 className='text-xl font-semibold text-primary'>Conversations</h2>
 				{error && (
 					<div className='mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg'>
 						<p className='text-sm text-red-500'>{error}</p>
@@ -331,7 +309,7 @@ export const MessagesPage = () => {
 						message='Start a conversation with your friends to begin messaging.'
 					/>
 				) : (
-					<div className='space-y-2'>
+					<div className='md:space-y-2'>
 						{conversations.map(conversation => {
 							const otherUser =
 								conversation.user1_id === profile?.id
@@ -341,8 +319,8 @@ export const MessagesPage = () => {
 							return (
 								<button
 									key={conversation.id}
-									onClick={() => setSelectedConversationId(conversation.id)}
-									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-colors ${
+									onClick={() => handleConversationClick(conversation.id)}
+									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-colors min-h-[44px] ${
 										selectedConversationId === conversation.id
 											? "bg-accent text-bg-secondary"
 											: "bg-secondary hover:bg-tertiary text-primary"
@@ -365,7 +343,7 @@ export const MessagesPage = () => {
 													{otherUser?.name || "Unknown User"}
 												</p>
 												{(conversation.unread_count ?? 0) > 0 && (
-													<span className='bg-accent text-bg-secondary rounded-full text-xs px-2 py-0.5 ml-2'>
+													<span className='bg-accent text-bg-secondary rounded-full text-xs px-2 py-0.5 ml-2 shrink-0'>
 														{conversation.unread_count}
 													</span>
 												)}
@@ -385,12 +363,61 @@ export const MessagesPage = () => {
 			</div>
 
 			{/* Messages View */}
-			<div className='flex-1 flex flex-col'>
-				{selectedConversationId && otherUser ? (
+			<div
+				className={`flex-1 flex flex-col ${
+					showMessagesView
+						? "fixed inset-0 md:static md:inset-auto flex flex-col"
+						: "hidden md:flex"
+				}`}>
+				{shouldShowMessagesView ? (
 					<>
-						<div
-							ref={messagesContainerRef}
-							className='flex-1 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent pr-4'>
+						{/* Mobile Header - Fixed at top with back arrow and user name on same row */}
+						<div className='md:hidden fixed top-0 left-0 right-0 bg-secondary border-b border-border shrink-0 flex items-center gap-3 px-4 py-3 max-h-[60px]'>
+							<button
+								onClick={handleBackToConversations}
+								className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center'>
+								<FaArrowLeft className='w-5 h-5' />
+							</button>
+							<div className='flex items-center gap-3 flex-1 min-w-0'>
+								{otherUser?.avatar_url ? (
+									<img
+										src={otherUser.avatar_url}
+										alt={otherUser.name || "User"}
+										className='w-8 h-8 rounded-full object-cover shrink-0'
+									/>
+								) : (
+									<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
+										<FaUser className='w-4 h-4' />
+									</div>
+								)}
+								<p className='font-semibold text-primary truncate'>
+									{otherUser?.name || "Unknown User"}
+								</p>
+							</div>
+						</div>
+
+						{/* Desktop Header */}
+						<div className='hidden md:flex items-center gap-3 mb-4 pb-4 border-b border-border'>
+							{otherUser?.avatar_url ? (
+								<img
+									src={otherUser.avatar_url}
+									alt={otherUser.name || "User"}
+									className='w-10 h-10 rounded-full object-cover'
+								/>
+							) : (
+								<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+									<FaUser className='w-5 h-5' />
+								</div>
+							)}
+							<div>
+								<p className='font-semibold text-primary'>
+									{otherUser?.name || "Unknown User"}
+								</p>
+							</div>
+						</div>
+
+						{/* Messages Container - Only scrollable area */}
+						<div className='flex-1 overflow-y-auto space-y-2 md:space-y-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent pr-0 md:pr-4 pt-1 md:pt-0 mt-[60px] md:mt-0 px-4 md:px-0 pb-[64px] md:pb-0'>
 							{messages.map(message => {
 								const isOwn = message.sender_id === profile?.id;
 								return (
@@ -400,25 +427,22 @@ export const MessagesPage = () => {
 											isOwn ? "justify-end" : "justify-start"
 										}`}>
 										<div
-											className={`max-w-xs p-3 rounded-lg ${
+											className={`max-w-[85%] md:max-w-xs p-2 md:p-3 rounded-lg ${
 												isOwn
 													? "bg-accent text-bg-secondary"
 													: "bg-tertiary text-primary"
 											}`}>
-											<p>{message.content}</p>
-											<p
-												className={`text-xs mt-1 ${
-													isOwn ? "text-bg-secondary/70" : "text-secondary"
-												}`}>
-												{new Date(message.created_at).toLocaleTimeString()}
-											</p>
+											<p className='wrap-break-word'>{message.content}</p>
 										</div>
 									</div>
 								);
 							})}
-							<div ref={messagesEndRef} />
 						</div>
-						<form onSubmit={handleSubmit(onSubmit)} className='flex gap-2'>
+
+						{/* Input Form - Fixed at bottom on mobile */}
+						<form
+							onSubmit={handleSubmit(onSubmit)}
+							className='flex gap-2 shrink-0 fixed bottom-0 left-0 right-0 md:static bg-secondary border-t md:border-t-0 border-border p-2 md:py-4 max-h-[60px]'>
 							<Input
 								placeholder='Type a message...'
 								autoComplete='off'
@@ -428,7 +452,11 @@ export const MessagesPage = () => {
 								error={errors.content?.message}
 								className='flex-1'
 							/>
-							<Button type='submit' loading={sending} loadingText='Sending...'>
+							<Button
+								type='submit'
+								loading={sending}
+								loadingText='Sending...'
+								className='min-w-[44px] min-h-[44px] flex items-center justify-center'>
 								<FaPaperPlane className='w-4 h-4' />
 							</Button>
 						</form>
