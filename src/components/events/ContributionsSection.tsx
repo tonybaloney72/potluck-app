@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "motion/react";
 import { AnimatedSection } from "../common/AnimatedSection";
 import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
@@ -52,8 +53,10 @@ export const ContributionsSection = ({
 	const canAdd = canAddContributions(currentUserParticipant?.role);
 
 	const actionButton = canAdd ? (
-		<Button onClick={() => setShowForm(!showForm)} className='text-sm min-h-[44px]'>
-			{showForm ? "Cancel" : "Add Contribution"}
+		<Button
+			onClick={() => setShowForm(!showForm)}
+			className='text-sm min-h-[44px]'>
+			{showForm ? "Cancel" : "Add"}
 		</Button>
 	) : undefined;
 
@@ -72,42 +75,54 @@ export const ContributionsSection = ({
 			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
 			<SectionHeader title='Contributions' actionButton={actionButton} />
 
-			{showForm && (
-				<form
-					onSubmit={contributionForm.handleSubmit(handleSubmit)}
-					className='mb-4 p-4 bg-secondary rounded-lg'>
-					<input
-						type='text'
-						placeholder='Item name *'
-						{...contributionForm.register("itemName")}
-						className={formInputClassName}
-					/>
-					{contributionForm.formState.errors.itemName && (
-						<p className='text-red-500 text-sm mb-2'>
-							{contributionForm.formState.errors.itemName.message}
-						</p>
-					)}
-					<input
-						type='text'
-						placeholder='Quantity (optional)'
-						{...contributionForm.register("quantity")}
-						className={formInputClassName}
-					/>
-					<textarea
-						placeholder='Description (optional)'
-						{...contributionForm.register("description")}
-						className={formInputClassName}
-						rows={2}
-					/>
-					<Button
-						type='submit'
-						disabled={addingContribution}
-						loading={addingContribution}
-						className='text-sm w-full sm:w-auto min-h-[44px]'>
-						Add Contribution
-					</Button>
-				</form>
-			)}
+			<AnimatePresence>
+				{showForm && (
+					<motion.form
+						initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+						animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+						exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+						transition={{ duration: 0.2, ease: "easeInOut" }}
+						onSubmit={contributionForm.handleSubmit(handleSubmit)}
+						className='overflow-hidden p-4 bg-secondary rounded-lg'>
+						<motion.div
+							initial={{ y: -10 }}
+							animate={{ y: 0 }}
+							exit={{ y: -10 }}
+							transition={{ duration: 0.2, ease: "easeInOut" }}>
+							<input
+								type='text'
+								placeholder='Item name *'
+								{...contributionForm.register("itemName")}
+								className={formInputClassName}
+							/>
+							{contributionForm.formState.errors.itemName && (
+								<p className='text-red-500 text-sm mb-2'>
+									{contributionForm.formState.errors.itemName.message}
+								</p>
+							)}
+							<input
+								type='text'
+								placeholder='Quantity (optional)'
+								{...contributionForm.register("quantity")}
+								className={formInputClassName}
+							/>
+							<textarea
+								placeholder='Description (optional)'
+								{...contributionForm.register("description")}
+								className={formInputClassName}
+								rows={2}
+							/>
+							<Button
+								type='submit'
+								disabled={addingContribution}
+								loading={addingContribution}
+								className='text-sm w-full sm:w-auto min-h-[44px]'>
+								Add Contribution
+							</Button>
+						</motion.div>
+					</motion.form>
+				)}
+			</AnimatePresence>
 
 			{event.contributions && event.contributions.length > 0 ? (
 				<div className='space-y-3'>

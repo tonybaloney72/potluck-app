@@ -50,7 +50,9 @@ export const CommentsSection = ({
 		<AnimatedSection
 			delay={0.2}
 			className='bg-primary rounded-lg shadow-md p-4 md:p-6'>
-			<h2 className='text-xl md:text-2xl font-semibold text-primary mb-4'>Comments</h2>
+			<h2 className='text-xl md:text-2xl font-semibold text-primary mb-4'>
+				Comments
+			</h2>
 
 			{currentUserParticipant && (
 				<form
@@ -61,6 +63,7 @@ export const CommentsSection = ({
 						placeholder='Add a comment...'
 						className='w-full px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
 						rows={3}
+						autoComplete='off'
 					/>
 					{commentForm.formState.errors.content && (
 						<p className='text-red-500 text-sm mb-2'>

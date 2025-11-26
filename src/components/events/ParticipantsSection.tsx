@@ -8,6 +8,7 @@ import type { Event, EventParticipant, EventRole } from "../../types";
 import { hasManagePermission } from "../../utils/events";
 import { RoleSelector } from "./RoleSelector";
 import { FaUsers } from "react-icons/fa";
+import { motion } from "motion/react";
 
 interface ParticipantsSectionProps {
 	event: Event;
@@ -72,8 +73,12 @@ export const ParticipantsSection = ({
 							canManage && isNotCurrentUser && !isHost;
 
 						return (
-							<div
+							<motion.div
 								key={participant.id}
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -20 }}
+								transition={{ duration: 0.3 }}
 								className='p-3 bg-secondary rounded-lg relative'>
 								{/* Delete button in top-right corner */}
 								{canRemoveParticipant && (
@@ -127,7 +132,7 @@ export const ParticipantsSection = ({
 										</div>
 									</div>
 								</div>
-							</div>
+							</motion.div>
 						);
 					})}
 				</div>
