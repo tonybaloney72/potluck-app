@@ -12,6 +12,7 @@ import {
 	type SelectedFriend,
 } from "../components/common/FriendSelector";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
+import { Map } from "../components/common/Map";
 
 interface CreateEventFormData {
 	title: string;
@@ -166,12 +167,14 @@ export const CreateEventPage = () => {
 							placeholder='e.g., Central Park, New York'
 						/>
 
-						<Input
+						<Map />
+
+						{/* <Input
 							label='Location URL (optional)'
 							{...register("location_url")}
 							placeholder='https://maps.google.com/...'
 							type='url'
-						/>
+						/> */}
 
 						{error && (
 							<ErrorDisplay message={error} variant='inline' className='mb-4' />

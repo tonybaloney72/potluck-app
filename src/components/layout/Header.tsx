@@ -29,6 +29,8 @@ export const Header = () => {
 	const mobileMenuRef = useRef<HTMLDivElement>(null);
 	const { theme, setTheme } = useTheme();
 
+	console.log(profile);
+
 	const handleThemeChange = (newTheme: ThemePreference) => {
 		setTheme(newTheme);
 	};
@@ -86,6 +88,19 @@ export const Header = () => {
 			document.body.style.overflow = "";
 		};
 	}, [isMobileMenuOpen]);
+
+	const posSuccess = (pos: GeolocationPosition) => {
+		const lat = pos.coords.latitude;
+		const lng = pos.coords.longitude;
+		console.log(pos.coords);
+		console.log(lat, lng);
+	};
+
+	const posError = (err: GeolocationPositionError) => {
+		console.log(err);
+	};
+
+	navigator.geolocation.getCurrentPosition(posSuccess, posError);
 
 	return (
 		<>

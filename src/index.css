@@ -230,3 +230,7 @@ body.hide-header-mobile header {
 		display: block;
 	}
 }
+
+.leaflet-container {
+	height: 300px;
+}
