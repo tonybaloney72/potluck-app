@@ -388,7 +388,7 @@ export const EventDetailPage = () => {
 				{/* Back Button, Edit, and Delete */}
 				<div className='flex justify-between items-center gap-3 mb-4'>
 					<button
-						onClick={() => navigate("/")}
+						onClick={() => navigate(-1)}
 						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'>
 						<FaArrowLeft className='w-5 h-5' />
 					</button>

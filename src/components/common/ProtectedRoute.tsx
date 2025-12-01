@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { useAppSelector } from "../../store/hooks";
 import { SkeletonAppLoader } from "./Skeleton";
 
@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 	const { user, initializing } = useAppSelector(state => state.auth);
+	const location = useLocation();
 
 	// If we have a user, show content even if still initializing (profile loading)
 	// Only show loading if we're initializing AND don't have a user yet
@@ -15,9 +16,20 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 		return <SkeletonAppLoader />;
 	}
 
-	// If initialization is complete and no user, redirect to login
+	// If initialization is complete and no user, redirect to login with return URL
 	if (!initializing && !user) {
-		return <Navigate to='/login' replace />;
+		// Save the attempted URL so we can redirect back after login
+		// Only save if we're not already on the login page
+		const returnUrl =
+			location.pathname !== "/login"
+				? location.pathname + location.search
+				: "/";
+		return (
+			<Navigate
+				to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
+				replace
+			/>
+		);
 	}
 
 	// User exists, show content

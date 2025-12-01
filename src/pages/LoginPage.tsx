@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useSearchParams } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { signIn } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
@@ -15,6 +15,7 @@ interface LoginFormData {
 export const LoginPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
+	const [searchParams] = useSearchParams();
 	const { loading, error } = useAppSelector(state => state.auth);
 
 	const {
@@ -26,7 +27,10 @@ export const LoginPage = () => {
 	const onSubmit = async (data: LoginFormData) => {
 		const result = await dispatch(signIn(data));
 		if (signIn.fulfilled.match(result)) {
-			navigate("/");
+			// Get the return URL from query params, default to home
+			const returnUrl = searchParams.get("returnUrl") || "/";
+			// Decode and navigate to the original destination
+			navigate(decodeURIComponent(returnUrl), { replace: true });
 		}
 	};
 

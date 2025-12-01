@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { useNavigate } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -7,6 +8,7 @@ import { updateProfile } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { SkeletonProfilePage } from "../components/common/Skeleton";
+import { FaArrowLeft } from "react-icons/fa";
 
 // Zod schema: no numbers allowed in name or location
 const profileSchema = z.object({
@@ -28,6 +30,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export const ProfilePage = () => {
 	const { profile } = useAppSelector(state => state.auth);
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	const {
 		register,
@@ -96,35 +99,48 @@ export const ProfilePage = () => {
 	}
 
 	return (
-		<div className='max-w-2xl mx-auto p-8'>
-			<h1 className=' text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary'>
-				Profile Settings
-			</h1>
+		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
+			<div className='max-w-2xl mx-auto'>
+				{/* Back Button */}
+				<div className='mb-4'>
+					<button
+						onClick={() => navigate(-1)}
+						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'
+						aria-label='Go back'
+						type='button'>
+						<FaArrowLeft className='w-5 h-5' />
+					</button>
+				</div>
 
-			<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
-				<Input
-					label='Name'
-					{...register("name")}
-					error={errors.name?.message}
-					helperText='Your display name (letters, spaces, hyphens, and apostrophes only)'
-				/>
-				<Input
-					label='Location'
-					placeholder='e.g., Los Angeles County'
-					{...register("location")}
-					error={errors.location?.message}
-					helperText='Optional: Your general location (letters, spaces, hyphens, and apostrophes only)'
-				/>
+				<h1 className='text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary'>
+					Profile Settings
+				</h1>
 
-				<Button
-					variant='primary'
-					type='submit'
-					loading={isSubmitting ? true : false}
-					loadingText='Saving...'
-					disabled={!isDirty}>
-					Save Changes
-				</Button>
-			</form>
-		</div>
+				<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+					<Input
+						label='Name'
+						{...register("name")}
+						error={errors.name?.message}
+						helperText='Your display name (letters, spaces, hyphens, and apostrophes only)'
+					/>
+					<Input
+						label='Location'
+						placeholder='e.g., Los Angeles County'
+						{...register("location")}
+						error={errors.location?.message}
+						helperText='Optional: Your general location (letters, spaces, hyphens, and apostrophes only)'
+					/>
+
+					<Button
+						variant='primary'
+						type='submit'
+						loading={isSubmitting ? true : false}
+						loadingText='Saving...'
+						disabled={!isDirty}>
+						Save Changes
+					</Button>
+				</form>
+			</div>
+		</main>
 	);
 };

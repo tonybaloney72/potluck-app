@@ -13,6 +13,7 @@ import {
 } from "../components/common/FriendSelector";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Map } from "../components/common/Map";
+import { FaArrowLeft } from "react-icons/fa";
 
 interface CreateEventFormData {
 	title: string;
@@ -97,14 +98,18 @@ export const CreateEventPage = () => {
 	};
 
 	return (
-		<div className='bg-secondary p-8'>
+		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 			<div className='max-w-2xl mx-auto'>
 				{/* Back Button */}
-				<button
-					onClick={() => navigate(-1)}
-					className='mb-6 text-accent hover:underline hover:cursor-pointer'>
-					← Back
-				</button>
+				<div className='mb-4'>
+					<button
+						onClick={() => navigate(-1)}
+						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'
+						aria-label='Go back'
+						type='button'>
+						<FaArrowLeft className='w-5 h-5' />
+					</button>
+				</div>
 
 				{/* Page Header */}
 				<div className='bg-primary rounded-lg shadow-md p-6 mb-6'>
@@ -195,6 +200,6 @@ export const CreateEventPage = () => {
 					</form>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 };

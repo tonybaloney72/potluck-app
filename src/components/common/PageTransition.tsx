@@ -8,6 +8,7 @@ interface PageTransitionProps {
 
 /**
  * PageTransition component provides smooth fade animations when routes change.
+ * Note: Scroll-to-top is handled in Layout component where the scroll container exists.
  *
  * Usage:
  * <PageTransition>
