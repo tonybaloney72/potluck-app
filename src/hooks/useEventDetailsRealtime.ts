@@ -20,6 +20,7 @@ import type {
 	Contribution,
 	EventRole,
 } from "../types";
+import { selectCurrentEvent } from "../store/selectors/eventsSelectors";
 
 export function useEventDetailsRealtime(eventId: string | null) {
 	const dispatch = useAppDispatch();
@@ -128,7 +129,8 @@ export function useEventDetailsRealtime(eventId: string | null) {
 
 				// Check if this comment exists in currentEvent (only process if viewing that event)
 				const state = store.getState();
-				const commentExists = state.events.currentEvent?.comments?.some(
+				const currentEvent = selectCurrentEvent(state);
+				const commentExists = currentEvent?.comments?.some(
 					c => c.id === deletedCommentId,
 				);
 
@@ -194,7 +196,7 @@ export function useEventDetailsRealtime(eventId: string | null) {
 
 				// Check if this contribution exists in the current event being viewed
 				const state = store.getState();
-				const event = state.events.currentEvent;
+				const event = selectCurrentEvent(state);
 				const contributionExists = event?.contributions?.some(
 					c => c.id === deletedContributionId,
 				);
@@ -300,7 +302,8 @@ export function useEventDetailsRealtime(eventId: string | null) {
 
 				// Check if this participant exists in currentEvent (only process if viewing that event)
 				const state = store.getState();
-				const participantExists = state.events.currentEvent?.participants?.some(
+				const currentEvent = selectCurrentEvent(state);
+				const participantExists = currentEvent?.participants?.some(
 					p => p.id === deletedParticipantId,
 				);
 
@@ -328,11 +331,10 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				// Note: We check if currentEvent exists and if we're currently updating
 				// to avoid processing our own optimistic updates
 				const state = store.getState();
-				const currentEvent = state.events.currentEvent;
+				const currentEvent = selectCurrentEvent(state);
 				const isCurrentlyUpdating = state.events.updatingEvent;
 				const isCurrentUserUpdate =
-					state.events.currentEvent?.created_by === user?.id &&
-					isCurrentlyUpdating;
+					currentEvent?.created_by === user?.id && isCurrentlyUpdating;
 
 				// Skip if this is our own update (handled optimistically)
 				if (isCurrentUserUpdate) {

@@ -12,13 +12,21 @@ import type {
 	RSVPStatus,
 	EventRole,
 } from "../../types";
+import type { RootState } from "../index";
 import { requireAuth } from "../../utils/auth";
 import { getEventHostId } from "../../utils/events";
 import { getOperationErrorMessage } from "../../utils/errors";
 
 interface EventsState {
-	events: Event[];
-	currentEvent: Event | null;
+	// ✅ Normalized structure - single source of truth
+	eventsById: {
+		[eventId: string]: Event;
+	};
+	currentEventId: string | null;
+
+	// Track which events are being fetched (prevents duplicate fetches)
+	fetchingEventIds: string[];
+
 	loading: boolean; // Initial load - shows full loading screen
 	refreshingEvents: boolean; // Background refresh - doesn't block UI
 	updatingRSVP: RSVPStatus | null; // Track which RSVP status is being updated
@@ -33,8 +41,11 @@ interface EventsState {
 }
 
 const initialState: EventsState = {
-	events: [],
-	currentEvent: null,
+	// ✅ Normalized structure - single source of truth
+	eventsById: {},
+	currentEventId: null,
+	fetchingEventIds: [],
+
 	loading: false,
 	refreshingEvents: false,
 	updatingRSVP: null,
@@ -98,8 +109,35 @@ export const fetchUserEvents = createAsyncThunk(
 // Fetch a single event with all related data
 export const fetchEventById = createAsyncThunk(
 	"events/fetchEventById",
-	async (eventId: string) => {
+	async (eventId: string, { getState }) => {
 		await requireAuth();
+
+		const state = getState() as RootState;
+
+		// ✅ Check if event is already in store
+		const existingEvent = state.events.eventsById[eventId];
+		const isFetching = state.events.fetchingEventIds.includes(eventId);
+
+		// If we have full event data (with participants, contributions, comments), return it
+		if (
+			existingEvent &&
+			existingEvent.participants &&
+			existingEvent.contributions &&
+			existingEvent.comments &&
+			!isFetching
+		) {
+			// Return from cache - no need to fetch, but still update currentEventId
+			return { event: existingEvent, fromCache: true, skipFetch: false };
+		}
+
+		// If already fetching, don't fetch again (prevent duplicate requests)
+		if (isFetching) {
+			return {
+				event: existingEvent || null,
+				fromCache: true,
+				skipFetch: true,
+			};
+		}
 
 		// Fetch event with creator
 		const { data: event, error: eventError } = await supabase
@@ -192,12 +230,14 @@ export const fetchEventById = createAsyncThunk(
 			}),
 		);
 
-		return {
+		const fullEvent = {
 			...event,
 			participants: participantsWithProfiles || [],
 			contributions: contributionsWithProfiles || [],
 			comments: commentsWithProfiles || [],
 		} as Event;
+
+		return { event: fullEvent, fromCache: false };
 	},
 );
 
@@ -661,15 +701,18 @@ const eventsSlice = createSlice({
 	name: "events",
 	initialState,
 	reducers: {
-		setCurrentEvent: (state, action: PayloadAction<Event | null>) => {
-			state.currentEvent = action.payload;
+		setCurrentEventId: (state, action: PayloadAction<string | null>) => {
+			state.currentEventId = action.payload;
 		},
 		removeEvent: (state, action: PayloadAction<string>) => {
-			// Remove event from events array
-			state.events = state.events.filter(e => e.id !== action.payload);
-			// Clear currentEvent if it's the deleted event
-			if (state.currentEvent?.id === action.payload) {
-				state.currentEvent = null;
+			const eventId = action.payload;
+
+			// ✅ Remove from normalized store only
+			delete state.eventsById[eventId];
+
+			// Clear currentEventId if it's the deleted event
+			if (state.currentEventId === eventId) {
+				state.currentEventId = null;
 			}
 		},
 		clearError: state => {
@@ -684,27 +727,13 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, participant } = action.payload;
 
-			// Update in events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event && event.participants) {
-				const index = event.participants.findIndex(
+			// ✅ Update in eventsById only
+			if (state.eventsById[eventId]?.participants) {
+				const index = state.eventsById[eventId].participants!.findIndex(
 					p => p.user_id === participant.user_id,
 				);
 				if (index !== -1) {
-					event.participants[index] = participant;
-				}
-			}
-
-			// Update in currentEvent
-			if (
-				state.currentEvent?.id === eventId &&
-				state.currentEvent.participants
-			) {
-				const index = state.currentEvent.participants.findIndex(
-					p => p.user_id === participant.user_id,
-				);
-				if (index !== -1) {
-					state.currentEvent.participants[index] = participant;
+					state.eventsById[eventId].participants![index] = participant;
 				}
 			}
 		},
@@ -726,22 +755,15 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, updatedFields } = action.payload;
 
-			// Update in events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event) {
-				Object.assign(event, updatedFields);
-			}
-
-			// Update in currentEvent (preserve nested data)
-			if (state.currentEvent?.id === eventId) {
-				// Merge updated fields with existing event, preserving nested arrays
-				state.currentEvent = {
-					...state.currentEvent,
+			// ✅ Update in eventsById (single source of truth)
+			if (state.eventsById[eventId]) {
+				state.eventsById[eventId] = {
+					...state.eventsById[eventId],
 					...updatedFields,
-					// Explicitly preserve nested data
-					participants: state.currentEvent.participants || [],
-					contributions: state.currentEvent.contributions || [],
-					comments: state.currentEvent.comments || [],
+					// Preserve nested data
+					participants: state.eventsById[eventId].participants || [],
+					contributions: state.eventsById[eventId].contributions || [],
+					comments: state.eventsById[eventId].comments || [],
 				};
 			}
 		},
@@ -756,29 +778,16 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, comment } = action.payload;
 
-			// Add to events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event) {
-				if (!event.comments) {
-					event.comments = [];
+			// ✅ Add to eventsById (single source of truth)
+			if (state.eventsById[eventId]) {
+				if (!state.eventsById[eventId].comments) {
+					state.eventsById[eventId].comments = [];
 				}
-				// Check if comment already exists (avoid duplicates)
-				const exists = event.comments.some(c => c.id === comment.id);
-				if (!exists) {
-					event.comments.push(comment);
-				}
-			}
-
-			// Add to currentEvent
-			if (state.currentEvent?.id === eventId) {
-				if (!state.currentEvent.comments) {
-					state.currentEvent.comments = [];
-				}
-				const exists = state.currentEvent.comments.some(
+				const exists = state.eventsById[eventId].comments?.some(
 					c => c.id === comment.id,
 				);
 				if (!exists) {
-					state.currentEvent.comments.push(comment);
+					state.eventsById[eventId].comments!.push(comment);
 				}
 			}
 		},
@@ -788,19 +797,13 @@ const eventsSlice = createSlice({
 			// Just commentId, like optimistic
 			const commentId = action.payload;
 
-			// Search all events (same as optimistic handler)
-			const event = state.events.find(e =>
-				e.comments?.some(c => c.id === commentId),
-			);
-			if (event && event.comments) {
-				event.comments = event.comments.filter(c => c.id !== commentId);
-			}
-
-			// Remove from currentEvent if it exists
-			if (state.currentEvent?.comments) {
-				state.currentEvent.comments = state.currentEvent.comments.filter(
-					c => c.id !== commentId,
-				);
+			// ✅ Search eventsById and remove comment (single source of truth)
+			for (const eventId in state.eventsById) {
+				const event = state.eventsById[eventId];
+				if (event.comments?.some(c => c.id === commentId)) {
+					event.comments = event.comments.filter(c => c.id !== commentId);
+					break; // Found it, no need to continue
+				}
 			}
 		},
 
@@ -814,29 +817,16 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, contribution } = action.payload;
 
-			// Add to events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event) {
-				if (!event.contributions) {
-					event.contributions = [];
+			// ✅ Add to eventsById (single source of truth)
+			if (state.eventsById[eventId]) {
+				if (!state.eventsById[eventId].contributions) {
+					state.eventsById[eventId].contributions = [];
 				}
-				// Check if contribution already exists (avoid duplicates)
-				const exists = event.contributions.some(c => c.id === contribution.id);
-				if (!exists) {
-					event.contributions.push(contribution);
-				}
-			}
-
-			// Add to currentEvent
-			if (state.currentEvent?.id === eventId) {
-				if (!state.currentEvent.contributions) {
-					state.currentEvent.contributions = [];
-				}
-				const exists = state.currentEvent.contributions.some(
+				const exists = state.eventsById[eventId].contributions?.some(
 					c => c.id === contribution.id,
 				);
 				if (!exists) {
-					state.currentEvent.contributions.push(contribution);
+					state.eventsById[eventId].contributions!.push(contribution);
 				}
 			}
 		},
@@ -848,20 +838,15 @@ const eventsSlice = createSlice({
 		) => {
 			const contributionId = action.payload;
 
-			// Remove from events array - search for which event contains this contribution
-			const event = state.events.find(e =>
-				e.contributions?.some(c => c.id === contributionId),
-			);
-			if (event && event.contributions) {
-				event.contributions = event.contributions.filter(
-					c => c.id !== contributionId,
-				);
-			}
-
-			// Remove from currentEvent
-			if (state.currentEvent?.contributions) {
-				state.currentEvent.contributions =
-					state.currentEvent.contributions.filter(c => c.id !== contributionId);
+			// ✅ Search eventsById and remove contribution (single source of truth)
+			for (const eventId in state.eventsById) {
+				const event = state.eventsById[eventId];
+				if (event.contributions?.some(c => c.id === contributionId)) {
+					event.contributions = event.contributions.filter(
+						c => c.id !== contributionId,
+					);
+					break; // Found it, no need to continue
+				}
 			}
 		},
 
@@ -875,20 +860,9 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, participantId, role } = action.payload;
 
-			// Update in currentEvent
-			if (state.currentEvent?.id === eventId) {
-				const participant = state.currentEvent.participants?.find(
-					p => p.id === participantId,
-				);
-				if (participant) {
-					participant.role = role;
-				}
-			}
-
-			// Update in events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event?.participants) {
-				const participant = event.participants.find(
+			// ✅ Update in eventsById (single source of truth)
+			if (state.eventsById[eventId]?.participants) {
+				const participant = state.eventsById[eventId].participants?.find(
 					p => p.id === participantId,
 				);
 				if (participant) {
@@ -907,28 +881,13 @@ const eventsSlice = createSlice({
 		) => {
 			const { eventId, participant } = action.payload;
 
-			// Add to events array
-			const event = state.events.find(e => e.id === eventId);
-			if (event && event.participants) {
-				// Check if participant already exists (avoid duplicates)
-				const exists = event.participants.some(
+			// ✅ Add to eventsById (single source of truth)
+			if (state.eventsById[eventId]?.participants) {
+				const exists = state.eventsById[eventId].participants?.some(
 					p => p.id === participant.id || p.user_id === participant.user_id,
 				);
 				if (!exists) {
-					event.participants.push(participant);
-				}
-			}
-
-			// Add to currentEvent
-			if (
-				state.currentEvent?.id === eventId &&
-				state.currentEvent.participants
-			) {
-				const exists = state.currentEvent.participants.some(
-					p => p.id === participant.id || p.user_id === participant.user_id,
-				);
-				if (!exists) {
-					state.currentEvent.participants.push(participant);
+					state.eventsById[eventId].participants!.push(participant);
 				}
 			}
 		},
@@ -938,20 +897,15 @@ const eventsSlice = createSlice({
 			// Just participantId (participant record ID), like optimistic and comments
 			const participantId = action.payload;
 
-			// Remove from events array
-			const event = state.events.find(e =>
-				e.participants?.some(p => p.id === participantId),
-			);
-			if (event && event.participants) {
-				event.participants = event.participants.filter(
-					p => p.id !== participantId,
-				);
-			}
-
-			// Remove from currentEvent
-			if (state.currentEvent?.participants) {
-				state.currentEvent.participants =
-					state.currentEvent.participants.filter(p => p.id !== participantId);
+			// ✅ Search eventsById and remove participant (single source of truth)
+			for (const eventId in state.eventsById) {
+				const event = state.eventsById[eventId];
+				if (event.participants?.some(p => p.id === participantId)) {
+					event.participants = event.participants.filter(
+						p => p.id !== participantId,
+					);
+					break; // Found it, no need to continue
+				}
 			}
 		},
 	},
@@ -960,7 +914,8 @@ const eventsSlice = createSlice({
 		builder
 			.addCase(fetchUserEvents.pending, state => {
 				// Only show full loading if we don't have events yet (initial load)
-				if (state.events.length === 0) {
+				const hasEvents = Object.keys(state.eventsById).length > 0;
+				if (!hasEvents) {
 					state.loading = true;
 				} else {
 					// Otherwise, just mark as refreshing (background update)
@@ -971,7 +926,31 @@ const eventsSlice = createSlice({
 			.addCase(fetchUserEvents.fulfilled, (state, action) => {
 				state.loading = false;
 				state.refreshingEvents = false;
-				state.events = action.payload;
+
+				// ✅ Normalize events into eventsById, preserving existing nested data
+				action.payload.forEach(event => {
+					const existingEvent = state.eventsById[event.id];
+					if (existingEvent) {
+						// Preserve contributions and comments if they already exist
+						state.eventsById[event.id] = {
+							...event,
+							contributions:
+								existingEvent.contributions || event.contributions || [],
+							comments: existingEvent.comments || event.comments || [],
+							// Ensure participants are updated (they come from fetchUserEvents)
+							participants:
+								event.participants || existingEvent.participants || [],
+						};
+					} else {
+						// New event, store as-is
+						state.eventsById[event.id] = {
+							...event,
+							contributions: event.contributions || [],
+							comments: event.comments || [],
+							participants: event.participants || [],
+						};
+					}
+				});
 			})
 			.addCase(fetchUserEvents.rejected, (state, action) => {
 				state.loading = false;
@@ -981,20 +960,50 @@ const eventsSlice = createSlice({
 
 		// Fetch event by ID
 		builder
-			.addCase(fetchEventById.pending, state => {
-				state.loading = true;
+			.addCase(fetchEventById.pending, (state, action) => {
+				const eventId = action.meta.arg;
+				if (!state.fetchingEventIds.includes(eventId)) {
+					state.fetchingEventIds.push(eventId);
+				}
+
+				// Only show full loading if we don't have the event yet
+				if (!state.eventsById[eventId]) {
+					state.loading = true;
+				}
 				state.error = null;
 			})
 			.addCase(fetchEventById.fulfilled, (state, action) => {
-				state.loading = false;
-				state.currentEvent = action.payload;
-				// Also update in events array if it exists
-				const index = state.events.findIndex(e => e.id === action.payload.id);
-				if (index !== -1) {
-					state.events[index] = action.payload;
+				const { event, skipFetch } = action.payload;
+				const eventId = action.meta.arg;
+
+				// Remove from fetching set
+				state.fetchingEventIds = state.fetchingEventIds.filter(
+					id => id !== eventId,
+				);
+
+				// If skipFetch is true, we were already fetching - just clear loading
+				if (skipFetch) {
+					if (state.loading) {
+						state.loading = false;
+					}
+					return;
 				}
+
+				if (!event) {
+					state.loading = false;
+					return;
+				}
+
+				// ✅ Store/update event in normalized store
+				state.eventsById[event.id] = event;
+				state.currentEventId = event.id;
+				state.loading = false;
 			})
 			.addCase(fetchEventById.rejected, (state, action) => {
+				const eventId = action.meta.arg;
+				state.fetchingEventIds = state.fetchingEventIds.filter(
+					id => id !== eventId,
+				);
 				state.loading = false;
 				state.error = getOperationErrorMessage("fetchEvent", action.error);
 			});
@@ -1003,7 +1012,8 @@ const eventsSlice = createSlice({
 		builder
 			.addCase(createEvent.pending, state => {
 				// Only show full loading if we don't have events yet
-				if (state.events.length === 0) {
+				const hasEvents = Object.keys(state.eventsById).length > 0;
+				if (!hasEvents) {
 					state.loading = true;
 				} else {
 					// Otherwise, just mark as refreshing (background update)
@@ -1014,8 +1024,8 @@ const eventsSlice = createSlice({
 			.addCase(createEvent.fulfilled, (state, action) => {
 				state.loading = false;
 				state.refreshingEvents = false;
-				// Add the new event to the list
-				state.events.push(action.payload);
+				// ✅ Add the new event to normalized store
+				state.eventsById[action.payload.id] = action.payload;
 			})
 			.addCase(createEvent.rejected, (state, action) => {
 				state.loading = false;
@@ -1032,23 +1042,17 @@ const eventsSlice = createSlice({
 			.addCase(updateEvent.fulfilled, (state, action) => {
 				state.updatingEvent = false;
 				const updatedEvent = action.payload;
-				const index = state.events.findIndex(e => e.id === updatedEvent.id);
-				if (index !== -1) {
-					// Preserve nested data when updating events array
-					state.events[index] = {
+
+				// ✅ Update in eventsById only (single source of truth)
+				if (state.eventsById[updatedEvent.id]) {
+					state.eventsById[updatedEvent.id] = {
+						...state.eventsById[updatedEvent.id],
 						...updatedEvent,
-						participants: state.events[index].participants || [],
-						contributions: state.events[index].contributions || [],
-						comments: state.events[index].comments || [],
-					};
-				}
-				if (state.currentEvent?.id === updatedEvent.id) {
-					// Preserve nested data when updating currentEvent
-					state.currentEvent = {
-						...updatedEvent,
-						participants: state.currentEvent.participants || [],
-						contributions: state.currentEvent.contributions || [],
-						comments: state.currentEvent.comments || [],
+						// Preserve nested data
+						participants: state.eventsById[updatedEvent.id].participants || [],
+						contributions:
+							state.eventsById[updatedEvent.id].contributions || [],
+						comments: state.eventsById[updatedEvent.id].comments || [],
 					};
 				}
 			})
@@ -1059,9 +1063,13 @@ const eventsSlice = createSlice({
 
 		// Delete event
 		builder.addCase(deleteEvent.fulfilled, (state, action) => {
-			state.events = state.events.filter(e => e.id !== action.payload);
-			if (state.currentEvent?.id === action.payload) {
-				state.currentEvent = null;
+			const eventId = action.payload;
+			// ✅ Remove from normalized store only
+			delete state.eventsById[eventId];
+
+			// Clear currentEventId if deleted
+			if (state.currentEventId === eventId) {
+				state.currentEventId = null;
 			}
 		});
 
@@ -1073,15 +1081,11 @@ const eventsSlice = createSlice({
 			})
 			.addCase(addParticipant.fulfilled, (state, action) => {
 				state.addingParticipant = false;
-				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event && event.participants) {
-					event.participants.push(action.payload.participant);
-				}
-				if (
-					state.currentEvent?.id === action.payload.eventId &&
-					state.currentEvent.participants
-				) {
-					state.currentEvent.participants.push(action.payload.participant);
+				const { eventId, participant } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]?.participants) {
+					state.eventsById[eventId].participants!.push(participant);
 				}
 			})
 			.addCase(addParticipant.rejected, state => {
@@ -1096,24 +1100,15 @@ const eventsSlice = createSlice({
 			})
 			.addCase(updateRSVP.fulfilled, (state, action) => {
 				state.updatingRSVP = null;
-				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event && event.participants) {
-					const index = event.participants.findIndex(
-						p => p.user_id === action.payload.participant.user_id,
+				const { eventId, participant } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]?.participants) {
+					const index = state.eventsById[eventId].participants!.findIndex(
+						p => p.user_id === participant.user_id,
 					);
 					if (index !== -1) {
-						event.participants[index] = action.payload.participant;
-					}
-				}
-				if (
-					state.currentEvent?.id === action.payload.eventId &&
-					state.currentEvent.participants
-				) {
-					const index = state.currentEvent.participants.findIndex(
-						p => p.user_id === action.payload.participant.user_id,
-					);
-					if (index !== -1) {
-						state.currentEvent.participants[index] = action.payload.participant;
+						state.eventsById[eventId].participants![index] = participant;
 					}
 				}
 			})
@@ -1123,20 +1118,13 @@ const eventsSlice = createSlice({
 
 		// Remove participant
 		builder.addCase(removeParticipant.fulfilled, (state, action) => {
-			const event = state.events.find(e => e.id === action.payload.eventId);
-			if (event && event.participants) {
-				event.participants = event.participants.filter(
-					p => p.user_id !== action.payload.userId,
-				);
-			}
-			if (
-				state.currentEvent?.id === action.payload.eventId &&
-				state.currentEvent.participants
-			) {
-				state.currentEvent.participants =
-					state.currentEvent.participants.filter(
-						p => p.user_id !== action.payload.userId,
-					);
+			const { eventId, userId } = action.payload;
+
+			// ✅ Update in eventsById only
+			if (state.eventsById[eventId]?.participants) {
+				state.eventsById[eventId].participants = state.eventsById[
+					eventId
+				].participants!.filter(p => p.user_id !== userId);
 			}
 		});
 
@@ -1148,28 +1136,13 @@ const eventsSlice = createSlice({
 				state.updatingRole = null;
 				const { eventId, participant } = action.payload;
 
-				// Update in currentEvent
-				if (state.currentEvent?.id === eventId) {
-					const index = state.currentEvent.participants?.findIndex(
-						p => p.id === participant.id,
-					);
-					if (
-						index !== undefined &&
-						index !== -1 &&
-						state.currentEvent.participants
-					) {
-						state.currentEvent.participants[index] = participant;
-					}
-				}
-
-				// Update in events array
-				const event = state.events.find(e => e.id === eventId);
-				if (event?.participants) {
-					const index = event.participants.findIndex(
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]?.participants) {
+					const index = state.eventsById[eventId].participants!.findIndex(
 						p => p.id === participant.id,
 					);
 					if (index !== -1) {
-						event.participants[index] = participant;
+						state.eventsById[eventId].participants![index] = participant;
 					}
 				}
 			})
@@ -1189,18 +1162,14 @@ const eventsSlice = createSlice({
 			})
 			.addCase(addContribution.fulfilled, (state, action) => {
 				state.addingContribution = false;
-				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event) {
-					if (!event.contributions) {
-						event.contributions = [];
+				const { eventId, contribution } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]) {
+					if (!state.eventsById[eventId].contributions) {
+						state.eventsById[eventId].contributions = [];
 					}
-					event.contributions.push(action.payload.contribution);
-				}
-				if (state.currentEvent?.id === action.payload.eventId) {
-					if (!state.currentEvent.contributions) {
-						state.currentEvent.contributions = [];
-					}
-					state.currentEvent.contributions.push(action.payload.contribution);
+					state.eventsById[eventId].contributions!.push(contribution);
 				}
 			})
 			.addCase(addContribution.rejected, state => {
@@ -1209,24 +1178,16 @@ const eventsSlice = createSlice({
 
 		// Update contribution
 		builder.addCase(updateContribution.fulfilled, (state, action) => {
-			const event = state.events.find(e => e.id === action.payload.event_id);
-			if (event && event.contributions) {
-				const index = event.contributions.findIndex(
-					c => c.id === action.payload.id,
+			const contribution = action.payload;
+			const eventId = contribution.event_id;
+
+			// ✅ Update in eventsById only
+			if (state.eventsById[eventId]?.contributions) {
+				const index = state.eventsById[eventId].contributions!.findIndex(
+					c => c.id === contribution.id,
 				);
 				if (index !== -1) {
-					event.contributions[index] = action.payload;
-				}
-			}
-			if (
-				state.currentEvent?.id === action.payload.event_id &&
-				state.currentEvent.contributions
-			) {
-				const index = state.currentEvent.contributions.findIndex(
-					c => c.id === action.payload.id,
-				);
-				if (index !== -1) {
-					state.currentEvent.contributions[index] = action.payload;
+					state.eventsById[eventId].contributions![index] = contribution;
 				}
 			}
 		});
@@ -1239,19 +1200,17 @@ const eventsSlice = createSlice({
 			})
 			.addCase(deleteContribution.fulfilled, (state, action) => {
 				state.deletingContribution = null;
-				const event = state.events.find(e =>
-					e.contributions?.some(c => c.id === action.payload),
-				);
-				if (event && event.contributions) {
-					event.contributions = event.contributions.filter(
-						c => c.id !== action.payload,
-					);
-				}
-				if (state.currentEvent?.contributions) {
-					state.currentEvent.contributions =
-						state.currentEvent.contributions.filter(
-							c => c.id !== action.payload,
+				const contributionId = action.payload;
+
+				// ✅ Search eventsById and remove contribution
+				for (const eventId in state.eventsById) {
+					const event = state.eventsById[eventId];
+					if (event.contributions?.some(c => c.id === contributionId)) {
+						event.contributions = event.contributions.filter(
+							c => c.id !== contributionId,
 						);
+						break; // Found it, no need to continue
+					}
 				}
 			})
 			.addCase(deleteContribution.rejected, state => {
@@ -1266,18 +1225,14 @@ const eventsSlice = createSlice({
 			})
 			.addCase(addComment.fulfilled, (state, action) => {
 				state.addingComment = false;
-				const event = state.events.find(e => e.id === action.payload.eventId);
-				if (event) {
-					if (!event.comments) {
-						event.comments = [];
+				const { eventId, comment } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]) {
+					if (!state.eventsById[eventId].comments) {
+						state.eventsById[eventId].comments = [];
 					}
-					event.comments.push(action.payload.comment);
-				}
-				if (state.currentEvent?.id === action.payload.eventId) {
-					if (!state.currentEvent.comments) {
-						state.currentEvent.comments = [];
-					}
-					state.currentEvent.comments.push(action.payload.comment);
+					state.eventsById[eventId].comments!.push(comment);
 				}
 			})
 			.addCase(addComment.rejected, state => {
@@ -1292,16 +1247,15 @@ const eventsSlice = createSlice({
 			})
 			.addCase(deleteComment.fulfilled, (state, action) => {
 				state.deletingComment = null;
-				const event = state.events.find(e =>
-					e.comments?.some(c => c.id === action.payload),
-				);
-				if (event && event.comments) {
-					event.comments = event.comments.filter(c => c.id !== action.payload);
-				}
-				if (state.currentEvent?.comments) {
-					state.currentEvent.comments = state.currentEvent.comments.filter(
-						c => c.id !== action.payload,
-					);
+				const commentId = action.payload;
+
+				// ✅ Search eventsById and remove comment
+				for (const eventId in state.eventsById) {
+					const event = state.eventsById[eventId];
+					if (event.comments?.some(c => c.id === commentId)) {
+						event.comments = event.comments.filter(c => c.id !== commentId);
+						break; // Found it, no need to continue
+					}
 				}
 			})
 			.addCase(deleteComment.rejected, state => {
@@ -1326,7 +1280,7 @@ export const retryFetchEvent = createAsyncThunk(
 );
 
 export const {
-	setCurrentEvent,
+	setCurrentEventId,
 	removeEvent,
 	clearError,
 	updateParticipantRSVP,

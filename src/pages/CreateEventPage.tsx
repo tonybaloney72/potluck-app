@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { useAppDispatch } from "../store/hooks";
-import { createEvent, setCurrentEvent } from "../store/slices/eventsSlice";
+import { createEvent, setCurrentEventId } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { Textarea } from "../components/common/Textarea";
@@ -81,9 +81,9 @@ export const CreateEventPage = () => {
 			);
 
 			if (createEvent.fulfilled.match(result)) {
-				// Set the created event as currentEvent before redirecting
+				// Set the created event as current before redirecting
 				// This prevents the "Event not found" flash on the details page
-				dispatch(setCurrentEvent(result.payload));
+				dispatch(setCurrentEventId(result.payload.id));
 				// Redirect to the newly created event
 				navigate(`/events/${result.payload.id}`);
 			} else {

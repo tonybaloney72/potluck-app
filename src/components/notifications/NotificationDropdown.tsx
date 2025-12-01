@@ -8,6 +8,7 @@ import {
 	deleteNotification,
 } from "../../store/slices/notificationsSlice";
 import { fetchConversations } from "../../store/slices/conversationsSlice";
+import { setCurrentEventId } from "../../store/slices/eventsSlice";
 import { FaBell, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
 import { SkeletonNotificationItem } from "../common/Skeleton";
 import { motion, AnimatePresence } from "motion/react";
@@ -78,12 +79,28 @@ export const NotificationDropdown = () => {
 					state: { conversationId: notification.related_id },
 				});
 			});
-		} else if (notification.type === "event_invitation") {
+		} else if (
+			notification.type === "event_invitation" &&
+			notification.related_id
+		) {
 			dispatch(markNotificationAsRead(notification.id));
+			// Clear current event so EventDetailsPage fetches the new event
+			dispatch(setCurrentEventId(null));
 			navigate(`/events/${notification.related_id}`);
 		} else if (notification.type === "rsvp" && notification.related_id) {
-			// NEW: Navigate to event when RSVP notification is clicked
+			// Navigate to event when RSVP notification is clicked
 			dispatch(markNotificationAsRead(notification.id));
+			dispatch(setCurrentEventId(null));
+			navigate(`/events/${notification.related_id}`);
+		} else if (
+			(notification.type === "event_updated" ||
+				notification.type === "event_cancelled" ||
+				notification.type === "event_reminder") &&
+			notification.related_id
+		) {
+			// Navigate to event for other event-related notifications
+			dispatch(markNotificationAsRead(notification.id));
+			dispatch(setCurrentEventId(null));
 			navigate(`/events/${notification.related_id}`);
 		}
 		setIsOpen(false);

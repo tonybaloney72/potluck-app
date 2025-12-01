@@ -28,6 +28,11 @@ import { CommentsSection } from "../components/events/CommentsSection";
 import { canAddContributions, hasManagePermission } from "../utils/events";
 import type { EventRole, RSVPStatus } from "../types";
 import { SkeletonEventDetails } from "../components/common/Skeleton";
+import {
+	selectEventById,
+	selectIsEventFetching,
+} from "../store/selectors/eventsSelectors";
+import { setCurrentEventId } from "../store/slices/eventsSlice";
 
 // Confirmation modal type - consolidated state
 type ConfirmationModal =
@@ -42,8 +47,6 @@ export const EventDetailPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 	const {
-		currentEvent,
-		loading,
 		updatingRSVP,
 		addingComment,
 		addingContribution,
@@ -68,42 +71,74 @@ export const EventDetailPage = () => {
 
 	useEventDetailsRealtime(eventId || null);
 
+	// ✅ Get event from URL eventId (this is what we should display)
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+	const isFetching = useAppSelector(state =>
+		eventId ? selectIsEventFetching(state, eventId) : false,
+	);
+
+	// Effect 1: Fetch event when eventId changes (only runs on mount or eventId change)
 	useEffect(() => {
 		if (!eventId) return;
 
-		// If we already have this event as currentEvent, no need to fetch again
-		if (currentEvent?.id === eventId) {
+		// Check if we already have the event with full nested data
+		const hasFullData =
+			event && event.participants && event.contributions && event.comments;
+
+		// If we have full data, no need to fetch
+		if (hasFullData) {
 			return;
 		}
 
-		// Fetch the event to get full details including comments and contributions
+		// If already fetching, don't fetch again
+		if (isFetching) {
+			return;
+		}
+
+		// Otherwise, fetch the event to get full details
 		dispatch(fetchEventById(eventId));
-	}, [dispatch, eventId, currentEvent]);
+		// Only depend on eventId to prevent infinite loops
+		// We check event in the body but don't include it in deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dispatch, eventId]);
+
+	// Effect 2: Set currentEventId when we have full event data
+	useEffect(() => {
+		if (!eventId) return;
+
+		const hasFullData =
+			event && event.participants && event.contributions && event.comments;
+
+		if (hasFullData && !isFetching) {
+			dispatch(setCurrentEventId(eventId));
+		}
+	}, [dispatch, eventId, event, isFetching]);
 
 	// Filter out friends that have been added as participants
 	// This ensures they don't appear in the selected chips after being added
 	useEffect(() => {
-		if (currentEvent?.participants) {
-			const participantIds = new Set(
-				currentEvent.participants.map(p => p.user_id),
-			);
+		if (event?.participants) {
+			const participantIds = new Set(event.participants.map(p => p.user_id));
 			setSelectedFriends(prev =>
 				prev.filter(f => !participantIds.has(f.friendId)),
 			);
 		}
-	}, [currentEvent?.participants]);
+	}, [event?.participants]);
 
 	// Show loading if:
-	// 1. We're actively loading, OR
-	// 2. We have an eventId but currentEvent doesn't match (still fetching)
-	const isLoading = loading || (eventId && currentEvent?.id !== eventId);
+	// 1. We're actively fetching, OR
+	// 2. We have an eventId but no event yet (initial load state)
+	// Stop loading once we have an event OR an error
+	const isLoading = isFetching || (eventId && !event && !error);
 
 	if (isLoading) {
 		return <SkeletonEventDetails />;
 	}
 
 	// Early return if no event after loading is complete
-	if (!currentEvent) {
+	if (!event) {
 		return (
 			<div className='bg-secondary p-4 md:p-8'>
 				<div className='max-w-4xl mx-auto'>
@@ -131,9 +166,9 @@ export const EventDetailPage = () => {
 		);
 	}
 
-	// At this point, TypeScript knows currentEvent is not null due to early return above
+	// At this point, TypeScript knows event is not null due to early return above
 	// Find current user's participant record
-	const currentUserParticipant = currentEvent.participants?.find(
+	const currentUserParticipant = event.participants?.find(
 		p => p.user_id === user?.id,
 	);
 
@@ -197,7 +232,7 @@ export const EventDetailPage = () => {
 			case "removeParticipant":
 				if (data?.userId && data?.userName) {
 					// Prevent removing hosts
-					const participantToRemove = currentEvent?.participants?.find(
+					const participantToRemove = event?.participants?.find(
 						p => p.user_id === data.userId,
 					);
 					if (participantToRemove?.role === "host") {
@@ -232,9 +267,9 @@ export const EventDetailPage = () => {
 				await dispatch(deleteContribution(confirmationModal.contributionId));
 				break;
 			case "removeParticipant": {
-				if (!currentEvent) return;
+				if (!event) return;
 				// Prevent removing hosts
-				const participantToRemove = currentEvent.participants?.find(
+				const participantToRemove = event.participants?.find(
 					p => p.user_id === confirmationModal.userId,
 				);
 				if (participantToRemove?.role === "host") {
@@ -326,10 +361,8 @@ export const EventDetailPage = () => {
 		if (!eventId) return;
 
 		// Find the participant to check their current role
-		if (!currentEvent) return;
-		const participant = currentEvent.participants?.find(
-			p => p.id === participantId,
-		);
+		if (!event) return;
+		const participant = event.participants?.find(p => p.id === participantId);
 
 		// Prevent changing to/from "host" role - hosts cannot be modified
 		if (!participant || participant.role === "host" || role === "host") {
@@ -345,7 +378,7 @@ export const EventDetailPage = () => {
 		);
 	};
 
-	const isEventCreator = currentEvent.created_by === user?.id;
+	const isEventCreator = event.created_by === user?.id;
 	const canEdit =
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
@@ -395,7 +428,7 @@ export const EventDetailPage = () => {
 
 				{/* Event Header */}
 				<EventHeader
-					event={currentEvent}
+					event={event}
 					currentUserParticipant={currentUserParticipant}
 					onRSVPChange={handleRSVP}
 					updatingRSVP={updatingRSVP}
@@ -409,7 +442,7 @@ export const EventDetailPage = () => {
 
 				{/* Participants Section */}
 				<ParticipantsSection
-					event={currentEvent}
+					event={event}
 					currentUserParticipant={currentUserParticipant}
 					currentUserId={user?.id}
 					onRemoveParticipant={(userId, userName) =>
@@ -431,14 +464,14 @@ export const EventDetailPage = () => {
 							);
 							// Friend will appear in ParticipantsSection via real-time update
 							// They'll be automatically filtered out from selectedFriends
-							// via the useEffect that syncs with currentEvent.participants
+							// via the useEffect that syncs with event.participants
 						}
 					}}
 				/>
 
 				{/* Contributions Section */}
 				<ContributionsSection
-					event={currentEvent}
+					event={event}
 					currentUserParticipant={currentUserParticipant}
 					currentUserId={user?.id}
 					onAddContribution={data => handleAdd("contribution", data)}
@@ -451,7 +484,7 @@ export const EventDetailPage = () => {
 
 				{/* Comments Section */}
 				<CommentsSection
-					event={currentEvent}
+					event={event}
 					currentUserParticipant={currentUserParticipant}
 					currentUserId={user?.id}
 					onAddComment={data => handleAdd("comment", data)}

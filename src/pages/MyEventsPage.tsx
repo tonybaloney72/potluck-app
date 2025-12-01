@@ -3,10 +3,16 @@ import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchUserEvents,
-	setCurrentEvent,
+	setCurrentEventId,
 	retryFetchEvents,
 	clearError,
 } from "../store/slices/eventsSlice";
+import {
+	selectHostedEvents,
+	selectAttendingEvents,
+	selectInvitedEvents,
+	selectEventsById,
+} from "../store/selectors/eventsSelectors";
 import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
@@ -16,9 +22,15 @@ import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { events, loading, error } = useAppSelector(state => state.events);
+	const { loading, error } = useAppSelector(state => state.events);
+	const eventsById = useAppSelector(selectEventsById);
 	const { user } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
+
+	// ✅ Use memoized selectors instead of filtering
+	const hostedEvents = useAppSelector(selectHostedEvents);
+	const attendingEvents = useAppSelector(selectAttendingEvents);
+	const invitedEvents = useAppSelector(selectInvitedEvents);
 
 	const handleRetry = () => {
 		dispatch(clearError());
@@ -37,32 +49,17 @@ export const MyEventsPage = () => {
 	}, [dispatch, user?.id, loading]);
 
 	const handleEventClick = (eventId: string) => {
-		dispatch(setCurrentEvent(null)); // Clear current event first
+		// Use setCurrentEventId instead of setCurrentEvent
+		dispatch(setCurrentEventId(eventId));
 		navigate(`/events/${eventId}`);
 	};
 
-	// Separate events into hosted, attending, and invited
-	const hostedEvents = events.filter(e => e.created_by === user?.id);
-
-	// Events where user has RSVP'd "going"
-	const attendingEvents = events.filter(e => {
-		if (e.created_by === user?.id) return false; // Don't include hosted events
-		const userParticipant = e.participants?.find(p => p.user_id === user?.id);
-		return userParticipant?.rsvp_status === "going";
-	});
-
-	// Events where user is invited but hasn't RSVP'd "going"
-	// (includes "maybe", "not_going", or "pending")
-	const invitedEvents = events.filter(e => {
-		if (e.created_by === user?.id) return false; // Don't include hosted events
-		const userParticipant = e.participants?.find(p => p.user_id === user?.id);
-		return userParticipant && userParticipant.rsvp_status !== "going";
-	});
-
-	const isInitialLoading = loading && events.length === 0;
+	// Check if we have any events (check both old and new structures for backward compatibility)
+	const hasEvents = Object.keys(eventsById).length > 0;
+	const isInitialLoading = loading && !hasEvents;
 
 	// Show error if we have an error and no events
-	if (error && events.length === 0 && !loading) {
+	if (error && !hasEvents && !loading) {
 		return (
 			<div className='bg-secondary p-4 md:p-8'>
 				<div className='max-w-7xl mx-auto'>
@@ -103,7 +100,7 @@ export const MyEventsPage = () => {
 					</Button>
 				</div>
 
-				{error && events.length > 0 && (
+				{error && hasEvents && (
 					<ErrorDisplay
 						message={error}
 						onRetry={handleRetry}

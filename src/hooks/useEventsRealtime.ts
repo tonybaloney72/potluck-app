@@ -44,9 +44,7 @@ export function useEventsRealtime() {
 
 				// Check if this event exists in our Redux state
 				const state = store.getState();
-				const eventExists = state.events.events.some(
-					e => e.id === deletedEventId,
-				);
+				const eventExists = !!state.events.eventsById[deletedEventId];
 
 				if (eventExists) {
 					dispatch(removeEvent(deletedEventId));

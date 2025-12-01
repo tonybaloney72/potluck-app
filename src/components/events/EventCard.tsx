@@ -79,7 +79,7 @@ export const EventCard = ({
 								scale: 0.98,
 								transition: { duration: 0.1 },
 							}}
-							className='bg-primary rounded-lg shadow-md p-4 md:p-6 cursor-pointer hover:shadow-xl transition-shadow flex flex-col min-h-[44px]'
+							className='bg-primary rounded-lg shadow-md p-4 md:p-6 cursor-pointer hover:shadow-xl hover:bg-tertiary transition-shadow flex flex-col min-h-[44px] '
 							onClick={() => onEventClick(event.id)}
 							role='button'
 							tabIndex={0}
