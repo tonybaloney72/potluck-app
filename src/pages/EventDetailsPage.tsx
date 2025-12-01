@@ -140,7 +140,7 @@ export const EventDetailPage = () => {
 	// Early return if no event after loading is complete
 	if (!event) {
 		return (
-			<div className='bg-secondary p-4 md:p-8'>
+			<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 				<div className='max-w-4xl mx-auto'>
 					{error ? (
 						<ErrorDisplay
@@ -162,7 +162,7 @@ export const EventDetailPage = () => {
 						/>
 					)}
 				</div>
-			</div>
+			</main>
 		);
 	}
 
@@ -383,14 +383,14 @@ export const EventDetailPage = () => {
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
 	return (
-		<div className='bg-secondary p-4 md:p-8'>
+		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button, Edit, and Delete */}
 				<div className='flex justify-between items-center gap-3 mb-4'>
 					<button
 						onClick={() => navigate("/")}
-						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center'>
-						<FaArrowLeft className='w-5 h-5 hover:cursor-pointer' />
+						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'>
+						<FaArrowLeft className='w-5 h-5' />
 					</button>
 					{canEdit && (
 						<div className='flex gap-2'>
@@ -528,6 +528,6 @@ export const EventDetailPage = () => {
 					/>
 				)}
 			</div>
-		</div>
+		</main>
 	);
 };

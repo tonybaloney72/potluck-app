@@ -73,17 +73,30 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 				? value
 				: inputRef.current?.value || "";
 
+		const inputId =
+			props.id ||
+			`input-${label?.toLowerCase().replace(/\s+/g, "-") || "field"}`;
+		const errorId = error ? `${inputId}-error` : undefined;
+		const helperTextId = helperText && !error ? `${inputId}-helper` : undefined;
+		const describedBy =
+			[errorId, helperTextId].filter(Boolean).join(" ") || undefined;
+
 		return (
 			<div className='w-full'>
 				{label && (
-					<label className='block text-sm font-medium text-primary'>
+					<label
+						htmlFor={inputId}
+						className='block text-sm font-medium text-primary'>
 						{label}
 					</label>
 				)}
 				{helperText && !error && (
-					<p className='text-sm text-secondary mb-1'>{helperText}</p>
+					<p id={helperTextId} className='text-sm text-secondary mb-1'>
+						{helperText}
+					</p>
 				)}
 				<input
+					id={inputId}
 					ref={node => {
 						if (typeof ref === "function") {
 							ref(node);
@@ -100,11 +113,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 							: "border-border focus:ring-accent"
 					} ${className}`}
 					autoComplete={autoComplete ?? "off"}
+					aria-invalid={error ? "true" : "false"}
+					aria-required={props.required ? "true" : undefined}
+					aria-describedby={describedBy}
+					aria-label={!label ? props["aria-label"] : undefined}
 					{...props}
 				/>
 				<div className='mt-1 flex justify-between items-start'>
 					<div className='flex-1'>
-						{error && <p className='text-sm text-red-500'>{error}</p>}
+						{error && (
+							<p id={errorId} className='text-sm text-red-500' role='alert'>
+								{error}
+							</p>
+						)}
 						{showPasswordStrength &&
 							type === "password" &&
 							typeof passwordValue === "string" && (

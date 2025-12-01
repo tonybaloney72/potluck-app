@@ -84,30 +84,55 @@ export const ContributionsSection = ({
 						exit={{ opacity: 0, height: 0, marginBottom: 0 }}
 						transition={{ duration: 0.2, ease: "easeInOut" }}
 						onSubmit={contributionForm.handleSubmit(handleSubmit)}
-						className='overflow-hidden p-4 bg-secondary rounded-lg'>
+						className='overflow-hidden p-4 bg-secondary rounded-lg'
+						aria-label='Add contribution form'>
 						<motion.div
 							initial={{ y: -10 }}
 							animate={{ y: 0 }}
 							exit={{ y: -10 }}
 							transition={{ duration: 0.2, ease: "easeInOut" }}>
+							<label htmlFor='contribution-item-name' className='sr-only'>
+								Item name (required)
+							</label>
 							<input
+								id='contribution-item-name'
 								type='text'
 								placeholder='Item name *'
 								{...contributionForm.register("itemName")}
 								className={formInputClassName}
+								aria-required='true'
+								aria-invalid={
+									contributionForm.formState.errors.itemName ? "true" : "false"
+								}
+								aria-describedby={
+									contributionForm.formState.errors.itemName
+										? "item-name-error"
+										: undefined
+								}
 							/>
 							{contributionForm.formState.errors.itemName && (
-								<p className='text-red-500 text-sm mb-2'>
+								<p
+									id='item-name-error'
+									className='text-red-500 text-sm mb-2'
+									role='alert'>
 									{contributionForm.formState.errors.itemName.message}
 								</p>
 							)}
+							<label htmlFor='contribution-quantity' className='sr-only'>
+								Quantity (optional)
+							</label>
 							<input
+								id='contribution-quantity'
 								type='text'
 								placeholder='Quantity (optional)'
 								{...contributionForm.register("quantity")}
 								className={formInputClassName}
 							/>
+							<label htmlFor='contribution-description' className='sr-only'>
+								Description (optional)
+							</label>
 							<textarea
+								id='contribution-description'
 								placeholder='Description (optional)'
 								{...contributionForm.register("description")}
 								className={formInputClassName}
@@ -159,7 +184,7 @@ export const ContributionsSection = ({
 						);
 
 						return (
-							<div
+							<article
 								key={contribution.id}
 								className='p-4 bg-secondary rounded-lg flex justify-between items-start'>
 								<div className='flex-1'>
@@ -189,9 +214,10 @@ export const ContributionsSection = ({
 										variant='text'
 										onDelete={() => onDeleteContribution(contribution.id)}
 										isDeleting={deletingContribution === contribution.id}
+										label={`Delete contribution: ${contribution.item_name}`}
 									/>
 								)}
-							</div>
+							</article>
 						);
 					})}
 				</div>

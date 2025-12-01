@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./Button";
 
@@ -23,15 +23,50 @@ export const ConfirmModal = ({
 	cancelText = "Cancel",
 	confirmVariant = "primary",
 }: ConfirmModalProps) => {
-	// Allow esc key to close the modal
+	const modalRef = useRef<HTMLDivElement>(null);
+	const cancelButtonRef = useRef<HTMLButtonElement>(null);
+	const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+	// Focus trap and keyboard handling
 	useEffect(() => {
 		if (!isOpen) return;
+
+		const modal = modalRef.current;
+		if (!modal) return;
+
+		// Focus the cancel button when modal opens
+		cancelButtonRef.current?.focus();
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape" || e.key === "Esc") {
 				onClose();
+				return;
+			}
+
+			// Focus trap: keep focus within modal
+			if (e.key === "Tab") {
+				const focusableElements = modal.querySelectorAll<HTMLElement>(
+					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+				);
+				const firstElement = focusableElements[0];
+				const lastElement = focusableElements[focusableElements.length - 1];
+
+				if (e.shiftKey) {
+					// Shift + Tab
+					if (document.activeElement === firstElement) {
+						e.preventDefault();
+						lastElement?.focus();
+					}
+				} else {
+					// Tab
+					if (document.activeElement === lastElement) {
+						e.preventDefault();
+						firstElement?.focus();
+					}
+				}
 			}
 		};
+
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
@@ -51,7 +86,8 @@ export const ConfirmModal = ({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						onClick={onClose}>
+						onClick={onClose}
+						aria-hidden='true'>
 						<motion.div
 							className='fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none'
 							initial={{ opacity: 0, y: 40, scale: 0.96 }}
@@ -60,19 +96,36 @@ export const ConfirmModal = ({
 							transition={{ duration: 0.18 }}
 							onClick={e => e.stopPropagation()}>
 							<div
+								ref={modalRef}
+								role='dialog'
+								aria-modal='true'
+								aria-labelledby='modal-title'
+								aria-describedby='modal-description'
 								className='bg-secondary rounded-lg shadow-xl w-full max-w-md p-6 relative z-50 pointer-events-auto border border-border'
 								onClick={e => e.stopPropagation()}>
 								<div className='mb-4'>
-									<h2 className='text-xl font-semibold text-primary mb-2'>
+									<h2
+										id='modal-title'
+										className='text-xl font-semibold text-primary mb-2'>
 										{title}
 									</h2>
-									<p className='text-secondary'>{message}</p>
+									<p id='modal-description' className='text-secondary'>
+										{message}
+									</p>
 								</div>
 								<div className='flex gap-3 justify-end'>
-									<Button variant='secondary' onClick={onClose}>
+									<Button
+										ref={cancelButtonRef}
+										variant='secondary'
+										onClick={onClose}
+										type='button'>
 										{cancelText}
 									</Button>
-									<Button variant={confirmVariant} onClick={handleConfirm}>
+									<Button
+										ref={confirmButtonRef}
+										variant={confirmVariant}
+										onClick={handleConfirm}
+										type='button'>
 										{confirmText}
 									</Button>
 								</div>

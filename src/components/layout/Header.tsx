@@ -102,146 +102,184 @@ export const Header = () => {
 
 	return (
 		<>
-			<header className='bg-secondary border-b border-border shadow'>
-				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-					<div className='flex justify-between items-center h-16'>
-						<Link
-							to='/'
-							className='text-xl font-bold text-primary flex items-center'>
-							Potluck <LuCookingPot className='w-6 h-6 inline-block ml-2' />
-						</Link>
-
-						{/* Desktop Navigation */}
-						<div className='hidden md:flex items-center gap-4'>
+			{/* Skip to main content link */}
+			<a href='#main-content' className='skip-link'>
+				Skip to main content
+			</a>
+			<header
+				className='bg-secondary border-b border-border shadow'
+				role='banner'>
+				<nav aria-label='Main navigation'>
+					<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+						<div className='flex justify-between items-center h-16'>
 							<Link
-								to='/friends'
-								className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
-								aria-label='Friends'>
-								<FaUsers className='w-6 h-6' />
+								to='/'
+								className='text-xl font-bold text-primary flex items-center'
+								aria-label='Potluck - Home'>
+								Potluck{" "}
+								<LuCookingPot
+									className='w-6 h-6 inline-block ml-2'
+									aria-hidden='true'
+								/>
 							</Link>
 
-							<Link
-								to='/messages'
-								className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
-								aria-label='Messages'>
-								<FaEnvelope className='w-6 h-6' />
-							</Link>
-							<NotificationDropdown />
-							<nav className='flex items-center gap-4'>
-								<div className='relative' ref={dropdownRef}>
-									<button
-										onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-										className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border cursor-pointer transition-all duration-200 hover:opacity-90 active:opacity-75 min-w-[44px] min-h-[44px]'
-										aria-label='User menu'>
-										{profile?.avatar_url ? (
-											<img
-												src={profile.avatar_url}
-												alt='User avatar'
-												className='w-full h-full rounded-full object-cover'
-											/>
-										) : (
-											<FaUser className='w-5 h-5' />
-										)}
-									</button>
+							{/* Desktop Navigation */}
+							<div className='hidden md:flex items-center gap-4'>
+								<Link
+									to='/friends'
+									className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
+									aria-label='Friends'>
+									<FaUsers className='w-6 h-6' aria-hidden='true' />
+								</Link>
 
-									<AnimatePresence>
-										{isDropdownOpen && (
-											<motion.div
-												initial={{ opacity: 0, y: -10, scale: 0.95 }}
-												animate={{ opacity: 1, y: 0, scale: 1 }}
-												exit={{ opacity: 0, y: -10, scale: 0.95 }}
-												transition={{ duration: 0.2, ease: "easeOut" }}
-												className='absolute right-0 mt-2 w-48 bg-secondary border border-border rounded-md shadow-lg z-50'>
-												{/* User info header */}
-												{profile?.name && (
-													<motion.div
-														initial={{ opacity: 0 }}
-														animate={{ opacity: 1 }}
-														transition={{ delay: 0.1 }}
-														className='px-4 py-3 border-b border-border'>
-														<div className='flex items-center gap-3'>
-															{profile.avatar_url ? (
-																<img
-																	src={profile.avatar_url}
-																	alt='User avatar'
-																	className='w-8 h-8 rounded-full object-cover'
-																/>
+								<Link
+									to='/messages'
+									className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
+									aria-label='Messages'>
+									<FaEnvelope className='w-6 h-6' aria-hidden='true' />
+								</Link>
+								<NotificationDropdown />
+								<div className='flex items-center gap-4'>
+									<div className='relative' ref={dropdownRef}>
+										<button
+											onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+											className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border cursor-pointer transition-all duration-200 hover:opacity-90 active:opacity-75 min-w-[44px] min-h-[44px]'
+											aria-label={`User menu for ${profile?.name || "user"}`}
+											aria-expanded={isDropdownOpen}
+											aria-haspopup='menu'
+											type='button'>
+											{profile?.avatar_url ? (
+												<img
+													src={profile.avatar_url}
+													alt={`${profile?.name || "User"} avatar`}
+													className='w-full h-full rounded-full object-cover'
+												/>
+											) : (
+												<FaUser className='w-5 h-5' aria-hidden='true' />
+											)}
+										</button>
+
+										<AnimatePresence>
+											{isDropdownOpen && (
+												<motion.div
+													initial={{ opacity: 0, y: -10, scale: 0.95 }}
+													animate={{ opacity: 1, y: 0, scale: 1 }}
+													exit={{ opacity: 0, y: -10, scale: 0.95 }}
+													transition={{ duration: 0.2, ease: "easeOut" }}
+													role='menu'
+													aria-label='User menu'
+													className='absolute right-0 mt-2 w-48 bg-secondary border border-border rounded-md shadow-lg z-50'>
+													{/* User info header */}
+													{profile?.name && (
+														<motion.div
+															initial={{ opacity: 0 }}
+															animate={{ opacity: 1 }}
+															transition={{ delay: 0.1 }}
+															className='px-4 py-3 border-b border-border'>
+															<div className='flex items-center gap-3'>
+																{profile.avatar_url ? (
+																	<img
+																		src={profile.avatar_url}
+																		alt={`${profile.name} avatar`}
+																		className='w-8 h-8 rounded-full object-cover'
+																	/>
+																) : (
+																	<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
+																		<FaUser
+																			className='w-4 h-4 text-primary'
+																			aria-hidden='true'
+																		/>
+																	</div>
+																)}
+																<span className='text-sm font-medium text-primary truncate'>
+																	{profile.name.split(" ")[0]}
+																</span>
+															</div>
+														</motion.div>
+													)}
+													{/* Menu items */}
+													<div className='py-1' role='group'>
+														<motion.button
+															whileHover={{
+																backgroundColor: "var(--bg-tertiary)",
+															}}
+															whileTap={{ scale: 0.98 }}
+															onClick={handleSettings}
+															className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
+															role='menuitem'
+															type='button'>
+															<FaCog className='w-4 h-4' aria-hidden='true' />
+															Settings
+														</motion.button>
+														<motion.button
+															whileHover={{
+																backgroundColor: "var(--bg-tertiary)",
+															}}
+															whileTap={{ scale: 0.98 }}
+															onClick={() =>
+																handleThemeChange(
+																	theme === "dark" ? "light" : "dark",
+																)
+															}
+															className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
+															role='menuitem'
+															aria-label={`Switch to ${
+																theme === "dark" ? "light" : "dark"
+															} mode`}
+															type='button'>
+															{theme === "dark" ? (
+																<FaSun className='w-4 h-4' aria-hidden='true' />
 															) : (
-																<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
-																	<FaUser className='w-4 h-4 text-primary' />
-																</div>
+																<FaMoon
+																	className='w-4 h-4'
+																	aria-hidden='true'
+																/>
 															)}
-															<span className='text-sm font-medium text-primary truncate'>
-																{profile.name.split(" ")[0]}
-															</span>
-														</div>
-													</motion.div>
-												)}
-												{/* Menu items */}
-												<div className='py-1'>
-													<motion.button
-														whileHover={{
-															backgroundColor: "var(--bg-tertiary)",
-														}}
-														whileTap={{ scale: 0.98 }}
-														onClick={handleSettings}
-														className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'>
-														<FaCog className='w-4 h-4' />
-														Settings
-													</motion.button>
-													<motion.button
-														whileHover={{
-															backgroundColor: "var(--bg-tertiary)",
-														}}
-														whileTap={{ scale: 0.98 }}
-														onClick={() =>
-															handleThemeChange(
-																theme === "dark" ? "light" : "dark",
-															)
-														}
-														className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'>
-														{theme === "dark" ? (
-															<FaSun className='w-4 h-4' />
-														) : (
-															<FaMoon className='w-4 h-4' />
-														)}
-														{theme === "dark" ? "Light Mode" : "Dark Mode"}
-													</motion.button>
-													<motion.button
-														whileHover={{
-															backgroundColor: "var(--bg-tertiary)",
-														}}
-														whileTap={{ scale: 0.98 }}
-														onClick={handleSignOut}
-														className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'>
-														<FaSignOutAlt className='w-4 h-4' />
-														Log Out
-													</motion.button>
-												</div>
-											</motion.div>
-										)}
-									</AnimatePresence>
+															{theme === "dark" ? "Light Mode" : "Dark Mode"}
+														</motion.button>
+														<motion.button
+															whileHover={{
+																backgroundColor: "var(--bg-tertiary)",
+															}}
+															whileTap={{ scale: 0.98 }}
+															onClick={handleSignOut}
+															className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
+															role='menuitem'
+															type='button'>
+															<FaSignOutAlt
+																className='w-4 h-4'
+																aria-hidden='true'
+															/>
+															Log Out
+														</motion.button>
+													</div>
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</div>
 								</div>
-							</nav>
-						</div>
+							</div>
 
-						{/* Mobile Navigation - Notification & Menu Button */}
-						<div className='md:hidden flex items-center gap-2'>
-							<NotificationDropdown />
-							<button
-								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-								className='flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]'
-								aria-label='Toggle mobile menu'
-								aria-expanded={isMobileMenuOpen}>
-								{isMobileMenuOpen ? (
-									<FaTimes className='w-6 h-6' />
-								) : (
-									<FaBars className='w-6 h-6' />
-								)}
-							</button>
+							{/* Mobile Navigation - Notification & Menu Button */}
+							<div className='md:hidden flex items-center gap-2'>
+								<NotificationDropdown />
+								<button
+									onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+									className='flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]'
+									aria-label='Toggle mobile menu'
+									aria-expanded={isMobileMenuOpen}
+									aria-controls='mobile-menu'
+									type='button'>
+									{isMobileMenuOpen ? (
+										<FaTimes className='w-6 h-6' aria-hidden='true' />
+									) : (
+										<FaBars className='w-6 h-6' aria-hidden='true' />
+									)}
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
+				</nav>
 			</header>
 
 			{/* Mobile Menu Overlay */}
@@ -261,10 +299,14 @@ export const Header = () => {
 						{/* Mobile Menu */}
 						<motion.div
 							ref={mobileMenuRef}
+							id='mobile-menu'
 							initial={{ x: "-100%" }}
 							animate={{ x: 0 }}
 							exit={{ x: "-100%" }}
 							transition={{ duration: 0.3, ease: "easeInOut" }}
+							role='dialog'
+							aria-modal='true'
+							aria-label='Mobile navigation menu'
 							className='fixed inset-y-0 left-0 w-64 bg-secondary border-r border-border z-50 md:hidden overflow-y-auto'>
 							<div className='flex flex-col h-full'>
 								{/* Header with close button */}
@@ -273,32 +315,33 @@ export const Header = () => {
 									<button
 										onClick={() => setIsMobileMenuOpen(false)}
 										className='flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]'
-										aria-label='Close menu'>
-										<FaTimes className='w-5 h-5' />
+										aria-label='Close menu'
+										type='button'>
+										<FaTimes className='w-5 h-5' aria-hidden='true' />
 									</button>
 								</div>
 
 								{/* Navigation Links */}
-								<nav className='p-4 space-y-2'>
+								<nav className='p-4 space-y-2' aria-label='Mobile navigation'>
 									<Link
 										to='/'
 										onClick={handleMobileNavClick}
 										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<LuCookingPot className='w-5 h-5' />
+										<LuCookingPot className='w-5 h-5' aria-hidden='true' />
 										<span>My Events</span>
 									</Link>
 									<Link
 										to='/friends'
 										onClick={handleMobileNavClick}
 										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaUsers className='w-5 h-5' />
+										<FaUsers className='w-5 h-5' aria-hidden='true' />
 										<span>Friends</span>
 									</Link>
 									<Link
 										to='/messages'
 										onClick={handleMobileNavClick}
 										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaEnvelope className='w-5 h-5' />
+										<FaEnvelope className='w-5 h-5' aria-hidden='true' />
 										<span>Messages</span>
 									</Link>
 								</nav>
@@ -310,12 +353,15 @@ export const Header = () => {
 											{profile.avatar_url ? (
 												<img
 													src={profile.avatar_url}
-													alt='User avatar'
+													alt={`${profile.name} avatar`}
 													className='w-10 h-10 rounded-full object-cover'
 												/>
 											) : (
 												<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-													<FaUser className='w-5 h-5 text-primary' />
+													<FaUser
+														className='w-5 h-5 text-primary'
+														aria-hidden='true'
+													/>
 												</div>
 											)}
 											<span className='text-sm font-medium text-primary truncate'>
@@ -328,19 +374,24 @@ export const Header = () => {
 											handleSettings();
 											setIsMobileMenuOpen(false);
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaCog className='w-5 h-5' />
+										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
+										type='button'>
+										<FaCog className='w-5 h-5' aria-hidden='true' />
 										<span>Settings</span>
 									</button>
 									<button
 										onClick={() => {
 											handleThemeChange(theme === "dark" ? "light" : "dark");
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
+										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
+										aria-label={`Switch to ${
+											theme === "dark" ? "light" : "dark"
+										} mode`}
+										type='button'>
 										{theme === "dark" ? (
-											<FaSun className='w-5 h-5' />
+											<FaSun className='w-5 h-5' aria-hidden='true' />
 										) : (
-											<FaMoon className='w-5 h-5' />
+											<FaMoon className='w-5 h-5' aria-hidden='true' />
 										)}
 										<span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
 									</button>
@@ -349,8 +400,9 @@ export const Header = () => {
 											handleSignOut();
 											setIsMobileMenuOpen(false);
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaSignOutAlt className='w-5 h-5' />
+										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
+										type='button'>
+										<FaSignOutAlt className='w-5 h-5' aria-hidden='true' />
 										<span>Log Out</span>
 									</button>
 								</div>

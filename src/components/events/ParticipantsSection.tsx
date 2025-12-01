@@ -73,65 +73,71 @@ export const ParticipantsSection = ({
 							canManage && isNotCurrentUser && !isHost;
 
 						return (
-							<motion.div
+							<article
 								key={participant.id}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -20 }}
-								transition={{ duration: 0.3 }}
 								className='p-3 bg-secondary rounded-lg relative'>
-								{/* Delete button in top-right corner */}
-								{canRemoveParticipant && (
-									<div className='absolute top-2 right-2'>
-										<DeleteButton
-											variant='icon'
-											onDelete={() =>
-												onRemoveParticipant(
-													participant.user_id,
-													participant.user?.name || "Unknown",
-												)
-											}
-											label='Remove attendee'
-										/>
-									</div>
-								)}
+								<motion.div
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									transition={{ duration: 0.3 }}>
+									{/* Delete button in top-right corner */}
+									{canRemoveParticipant && (
+										<div className='absolute top-2 right-2'>
+											<DeleteButton
+												variant='icon'
+												onDelete={() =>
+													onRemoveParticipant(
+														participant.user_id,
+														participant.user?.name || "Unknown",
+													)
+												}
+												label={`Remove attendee ${
+													participant.user?.name || "Unknown"
+												}`}
+											/>
+										</div>
+									)}
 
-								{/* Main content */}
-								<div className='flex gap-3 pr-8 sm:pr-0'>
-									<Avatar user={participant.user} size='md' />
-									<div className='flex-1 min-w-0'>
-										<p className='font-semibold text-primary mb-1 sm:mb-0'>
-											{participant.user?.name || "Unknown"}
-										</p>
-										{/* Mobile: Stack role and RSVP vertically */}
-										<div className='flex flex-col gap-1 sm:gap-2'>
-											<div className='flex items-center gap-2'>
-												<p className='text-xs text-tertiary capitalize'>
-													{participant.role}
-												</p>
-												<span className='inline text-xs text-tertiary'>•</span>
-												<p className='text-xs text-tertiary capitalize'>
-													{participant.rsvp_status}
-												</p>
+									{/* Main content */}
+									<div className='flex gap-3 pr-8 sm:pr-0'>
+										<Avatar user={participant.user} size='md' />
+										<div className='flex-1 min-w-0'>
+											<p className='font-semibold text-primary mb-1 sm:mb-0'>
+												{participant.user?.name || "Unknown"}
+											</p>
+											{/* Mobile: Stack role and RSVP vertically */}
+											<div className='flex flex-col gap-1 sm:gap-2'>
+												<div className='flex items-center gap-2'>
+													<p className='text-xs text-tertiary capitalize'>
+														{participant.role}
+													</p>
+													<span className='inline text-xs text-tertiary'>
+														•
+													</span>
+													<p className='text-xs text-tertiary capitalize'>
+														{participant.rsvp_status}
+													</p>
+												</div>
+												{canModifyRole && (
+													<RoleSelector
+														value={participant.role}
+														onChange={role => {
+															onUpdateParticipantRole(
+																participant.id,
+																participant.user_id,
+																role,
+															);
+														}}
+														disabled={updatingRole === participant.id}
+														className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
+													/>
+												)}
 											</div>
-											{canModifyRole && (
-												<RoleSelector
-													value={participant.role}
-													onChange={role => {
-														onUpdateParticipantRole(
-															participant.id,
-															participant.user_id,
-															role,
-														);
-													}}
-													disabled={updatingRole === participant.id}
-													className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
-												/>
-											)}
 										</div>
 									</div>
-								</div>
-							</motion.div>
+								</motion.div>
+							</article>
 						);
 					})}
 				</div>

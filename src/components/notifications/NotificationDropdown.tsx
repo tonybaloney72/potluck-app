@@ -128,12 +128,18 @@ export const NotificationDropdown = () => {
 			{/* Bell Icon Button */}
 			<button
 				onClick={() => setIsOpen(!isOpen)}
-				className='relative p-2 rounded-lg hover:bg-tertiary transition-colors focus:outline-none hover:cursor-pointer'
-				aria-label='Notifications'
+				className='relative p-2 rounded-lg hover:bg-tertiary transition-colors focus:outline-none hover:cursor-pointer flex justify-center items-center'
+				aria-label={`Notifications${
+					unreadCount > 0 ? `, ${unreadCount} unread` : ""
+				}`}
+				aria-expanded={isOpen}
+				aria-haspopup='menu'
 				type='button'>
-				<FaBell className='w-5 h-5 text-primary' />
+				<FaBell className='w-5 h-5 text-primary' aria-hidden='true' />
 				{unreadCount > 0 && (
-					<span className='absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-accent rounded-full'>
+					<span
+						className='absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-accent rounded-full'
+						aria-label={`${unreadCount} unread notifications`}>
 						{unreadCount > 9 ? "9+" : unreadCount}
 					</span>
 				)}
@@ -158,10 +164,14 @@ export const NotificationDropdown = () => {
 							initial={{ opacity: 0, y: -10, scale: 0.95 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: -10, scale: 0.95 }}
-							transition={{ duration: 0.15 }}>
+							transition={{ duration: 0.15 }}
+							role='menu'
+							aria-label='Notifications menu'>
 							{/* Header */}
 							<div className='flex items-center justify-between p-4 border-b border-border'>
-								<h3 className='text-lg font-semibold text-primary'>
+								<h3
+									id='notifications-heading'
+									className='text-lg font-semibold text-primary'>
 									Notifications
 								</h3>
 								<div className='flex items-center gap-2'>
@@ -169,16 +179,20 @@ export const NotificationDropdown = () => {
 										<button
 											onClick={handleMarkAllAsRead}
 											className='text-sm text-accent hover:underline hover:cursor-pointer'
-											type='button'>
+											type='button'
+											aria-label='Mark all notifications as read'>
 											Mark all read
 										</button>
 									)}
 									<button
 										onClick={() => setIsOpen(false)}
-										className='p-1 rounded hover:bg-tertiary transition-colors'
-										aria-label='Close'
+										className='p-1 rounded hover:bg-tertiary transition-colors flex justify-center items-center hover:cursor-pointer'
+										aria-label='Close notifications menu'
 										type='button'>
-										<FaTimes className='w-4 h-4 text-secondary' />
+										<FaTimes
+											className='w-4 h-4 text-secondary'
+											aria-hidden='true'
+										/>
 									</button>
 								</div>
 							</div>
@@ -197,7 +211,10 @@ export const NotificationDropdown = () => {
 										<p>No notifications</p>
 									</div>
 								) : (
-									<div className='divide-y divide-border'>
+									<div
+										className='divide-y divide-border'
+										role='group'
+										aria-labelledby='notifications-heading'>
 										{notifications.map(notification => (
 											<motion.div
 												key={notification.id}
@@ -206,9 +223,18 @@ export const NotificationDropdown = () => {
 												}`}
 												initial={{ opacity: 0, x: -10 }}
 												animate={{ opacity: 1, x: 0 }}
-												onClick={() => handleNotificationClick(notification)}>
+												onClick={() => handleNotificationClick(notification)}
+												role='menuitem'
+												tabIndex={0}
+												onKeyDown={e => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														handleNotificationClick(notification);
+													}
+												}}
+												aria-label={`${notification.title}. ${notification.message}`}>
 												<div className='flex items-start gap-3'>
-													<div className='text-2xl shrink-0'>
+													<div className='text-2xl shrink-0' aria-hidden='true'>
 														{getNotificationIcon(notification.type)}
 													</div>
 													<div className='flex-1 min-w-0'>
@@ -220,11 +246,13 @@ export const NotificationDropdown = () => {
 																<p className='text-sm text-secondary mt-1'>
 																	{notification.message}
 																</p>
-																<p className='text-xs text-tertiary mt-2'>
+																<time
+																	dateTime={notification.created_at}
+																	className='text-xs text-tertiary mt-2'>
 																	{new Date(
 																		notification.created_at,
 																	).toLocaleString()}
-																</p>
+																</time>
 															</div>
 															{!notification.read && (
 																<div className='w-2 h-2 bg-accent rounded-full shrink-0 mt-1' />
@@ -238,8 +266,12 @@ export const NotificationDropdown = () => {
 																		handleMarkAsRead(notification.id);
 																	}}
 																	className='text-xs text-accent hover:underline flex items-center gap-1 hover:cursor-pointer'
-																	type='button'>
-																	<FaCheck className='w-3 h-3' />
+																	type='button'
+																	aria-label={`Mark "${notification.title}" as read`}>
+																	<FaCheck
+																		className='w-3 h-3'
+																		aria-hidden='true'
+																	/>
 																	Mark as read
 																</button>
 															)}
@@ -249,8 +281,12 @@ export const NotificationDropdown = () => {
 																	handleDelete(notification.id);
 																}}
 																className='text-xs text-tertiary hover:text-primary flex items-center gap-1 hover:cursor-pointer'
-																type='button'>
-																<FaTrash className='w-3 h-3' />
+																type='button'
+																aria-label={`Delete notification: ${notification.title}`}>
+																<FaTrash
+																	className='w-3 h-3'
+																	aria-hidden='true'
+																/>
 																Delete
 															</button>
 														</div>

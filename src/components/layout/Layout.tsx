@@ -8,7 +8,7 @@ export function Layout({ children }: LayoutProps) {
 	return (
 		<div className='h-screen flex flex-col'>
 			<Header />
-			<main className='flex-1 overflow-y-auto'>{children}</main>
+			<div className='flex-1 overflow-y-auto'>{children}</div>
 		</div>
 	);
 }

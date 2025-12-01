@@ -21,14 +21,19 @@ export const DatePicker = ({
 	required = false,
 	helperText,
 }: DatePickerProps) => {
+	const datePickerId = `datepicker-${name}`;
+	const errorId = error ? `${datePickerId}-error` : undefined;
+	const helperTextId = helperText && !error ? `${datePickerId}-helper` : undefined;
+	const describedBy = [errorId, helperTextId].filter(Boolean).join(" ") || undefined;
+
 	return (
 		<div className='relative w-full'>
-			<label className='block text-sm font-medium text-primary'>
-				{label} {required && "*"}
+			<label htmlFor={datePickerId} className='block text-sm font-medium text-primary'>
+				{label} {required && <span aria-label='required'>*</span>}
 			</label>
 
 			{helperText && !error && (
-				<p className='text-sm text-secondary mb-1'>{helperText}</p>
+				<p id={helperTextId} className='text-sm text-secondary mb-1'>{helperText}</p>
 			)}
 
 			<Controller
@@ -50,7 +55,14 @@ export const DatePicker = ({
 					return (
 						<>
 							<div
-								className={`w-full ${error ? "has-error border-red-500" : ""}`}>
+								id={datePickerId}
+								className={`w-full ${error ? "has-error border-red-500" : ""}`}
+								role='group'
+								aria-labelledby={`${datePickerId}-label`}
+								aria-describedby={describedBy}
+								aria-invalid={error ? "true" : "false"}
+								aria-required={required ? "true" : undefined}>
+								<span id={`${datePickerId}-label`} className='sr-only'>{label}</span>
 								<DateTimePicker
 									onChange={handleDateTimeChange}
 									value={selectedDateTime}
@@ -62,7 +74,9 @@ export const DatePicker = ({
 								/>
 							</div>
 							{error && (
-								<p className='mt-1 text-sm text-red-500'>{error.message}</p>
+								<p id={errorId} className='mt-1 text-sm text-red-500' role='alert'>
+									{error.message}
+								</p>
 							)}
 						</>
 					);

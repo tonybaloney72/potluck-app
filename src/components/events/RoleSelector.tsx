@@ -82,12 +82,14 @@ export const RoleSelector = ({
 				className={`flex items-center justify-between gap-2 px-3 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary transition-colors min-w-[140px] ${className} hover:cursor-pointer`}
 				aria-haspopup='listbox'
 				aria-expanded={isOpen}
-				aria-label={`Selected role: ${selectedRole?.label}`}>
+				aria-label={`Selected role: ${selectedRole?.label}. Click to change role.`}
+				id='role-selector-button'>
 				<span className='capitalize'>{selectedRole?.label || value}</span>
 				<FaChevronDown
 					className={`w-3 h-3 transition-transform ${
 						isOpen ? "rotate-180" : ""
 					}`}
+					aria-hidden='true'
 				/>
 			</button>
 
@@ -111,7 +113,8 @@ export const RoleSelector = ({
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: -10, scale: 0.95 }}
 							transition={{ duration: 0.15 }}
-							role='listbox'>
+							role='listbox'
+							aria-labelledby='role-selector-button'>
 							{roles.map(role => (
 								<button
 									key={role.value}
@@ -125,7 +128,8 @@ export const RoleSelector = ({
 											: "text-primary hover:bg-tertiary"
 									} hover:cursor-pointer`}
 									role='option'
-									aria-selected={value === role.value}>
+									aria-selected={value === role.value}
+									aria-label={`${role.label}: ${role.description}`}>
 									<div className='flex flex-col'>
 										<span className='capitalize font-medium'>{role.label}</span>
 										{hoveredRole === role.value && (

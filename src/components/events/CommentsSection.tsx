@@ -58,16 +58,31 @@ export const CommentsSection = ({
 			{currentUserParticipant && (
 				<form
 					onSubmit={commentForm.handleSubmit(handleSubmit)}
-					className='mb-6'>
+					className='mb-6'
+					aria-label='Add a comment'>
+					<label htmlFor='comment-content' className='sr-only'>
+						Comment
+					</label>
 					<textarea
+						id='comment-content'
 						{...commentForm.register("content")}
 						placeholder='Add a comment...'
 						className='w-full px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
 						rows={3}
 						autoComplete='off'
+						aria-required='true'
+						aria-invalid={
+							commentForm.formState.errors.content ? "true" : "false"
+						}
+						aria-describedby={
+							commentForm.formState.errors.content ? "comment-error" : undefined
+						}
 					/>
 					{commentForm.formState.errors.content && (
-						<p className='text-red-500 text-sm mb-2'>
+						<p
+							id='comment-error'
+							className='text-red-500 text-sm mb-2'
+							role='alert'>
 							{commentForm.formState.errors.content.message}
 						</p>
 					)}
@@ -118,7 +133,7 @@ export const CommentsSection = ({
 						);
 
 						return (
-							<div key={comment.id} className='p-4 bg-secondary rounded-lg'>
+							<article key={comment.id} className='p-4 bg-secondary rounded-lg'>
 								<div className='flex justify-between items-start mb-2'>
 									<div>
 										{comment.user && (
@@ -126,20 +141,25 @@ export const CommentsSection = ({
 												{comment.user.name}
 											</p>
 										)}
-										<p className='text-xs text-tertiary'>
+										<time
+											dateTime={comment.created_at}
+											className='text-xs text-tertiary'>
 											{new Date(comment.created_at).toLocaleString()}
-										</p>
+										</time>
 									</div>
 									{canDelete && (
 										<DeleteButton
 											variant='text'
 											onDelete={() => onDeleteComment(comment.id)}
 											isDeleting={deletingComment === comment.id}
+											label={`Delete comment by ${
+												comment.user?.name || "user"
+											}`}
 										/>
 									)}
 								</div>
 								<p className='text-primary'>{comment.content}</p>
-							</div>
+							</article>
 						);
 					})}
 				</div>

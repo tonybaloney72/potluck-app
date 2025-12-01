@@ -219,7 +219,7 @@ export const FriendSelector = ({
 			<div className='relative' ref={dropdownRef}>
 				{/* Search Input (Trigger) */}
 				<div className='relative'>
-					<FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10' />
+					<FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10' aria-hidden='true' />
 					<Input
 						type='text'
 						placeholder='Search friends'
@@ -230,11 +230,17 @@ export const FriendSelector = ({
 						className='pl-10 pr-10 cursor-text'
 						autoComplete='off'
 						readOnly={false}
+						aria-label='Search friends to add'
+						aria-expanded={isOpen}
+						aria-haspopup='listbox'
+						aria-controls='friend-selector-listbox'
+						role='combobox'
 					/>
 					<FaChevronDown
 						className={`absolute right-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none transition-transform ${
 							isOpen ? "rotate-180" : ""
 						}`}
+						aria-hidden='true'
 					/>
 				</div>
 
@@ -253,11 +259,14 @@ export const FriendSelector = ({
 
 							{/* Dropdown Content */}
 							<motion.div
+								id='friend-selector-listbox'
 								className='absolute top-full left-0 right-0 mt-1 bg-secondary border border-border rounded-lg shadow-lg z-50 overflow-visible'
 								initial={{ opacity: 0, y: -10, scale: 0.95 }}
 								animate={{ opacity: 1, y: 0, scale: 1 }}
 								exit={{ opacity: 0, y: -10, scale: 0.95 }}
-								transition={{ duration: 0.15 }}>
+								transition={{ duration: 0.15 }}
+								role='listbox'
+								aria-label='Available friends'>
 								{availableFriends.length === 0 ? (
 									<div className='p-6 text-center border border-border rounded-lg'>
 										<p className='text-tertiary text-sm'>
@@ -277,19 +286,21 @@ export const FriendSelector = ({
 												{filteredFriends.map(friend => (
 													<li
 														key={friend.id}
-														className='p-3 hover:bg-tertiary transition-colors'>
+														className='p-3 hover:bg-tertiary transition-colors'
+														role='option'
+														aria-label={`Add ${friend.name || "Unknown User"}${friend.location ? ` from ${friend.location}` : ""}`}>
 														<div className='flex items-center justify-between gap-3'>
 															{/* Friend Info */}
 															<div className='flex items-center gap-3 flex-1 min-w-0'>
 																{friend.avatar_url ? (
 																	<img
 																		src={friend.avatar_url}
-																		alt={friend.name || "User"}
+																		alt={`${friend.name || "User"} avatar`}
 																		className='w-10 h-10 rounded-full object-cover shrink-0'
 																	/>
 																) : (
 																	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
-																		<FaUser className='w-5 h-5' />
+																		<FaUser className='w-5 h-5' aria-hidden='true' />
 																	</div>
 																)}
 																<div className='min-w-0 flex-1'>
@@ -309,8 +320,9 @@ export const FriendSelector = ({
 																type='button'
 																variant='primary'
 																onClick={() => handleAddFriend(friend.id)}
-																className='flex items-center gap-1.5 h-8 px-3 text-sm shrink-0'>
-																<FaPlus className='w-3 h-3' />
+																className='flex items-center gap-1.5 h-8 px-3 text-sm shrink-0'
+																aria-label={`Add ${friend.name || "friend"}`}>
+																<FaPlus className='w-3 h-3' aria-hidden='true' />
 																Add
 															</Button>
 														</div>
@@ -380,7 +392,7 @@ export const FriendSelector = ({
 										onClick={() => handleRemoveFriend(friend.id)}
 										className='text-secondary hover:text-red-500 transition shrink-0 hover:cursor-pointer'
 										aria-label={`Remove ${friend.name || "friend"}`}>
-										<FaTimes className='w-3 h-3' />
+										<FaTimes className='w-3 h-3' aria-hidden='true' />
 									</button>
 								</motion.div>
 							))}

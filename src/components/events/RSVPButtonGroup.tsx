@@ -19,7 +19,10 @@ export const RSVPButtonGroup = ({
 	updatingRSVP,
 }: RSVPButtonGroupProps) => {
 	return (
-		<div className='flex gap-2'>
+		<div 
+			className='flex gap-2'
+			role='group'
+			aria-label='RSVP status'>
 			{RSVP_OPTIONS.map(({ status, label }) => (
 				<Button
 					key={status}
@@ -27,7 +30,9 @@ export const RSVPButtonGroup = ({
 					onClick={() => onRSVPChange(status)}
 					disabled={updatingRSVP === status}
 					loading={updatingRSVP === status}
-					className='text-sm'>
+					className='text-sm'
+					aria-pressed={currentStatus === status}
+					aria-label={`RSVP: ${label}${currentStatus === status ? " (current)" : ""}`}>
 					{label}
 				</Button>
 			))}

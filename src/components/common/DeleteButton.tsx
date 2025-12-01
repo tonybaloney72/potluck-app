@@ -25,9 +25,12 @@ export const DeleteButton = ({
 			<button
 				onClick={onDelete}
 				disabled={disabled || isDeleting}
-				className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 ${className}`}
-				title={label}>
-				<FaTimes className='w-4 h-4' />
+				className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 flex justify-center items-center hover:cursor-pointer ${className}`}
+				aria-label={label}
+				aria-busy={isDeleting}
+				aria-disabled={disabled || isDeleting}
+				type='button'>
+				<FaTimes className='w-4 h-4' aria-hidden='true' />
 			</button>
 		);
 	}
@@ -36,8 +39,19 @@ export const DeleteButton = ({
 		<button
 			onClick={onDelete}
 			disabled={disabled || isDeleting}
-			className={`${baseClasses} ml-4 ${className}`}>
-			{isDeleting ? "Deleting..." : label}
+			className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 flex justify-center items-center hover:cursor-pointer ${className}`}
+			aria-label={label}
+			aria-busy={isDeleting}
+			aria-disabled={disabled || isDeleting}
+			type='button'>
+			{isDeleting ? (
+				<>
+					<span className='sr-only'>Deleting</span>
+					<span aria-live='polite'>Deleting...</span>
+				</>
+			) : (
+				<FaTimes className='w-4 h-4' aria-hidden='true' />
+			)}
 		</button>
 	);
 };

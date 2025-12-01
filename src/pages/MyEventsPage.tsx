@@ -85,7 +85,7 @@ export const MyEventsPage = () => {
 	}
 
 	return (
-		<div className='bg-secondary p-4 md:p-8'>
+		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8'>
 					<div className='flex items-center gap-3'>
@@ -201,6 +201,6 @@ export const MyEventsPage = () => {
 					</>
 				)}
 			</div>
-		</div>
+		</main>
 	);
 };
