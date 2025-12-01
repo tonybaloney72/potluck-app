@@ -327,10 +327,10 @@ export const MessagesPage = () => {
 								<button
 									key={conversation.id}
 									onClick={() => handleConversationClick(conversation.id)}
-									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-colors min-h-[44px] ${
+									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-all duration-200 min-h-[44px] ${
 										selectedConversationId === conversation.id
-											? "bg-accent text-bg-secondary"
-											: "bg-secondary hover:bg-tertiary text-primary"
+											? "bg-accent text-bg-secondary shadow-sm"
+											: "bg-secondary hover:bg-tertiary hover:shadow-sm text-primary"
 									}`}>
 									<div className='flex items-center gap-3'>
 										{otherUser?.avatar_url ? (

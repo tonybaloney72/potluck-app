@@ -69,7 +69,7 @@ export const EventCard = ({
 					{events.map(event => (
 						<article
 							key={event.id}
-							className='bg-primary rounded-lg shadow-md cursor-pointer hover:shadow-xl hover:bg-tertiary transition-shadow flex flex-col min-h-[44px]'>
+							className='bg-primary rounded-lg shadow-md cursor-pointer hover:shadow-xl hover:bg-tertiary transition-all duration-200 flex flex-col min-h-[44px]'>
 							<motion.div
 								initial={{ opacity: 0, y: 20 }}
 								animate={{ opacity: 1, y: 0 }}

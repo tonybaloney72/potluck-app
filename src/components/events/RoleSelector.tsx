@@ -79,7 +79,7 @@ export const RoleSelector = ({
 				type='button'
 				onClick={() => !disabled && setIsOpen(!isOpen)}
 				disabled={disabled}
-				className={`flex items-center justify-between gap-2 px-3 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary transition-colors min-w-[140px] ${className} hover:cursor-pointer`}
+				className={`flex items-center justify-between gap-2 px-3 py-2 bg-secondary border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary hover:shadow-sm hover:border-accent/50 transition-all duration-200 min-w-[140px] ${className} hover:cursor-pointer`}
 				aria-haspopup='listbox'
 				aria-expanded={isOpen}
 				aria-label={`Selected role: ${selectedRole?.label}. Click to change role.`}
@@ -122,11 +122,11 @@ export const RoleSelector = ({
 									onClick={() => handleSelectRole(role.value)}
 									onMouseEnter={() => setHoveredRole(role.value)}
 									onMouseLeave={() => setHoveredRole(null)}
-									className={`w-full px-3 py-2 text-left transition-colors ${
+									className={`w-full px-3 py-2 text-left transition-all duration-200 ${
 										value === role.value
 											? "bg-accent/20 text-accent font-medium"
-											: "text-primary hover:bg-tertiary"
-									} hover:cursor-pointer`}
+											: "text-primary hover:bg-tertiary hover:shadow-sm"
+									} hover:cursor-pointer active:scale-[0.98]`}
 									role='option'
 									aria-selected={value === role.value}
 									aria-label={`${role.label}: ${role.description}`}>

@@ -128,7 +128,7 @@ export const NotificationDropdown = () => {
 			{/* Bell Icon Button */}
 			<button
 				onClick={() => setIsOpen(!isOpen)}
-				className='relative p-2 rounded-lg hover:bg-tertiary transition-colors focus:outline-none hover:cursor-pointer flex justify-center items-center'
+				className='relative p-2 rounded-lg hover:bg-tertiary active:scale-95 transition-all duration-200 focus:outline-none hover:cursor-pointer flex justify-center items-center'
 				aria-label={`Notifications${
 					unreadCount > 0 ? `, ${unreadCount} unread` : ""
 				}`}
@@ -178,7 +178,7 @@ export const NotificationDropdown = () => {
 									{unreadCount > 0 && (
 										<button
 											onClick={handleMarkAllAsRead}
-											className='text-sm text-accent hover:underline hover:cursor-pointer'
+											className='text-sm text-accent hover:underline hover:text-accent-secondary transition-all duration-200 hover:cursor-pointer'
 											type='button'
 											aria-label='Mark all notifications as read'>
 											Mark all read
@@ -186,7 +186,7 @@ export const NotificationDropdown = () => {
 									)}
 									<button
 										onClick={() => setIsOpen(false)}
-										className='p-1 rounded hover:bg-tertiary transition-colors flex justify-center items-center hover:cursor-pointer'
+										className='p-1 rounded hover:bg-tertiary active:scale-95 transition-all duration-200 flex justify-center items-center hover:cursor-pointer'
 										aria-label='Close notifications menu'
 										type='button'>
 										<FaTimes
@@ -218,7 +218,7 @@ export const NotificationDropdown = () => {
 										{notifications.map(notification => (
 											<motion.div
 												key={notification.id}
-												className={`p-4 hover:bg-tertiary transition-colors ${
+												className={`p-4 hover:bg-tertiary hover:shadow-sm rounded-lg transition-all duration-200 ${
 													!notification.read ? "bg-primary/50" : ""
 												}`}
 												initial={{ opacity: 0, x: -10 }}
@@ -265,7 +265,7 @@ export const NotificationDropdown = () => {
 																		e.stopPropagation();
 																		handleMarkAsRead(notification.id);
 																	}}
-																	className='text-xs text-accent hover:underline flex items-center gap-1 hover:cursor-pointer'
+																	className='text-xs text-accent hover:underline hover:text-accent-secondary transition-all duration-200 flex items-center gap-1 hover:cursor-pointer'
 																	type='button'
 																	aria-label={`Mark "${notification.title}" as read`}>
 																	<FaCheck
@@ -280,7 +280,7 @@ export const NotificationDropdown = () => {
 																	e.stopPropagation();
 																	handleDelete(notification.id);
 																}}
-																className='text-xs text-tertiary hover:text-primary flex items-center gap-1 hover:cursor-pointer'
+																className='text-xs text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded px-1 py-0.5 transition-all duration-200 flex items-center gap-1 hover:cursor-pointer'
 																type='button'
 																aria-label={`Delete notification: ${notification.title}`}>
 																<FaTrash

@@ -286,7 +286,7 @@ export const FriendSelector = ({
 												{filteredFriends.map(friend => (
 													<li
 														key={friend.id}
-														className='p-3 hover:bg-tertiary transition-colors'
+														className='p-3 hover:bg-tertiary hover:shadow-sm rounded-md transition-all duration-200'
 														role='option'
 														aria-label={`Add ${friend.name || "Unknown User"}${friend.location ? ` from ${friend.location}` : ""}`}>
 														<div className='flex items-center justify-between gap-3'>
@@ -390,7 +390,7 @@ export const FriendSelector = ({
 									<button
 										type='button'
 										onClick={() => handleRemoveFriend(friend.id)}
-										className='text-secondary hover:text-red-500 transition shrink-0 hover:cursor-pointer'
+										className='text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-full p-1 transition-all duration-200 shrink-0 hover:cursor-pointer'
 										aria-label={`Remove ${friend.name || "friend"}`}>
 										<FaTimes className='w-3 h-3' aria-hidden='true' />
 									</button>

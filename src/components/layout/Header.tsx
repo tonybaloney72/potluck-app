@@ -127,14 +127,14 @@ export const Header = () => {
 							<div className='hidden md:flex items-center gap-4'>
 								<Link
 									to='/friends'
-									className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
+									className='text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
 									aria-label='Friends'>
 									<FaUsers className='w-6 h-6' aria-hidden='true' />
 								</Link>
 
 								<Link
 									to='/messages'
-									className='text-primary hover:text-tertiary transition-colors duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
+									className='text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
 									aria-label='Messages'>
 									<FaEnvelope className='w-6 h-6' aria-hidden='true' />
 								</Link>
@@ -143,7 +143,7 @@ export const Header = () => {
 									<div className='relative' ref={dropdownRef}>
 										<button
 											onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-											className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border cursor-pointer transition-all duration-200 hover:opacity-90 active:opacity-75 min-w-[44px] min-h-[44px]'
+											className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border active:scale-95 cursor-pointer transition-all duration-200 min-w-[44px] min-h-[44px]'
 											aria-label={`User menu for ${profile?.name || "user"}`}
 											aria-expanded={isDropdownOpen}
 											aria-haspopup='menu'

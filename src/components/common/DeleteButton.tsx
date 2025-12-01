@@ -18,14 +18,14 @@ export const DeleteButton = ({
 	className = "",
 }: DeleteButtonProps) => {
 	const baseClasses =
-		"text-red-500 hover:text-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition";
+		"text-red-500 hover:text-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200";
 
 	if (variant === "icon") {
 		return (
 			<button
 				onClick={onDelete}
 				disabled={disabled || isDeleting}
-				className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 flex justify-center items-center hover:cursor-pointer ${className}`}
+				className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 active:scale-95 flex justify-center items-center ${className}`}
 				aria-label={label}
 				aria-busy={isDeleting}
 				aria-disabled={disabled || isDeleting}
@@ -39,7 +39,7 @@ export const DeleteButton = ({
 		<button
 			onClick={onDelete}
 			disabled={disabled || isDeleting}
-			className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 flex justify-center items-center hover:cursor-pointer ${className}`}
+			className={`${baseClasses} p-1 rounded-full hover:bg-red-500/10 active:scale-95 flex justify-center items-center ${className}`}
 			aria-label={label}
 			aria-busy={isDeleting}
 			aria-disabled={disabled || isDeleting}

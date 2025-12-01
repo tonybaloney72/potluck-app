@@ -22,7 +22,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		ref,
 	) => {
 		const baseStyles =
-			"px-4 py-2 rounded-md font-medium transition-all duration-200 cursor-pointer hover:opacity-90 active:opacity-75";
+			"px-4 py-2 rounded-md font-medium transition-all duration-200 cursor-pointer active:scale-[0.98]";
 
 		const variants = {
 			primary:

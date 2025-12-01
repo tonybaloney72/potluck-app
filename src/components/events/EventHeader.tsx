@@ -171,13 +171,13 @@ export const EventHeader = ({
 									href={generateGoogleCalendarUrl(event)}
 									target='_blank'
 									rel='noopener noreferrer'
-									className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent text-white rounded-md text-sm transition min-h-[44px]'>
+									className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 min-h-[44px]'>
 									<FaGoogle className='w-4 h-4' />
 									<span className='hidden md:block'>Google</span>
 								</a>
 								<button
 									onClick={() => downloadAppleCalendar(event)}
-									className='flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-tertiary text-white rounded-md text-sm transition cursor-pointer min-h-[44px]'>
+									className='flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-tertiary hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 cursor-pointer min-h-[44px]'>
 									<FaApple className='w-4 h-4' />
 									<span className='hidden md:block'>Apple</span>
 								</button>
@@ -246,7 +246,7 @@ export const EventHeader = ({
 									href={event.location_url}
 									target='_blank'
 									rel='noopener noreferrer'
-									className='font-semibold text-accent hover:underline'>
+									className='font-semibold text-accent hover:text-accent-secondary hover:underline transition-all duration-200'>
 									{event.location} →
 								</a>
 							) : (

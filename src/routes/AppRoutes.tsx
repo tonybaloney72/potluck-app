@@ -12,6 +12,7 @@ import { CreateEventPage } from "../pages/CreateEventPage";
 import { ForgotPassword } from "../pages/ForgotPassword";
 import { PasswordReset } from "../pages/PasswordReset";
 import { EmailVerificationPage } from "../pages/EmailVerificationPage";
+import { PageTransition } from "../components/common/PageTransition";
 
 export function AppRoutes() {
 	return (
@@ -21,7 +22,9 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<MyEventsPage />
+							<PageTransition>
+								<MyEventsPage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -31,7 +34,9 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<ProfilePage />
+							<PageTransition>
+								<ProfilePage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -41,7 +46,9 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<FriendsPage />
+							<PageTransition>
+								<FriendsPage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -51,7 +58,9 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<MessagesPage />
+							<PageTransition>
+								<MessagesPage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -61,7 +70,9 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<EventDetailPage />
+							<PageTransition>
+								<EventDetailPage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
@@ -71,16 +82,53 @@ export function AppRoutes() {
 				element={
 					<Layout>
 						<ProtectedRoute>
-							<CreateEventPage />
+							<PageTransition>
+								<CreateEventPage />
+							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
 				}
 			/>
-			<Route path='/login' element={<LoginPage />} />
-			<Route path='/register' element={<RegisterPage />} />
-			<Route path='/forgot-password' element={<ForgotPassword />} />
-			<Route path='/reset-password' element={<PasswordReset />} />
-			<Route path='/email-verification' element={<EmailVerificationPage />} />
+			<Route
+				path='/login'
+				element={
+					<PageTransition>
+						<LoginPage />
+					</PageTransition>
+				}
+			/>
+			<Route
+				path='/register'
+				element={
+					<PageTransition>
+						<RegisterPage />
+					</PageTransition>
+				}
+			/>
+			<Route
+				path='/forgot-password'
+				element={
+					<PageTransition>
+						<ForgotPassword />
+					</PageTransition>
+				}
+			/>
+			<Route
+				path='/reset-password'
+				element={
+					<PageTransition>
+						<PasswordReset />
+					</PageTransition>
+				}
+			/>
+			<Route
+				path='/email-verification'
+				element={
+					<PageTransition>
+						<EmailVerificationPage />
+					</PageTransition>
+				}
+			/>
 
 			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>
