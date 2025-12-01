@@ -5,6 +5,7 @@ import { AnimatedSection } from "../common/AnimatedSection";
 import { EmptyState } from "../common/EmptyState";
 import { DeleteButton } from "../common/DeleteButton";
 import { Button } from "../common/Button";
+import { Skeleton } from "../common/Skeleton";
 import type { Event, EventParticipant } from "../../types";
 import { canDeleteItem } from "../../utils/events";
 import { FaComment } from "react-icons/fa";
@@ -80,7 +81,34 @@ export const CommentsSection = ({
 				</form>
 			)}
 
-			{event.comments && event.comments.length > 0 ? (
+			{event.comments === undefined ? (
+				// Loading state: comments are being fetched
+				<div className='space-y-4'>
+					{Array.from({ length: 2 }).map((_, i) => (
+						<div key={i} className='p-4 bg-secondary rounded-lg'>
+							<div className='flex justify-between items-start mb-2'>
+								<div className='flex-1'>
+									<Skeleton
+										variant='text'
+										width='30%'
+										height={18}
+										className='mb-1'
+									/>
+									<Skeleton variant='text' width='40%' height={14} />
+								</div>
+							</div>
+							<Skeleton
+								variant='text'
+								width='90%'
+								height={16}
+								className='mb-1'
+							/>
+							<Skeleton variant='text' width='60%' height={16} />
+						</div>
+					))}
+				</div>
+			) : event.comments && event.comments.length > 0 ? (
+				// Has comments: show list
 				<div className='space-y-4'>
 					{event.comments.map(comment => {
 						const canDelete = canDeleteItem(
@@ -116,6 +144,7 @@ export const CommentsSection = ({
 					})}
 				</div>
 			) : (
+				// Empty state: comments were fetched but there are none
 				<EmptyState
 					icon={<FaComment className='w-16 h-16' />}
 					title='No comments yet'

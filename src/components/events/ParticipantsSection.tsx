@@ -97,15 +97,24 @@ export const ParticipantsSection = ({
 								)}
 
 								{/* Main content */}
-								<div className='flex flex-col sm:flex-row sm:items-center gap-3 pr-8 sm:pr-0'>
+								<div className='flex gap-3 pr-8 sm:pr-0'>
 									<Avatar user={participant.user} size='md' />
 									<div className='flex-1 min-w-0'>
 										<p className='font-semibold text-primary mb-1 sm:mb-0'>
 											{participant.user?.name || "Unknown"}
 										</p>
 										{/* Mobile: Stack role and RSVP vertically */}
-										<div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2'>
-											{canModifyRole ? (
+										<div className='flex flex-col gap-1 sm:gap-2'>
+											<div className='flex items-center gap-2'>
+												<p className='text-xs text-tertiary capitalize'>
+													{participant.role}
+												</p>
+												<span className='inline text-xs text-tertiary'>•</span>
+												<p className='text-xs text-tertiary capitalize'>
+													{participant.rsvp_status}
+												</p>
+											</div>
+											{canModifyRole && (
 												<RoleSelector
 													value={participant.role}
 													onChange={role => {
@@ -118,17 +127,7 @@ export const ParticipantsSection = ({
 													disabled={updatingRole === participant.id}
 													className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
 												/>
-											) : (
-												<p className='text-xs text-tertiary capitalize'>
-													{participant.role}
-												</p>
 											)}
-											<span className='hidden sm:inline text-xs text-tertiary'>
-												•
-											</span>
-											<p className='text-xs text-tertiary capitalize'>
-												{participant.rsvp_status}
-											</p>
 										</div>
 									</div>
 								</div>

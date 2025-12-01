@@ -932,21 +932,30 @@ const eventsSlice = createSlice({
 					const existingEvent = state.eventsById[event.id];
 					if (existingEvent) {
 						// Preserve contributions and comments if they already exist
+						// Only use empty array if we explicitly know there are none (array exists)
+						// If undefined, it means we haven't fetched that data yet
 						state.eventsById[event.id] = {
 							...event,
 							contributions:
-								existingEvent.contributions || event.contributions || [],
-							comments: existingEvent.comments || event.comments || [],
+								existingEvent.contributions !== undefined
+									? existingEvent.contributions
+									: event.contributions,
+							comments:
+								existingEvent.comments !== undefined
+									? existingEvent.comments
+									: event.comments,
 							// Ensure participants are updated (they come from fetchUserEvents)
 							participants:
 								event.participants || existingEvent.participants || [],
 						};
 					} else {
 						// New event, store as-is
+						// Don't set contributions/comments to empty arrays if they weren't fetched
+						// Leave them undefined so EventDetailsPage knows to fetch full data
 						state.eventsById[event.id] = {
 							...event,
-							contributions: event.contributions || [],
-							comments: event.comments || [],
+							contributions: event.contributions,
+							comments: event.comments,
 							participants: event.participants || [],
 						};
 					}

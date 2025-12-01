@@ -8,6 +8,7 @@ import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
 import { DeleteButton } from "../common/DeleteButton";
 import { Button } from "../common/Button";
+import { Skeleton } from "../common/Skeleton";
 import type { Event, EventParticipant } from "../../types";
 import { canAddContributions, canDeleteItem } from "../../utils/events";
 import { FaGift } from "react-icons/fa";
@@ -124,7 +125,31 @@ export const ContributionsSection = ({
 				)}
 			</AnimatePresence>
 
-			{event.contributions && event.contributions.length > 0 ? (
+			{event.contributions === undefined ? (
+				// Loading state: contributions are being fetched
+				<div className='space-y-3'>
+					{Array.from({ length: 2 }).map((_, i) => (
+						<div
+							key={i}
+							className='p-4 bg-secondary rounded-lg flex justify-between items-start'>
+							<div className='flex-1'>
+								<div className='flex items-center gap-2 mb-2'>
+									<Skeleton variant='text' width='40%' height={20} />
+									<Skeleton variant='text' width='20%' height={16} />
+								</div>
+								<Skeleton
+									variant='text'
+									width='80%'
+									height={16}
+									className='mb-2'
+								/>
+								<Skeleton variant='text' width='30%' height={14} />
+							</div>
+						</div>
+					))}
+				</div>
+			) : event.contributions && event.contributions.length > 0 ? (
+				// Has contributions: show list
 				<div className='space-y-3'>
 					{event.contributions.map(contribution => {
 						const canDelete = canDeleteItem(
@@ -171,6 +196,7 @@ export const ContributionsSection = ({
 					})}
 				</div>
 			) : (
+				// Empty state: contributions were fetched but there are none
 				<EmptyState
 					icon={<FaGift className='w-16 h-16' />}
 					title='No contributions yet'
