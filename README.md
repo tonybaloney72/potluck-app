@@ -8,14 +8,16 @@ Potluck App is a modern web application designed to simplify the organization of
 
 ## Features
 
-### Current Features (Phase 1, 2, 3, 4, 5 & 6 Complete)
+### Current Features (Phase 1, 2, 3, 4, 5, 6 & 7 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and location
 - ✅ **Theme System** - Per-user theme preferences (light, dark, or system)
-- ✅ **Protected Routes** - Secure access to authenticated pages
+- ✅ **Protected Routes** - Secure access to authenticated pages with deep linking support
 - ✅ **Responsive Design** - Modern UI built with Tailwind CSS
 - ✅ **Smooth Animations** - Enhanced UX with Motion (Framer Motion)
+- ✅ **Accessibility (A11y)** - WCAG 2.1 Level AA compliant with ARIA labels, semantic HTML, keyboard navigation, focus management, and screen reader support
+- ✅ **Navigation Enhancements** - Smooth page transitions, scroll position management, back buttons, and deep linking with login redirect
 - ✅ **Friends System** - Connect with other users, send and accept friend requests, manage friendships
   - ✅ **Real-time Updates** - Instant synchronization of friend requests, acceptances, and removals
 - ✅ **Messaging** - Direct messaging between friends with conversation-based architecture
@@ -46,6 +48,8 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **Role Protection** - Host roles cannot be modified or removed by anyone
   - ✅ **Role-Based Contributions** - All roles except 'guest' can add contributions (host, co_host, contributor)
   - ✅ **RSVP Notifications** - Host receives real-time notifications when attendees RSVP to their events
+- ✅ **UI/UX Improvements** - Enhanced hover states, button states, and visual feedback throughout the application
+- ✅ **Performance Optimizations** - Optimized Redux state management with normalized data structures for O(1) lookups
 
 ## Tech Stack
 
@@ -151,10 +155,35 @@ This project is currently in active development.
 - ✅ Phase 4: Notifications (notification system, real-time updates, notification UI)
 - ✅ Phase 5: Events Core (create, edit, delete events, RSVP system, contributions, comments)
 - ✅ Phase 6: Roles & Permissions (role assignment, role modification, role-based contributions, RSVP notifications)
+- ✅ Phase 7: UI/UX Polish & Accessibility (accessibility improvements, navigation enhancements, hover states, page transitions)
 
-**In Progress:**
+## Recent Improvements
 
-- 🔄 Phase 7: Polish & Optimization (to be started)
+### Accessibility (A11y) Enhancements
+
+- **WCAG 2.1 Level AA Compliance**: Full accessibility support with ARIA labels, semantic HTML, and keyboard navigation
+- **Focus Management**: Visible focus indicators for keyboard users, focus traps in modals
+- **Screen Reader Support**: Comprehensive ARIA attributes, skip links, and semantic landmarks
+- **Form Accessibility**: Proper labels, error associations, and required field indicators
+- **Keyboard Navigation**: Full keyboard support for all interactive elements
+
+### Navigation Improvements
+
+- **Page Transitions**: Smooth fade animations between routes for better visual continuity
+- **Scroll Position Management**: Automatic scroll-to-top on route changes, ensuring new pages start at the top
+- **Back Buttons**: Consistent back button implementation across Event Details, Create Event, and Profile pages
+- **Deep Linking**: Protected routes redirect to login and automatically return users to their intended destination after authentication
+
+### UI/UX Enhancements
+
+- **Hover States**: Enhanced hover effects with consistent transitions, shadows, and color changes across all interactive elements
+- **Button States**: Improved focus, disabled, loading, and active states for better user feedback
+- **Visual Feedback**: Smooth transitions and animations throughout the application
+
+### Performance Optimizations
+
+- **Redux State Normalization**: Events state changed from array to normalized object structure (`eventsById`) for O(1) lookup complexity
+- **Efficient Data Access**: Direct event access by ID eliminates need for array searches, improving performance with large event lists
 
 ## Future Plans
 
