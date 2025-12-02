@@ -1,23 +1,8 @@
 {
 	"rewrites": [
 		{
-			"source": "/potluck-app/(.*)",
-			"destination": "/potluck-app/index.html"
-		},
-		{
-			"source": "/potluck-app",
-			"destination": "/potluck-app/index.html"
-		}
-	],
-	"headers": [
-		{
-			"source": "/potluck-app/(.*)",
-			"headers": [
-				{
-					"key": "Cache-Control",
-					"value": "public, max-age=0, must-revalidate"
-				}
-			]
+			"source": "/(.*)",
+			"destination": "/index.html"
 		}
 	]
 }
