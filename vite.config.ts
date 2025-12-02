@@ -12,5 +12,5 @@ export default defineConfig({
 		}),
 		tailwindcss(),
 	],
-	base: "/potluck-app/",
+	base: process.env.VITE_BASE_PATH || "/potluck-app",
 });
