@@ -98,11 +98,21 @@ export const updateProfile = createAsyncThunk(
 	},
 );
 
+// Helper function to get base URL from environment variable or fallback to window.location.origin
+const getBaseUrl = () => {
+	// Use environment variable if available, otherwise fall back to window.location.origin
+	return (
+		import.meta.env.VITE_APP_URL ||
+		(typeof window !== "undefined" ? window.location.origin : "")
+	);
+};
+
 export const resetPassword = createAsyncThunk(
 	"auth/resetPassword",
 	async (email: string) => {
+		const baseUrl = getBaseUrl();
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
-			redirectTo: `${window.location.origin}/reset-password`,
+			redirectTo: `${baseUrl}/reset-password`,
 		});
 		if (error) throw error;
 		return email;

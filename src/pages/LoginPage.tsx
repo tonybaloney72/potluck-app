@@ -82,7 +82,7 @@ export const LoginPage = () => {
 						<button
 							type='button'
 							onClick={() => navigate("/forgot-password")}
-							className='text-sm text-accent hover:text-accent-secondary hover:underline'>
+							className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer'>
 							Forgot Password?
 						</button>
 					</div>
