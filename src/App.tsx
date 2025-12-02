@@ -1,4 +1,4 @@
-import { HashRouter } from "react-router";
+import { BrowserRouter } from "react-router";
 import { useAuth } from "./hooks/useAuth";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AppRoutes } from "./routes/AppRoutes";
@@ -14,9 +14,9 @@ function App() {
 
 	return (
 		<ThemeProvider>
-			<HashRouter>
+			<BrowserRouter>
 				<AppRoutes />
-			</HashRouter>
+			</BrowserRouter>
 		</ThemeProvider>
 	);
 }
