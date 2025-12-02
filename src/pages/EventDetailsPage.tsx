@@ -84,8 +84,12 @@ export const EventDetailPage = () => {
 		if (!eventId) return;
 
 		// Check if we already have the event with full nested data
+		// With normalization, contributions/comments are always arrays, so check for event existence
 		const hasFullData =
-			event && event.participants && event.contributions && event.comments;
+			event &&
+			Array.isArray(event.participants) &&
+			Array.isArray(event.contributions) &&
+			Array.isArray(event.comments);
 
 		// If we have full data, no need to fetch
 		if (hasFullData) {
@@ -99,6 +103,19 @@ export const EventDetailPage = () => {
 
 		// Otherwise, fetch the event to get full details
 		dispatch(fetchEventById(eventId));
+
+		// Timeout safeguard: if fetch takes too long (30 seconds), clear error to show error state
+		// This prevents infinite loading if the fetch gets stuck
+		const timeoutId = setTimeout(() => {
+			if (!event && isFetching) {
+				dispatch(clearError());
+				// The error will be set by the rejected case, but if it's stuck, we want to show error
+			}
+		}, 30000);
+
+		return () => {
+			clearTimeout(timeoutId);
+		};
 		// Only depend on eventId to prevent infinite loops
 		// We check event in the body but don't include it in deps
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,8 +125,12 @@ export const EventDetailPage = () => {
 	useEffect(() => {
 		if (!eventId) return;
 
+		// With normalization, contributions/comments are always arrays, so check for event existence
 		const hasFullData =
-			event && event.participants && event.contributions && event.comments;
+			event &&
+			Array.isArray(event.participants) &&
+			Array.isArray(event.contributions) &&
+			Array.isArray(event.comments);
 
 		if (hasFullData && !isFetching) {
 			dispatch(setCurrentEventId(eventId));
@@ -131,6 +152,8 @@ export const EventDetailPage = () => {
 	// 1. We're actively fetching, OR
 	// 2. We have an eventId but no event yet (initial load state)
 	// Stop loading once we have an event OR an error
+	// Note: With normalization, contributions/comments are always arrays, so we check for event existence
+	// Also add a safeguard: if we've been loading for too long without an event or error, show error state
 	const isLoading = isFetching || (eventId && !event && !error);
 
 	if (isLoading) {

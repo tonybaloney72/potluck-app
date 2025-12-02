@@ -119,15 +119,26 @@ export const fetchEventById = createAsyncThunk(
 		const isFetching = state.events.fetchingEventIds.includes(eventId);
 
 		// If we have full event data (with participants, contributions, comments), return it
+		// Check for arrays to handle both normalized and non-normalized events
 		if (
 			existingEvent &&
-			existingEvent.participants &&
-			existingEvent.contributions &&
-			existingEvent.comments &&
+			Array.isArray(existingEvent.participants) &&
+			Array.isArray(existingEvent.contributions) &&
+			Array.isArray(existingEvent.comments) &&
 			!isFetching
 		) {
 			// Return from cache - no need to fetch, but still update currentEventId
-			return { event: existingEvent, fromCache: true, skipFetch: false };
+			// Normalize the event before returning to ensure consistency
+			return {
+				event: {
+					...existingEvent,
+					contributions: existingEvent.contributions ?? [],
+					comments: existingEvent.comments ?? [],
+					participants: existingEvent.participants ?? [],
+				},
+				fromCache: true,
+				skipFetch: false,
+			};
 		}
 
 		// If already fetching, don't fetch again (prevent duplicate requests)
