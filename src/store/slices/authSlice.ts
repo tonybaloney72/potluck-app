@@ -107,12 +107,20 @@ const getBaseUrl = () => {
 	);
 };
 
+// Helper function to construct the full redirect URL
+const getRedirectUrl = () => {
+	const baseUrl = getBaseUrl();
+	// Ensure baseUrl doesn't have trailing slash, then append the path
+	const cleanBaseUrl = baseUrl.replace(/\/+$/, "");
+	return `${cleanBaseUrl}/reset-password`;
+};
+
 export const resetPassword = createAsyncThunk(
 	"auth/resetPassword",
 	async (email: string) => {
-		const baseUrl = getBaseUrl();
+		const redirectUrl = getRedirectUrl();
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
-			redirectTo: `${baseUrl}/reset-password`,
+			redirectTo: redirectUrl,
 		});
 		if (error) throw error;
 		return email;

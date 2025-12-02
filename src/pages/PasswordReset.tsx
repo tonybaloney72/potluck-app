@@ -29,16 +29,40 @@ export const PasswordReset = () => {
 	const { loading, error } = useAppSelector(state => state.auth);
 	const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
 
-	// Check if user has a valid session from the password reset link
+	// Check if user has a valid recovery session from the password reset link
 	useEffect(() => {
 		const checkSession = async () => {
+			// Check for hash fragments in URL (Supabase recovery tokens)
+			const hashParams = new URLSearchParams(window.location.hash.substring(1));
+			const hasRecoveryToken =
+				hashParams.has("access_token") || hashParams.has("type");
+
+			// Give Supabase a moment to process hash fragments if they exist
+			if (hasRecoveryToken) {
+				// Wait a bit for Supabase to process the hash
+				await new Promise(resolve => setTimeout(resolve, 500));
+			}
+
 			const {
 				data: { session },
 			} = await supabase.auth.getSession();
-			setIsValidSession(!!session);
 
-			// If no session, redirect to login after a moment
-			if (!session) {
+			// Check if this is a recovery session by looking at the URL or session metadata
+			// Recovery sessions should have type=recovery in the hash, or we can check if we're on this page
+			const isRecoverySession =
+				hasRecoveryToken ||
+				hashParams.get("type") === "recovery" ||
+				window.location.hash.includes("type=recovery");
+
+			if (session && isRecoverySession) {
+				// Valid recovery session - allow password reset
+				setIsValidSession(true);
+			} else if (session && !isRecoverySession) {
+				// Regular session (user already logged in) - redirect to home
+				navigate("/");
+			} else {
+				// No valid session - show error
+				setIsValidSession(false);
 				setTimeout(() => {
 					navigate("/login");
 				}, 3000);
