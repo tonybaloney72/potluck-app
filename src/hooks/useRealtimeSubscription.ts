@@ -92,7 +92,6 @@ export function useRealtimeSubscription(config: RealtimeSubscriptionConfig) {
 				}
 			} else if (status === "CHANNEL_ERROR") {
 				const errorMsg = `❌ ${config.channelName} channel error - Will attempt to reconnect...`;
-				console.error(errorMsg);
 				config.onError?.(errorMsg);
 				handleReconnect();
 			} else if (status === "TIMED_OUT") {

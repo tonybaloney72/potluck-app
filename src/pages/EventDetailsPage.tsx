@@ -157,6 +157,10 @@ export const EventDetailPage = () => {
 	const isLoading = isFetching || (eventId && !event && !error);
 
 	if (isLoading) {
+		console.log("eventId, :", eventId);
+		console.log("event:", event);
+		console.log("isFetching:", isFetching);
+		console.log("error:", error);
 		return <SkeletonEventDetails />;
 	}
 
@@ -165,7 +169,7 @@ export const EventDetailPage = () => {
 		return (
 			<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 				<div className='max-w-4xl mx-auto'>
-					{error ? (
+					{error ?
 						<ErrorDisplay
 							title='Failed to load event'
 							message={error}
@@ -177,13 +181,12 @@ export const EventDetailPage = () => {
 							}}
 							variant='fullscreen'
 						/>
-					) : (
-						<ErrorDisplay
+					:	<ErrorDisplay
 							title='Event not found'
 							message='The event you are looking for does not exist or has been deleted.'
 							variant='fullscreen'
 						/>
-					)}
+					}
 				</div>
 			</main>
 		);
@@ -525,27 +528,27 @@ export const EventDetailPage = () => {
 						onClose={() => setConfirmationModal(null)}
 						onConfirm={handleConfirmDelete}
 						title={
-							confirmationModal.type === "deleteEvent"
-								? "Delete Event"
-								: confirmationModal.type === "deleteComment"
-								? "Delete Comment"
-								: confirmationModal.type === "deleteContribution"
-								? "Delete Contribution"
-								: "Remove Attendee"
+							confirmationModal.type === "deleteEvent" ? "Delete Event"
+							: confirmationModal.type === "deleteComment" ?
+								"Delete Comment"
+							: confirmationModal.type === "deleteContribution" ?
+								"Delete Contribution"
+							:	"Remove Attendee"
 						}
 						message={
-							confirmationModal.type === "deleteEvent"
-								? "Are you sure you want to delete this event? This action cannot be undone."
-								: confirmationModal.type === "deleteComment"
-								? "Are you sure you want to delete this comment? This action cannot be undone."
-								: confirmationModal.type === "deleteContribution"
-								? "Are you sure you want to delete this contribution? This action cannot be undone."
-								: `Are you sure you want to remove ${confirmationModal.userName} from this event? This action cannot be undone.`
+							confirmationModal.type === "deleteEvent" ?
+								"Are you sure you want to delete this event? This action cannot be undone."
+							: confirmationModal.type === "deleteComment" ?
+								"Are you sure you want to delete this comment? This action cannot be undone."
+							: confirmationModal.type === "deleteContribution" ?
+								"Are you sure you want to delete this contribution? This action cannot be undone."
+							:	`Are you sure you want to remove ${confirmationModal.userName} from this event? This action cannot be undone.`
+
 						}
 						confirmText={
-							confirmationModal.type === "removeParticipant"
-								? "Remove"
-								: "Delete"
+							confirmationModal.type === "removeParticipant" ?
+								"Remove"
+							:	"Delete"
 						}
 						confirmVariant='secondary'
 					/>
