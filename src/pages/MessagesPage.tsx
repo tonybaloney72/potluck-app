@@ -56,9 +56,8 @@ export const MessagesPage = () => {
 	const [selectedConversationId, setSelectedConversationId] = useState<
 		string | null
 	>(location.state?.conversationId || null);
-	const messages = selectedConversationId
-		? allMessages[selectedConversationId] || []
-		: [];
+	const messages =
+		selectedConversationId ? allMessages[selectedConversationId] || [] : [];
 
 	useMessagesRealtime(selectedConversationId);
 	useConversationsRealtime();
@@ -68,10 +67,12 @@ export const MessagesPage = () => {
 		useState(false);
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
 	const [showMessagesView, setShowMessagesView] = useState(
-		location.state?.conversationId &&
-			conversations.some(c => c.id === location.state.conversationId)
-			? location.state.conversationId
-			: null,
+		(
+			location.state?.conversationId &&
+				conversations.some(c => c.id === location.state.conversationId)
+		) ?
+			location.state.conversationId
+		:	null,
 	);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,7 @@ export const MessagesPage = () => {
 				result => {
 					if (getOrCreateConversation.fulfilled.match(result)) {
 						setSelectedConversationId(result.payload.id);
+						setShowMessagesView(true);
 					}
 				},
 			);
@@ -152,9 +154,9 @@ export const MessagesPage = () => {
 		if (!selectedConversation) return;
 
 		const receiverId =
-			selectedConversation.user1_id === profile?.id
-				? selectedConversation.user2_id
-				: selectedConversation.user1_id;
+			selectedConversation.user1_id === profile?.id ?
+				selectedConversation.user2_id
+			:	selectedConversation.user1_id;
 
 		await dispatch(sendMessage({ receiverId, content: data.content }));
 		reset();
@@ -257,11 +259,12 @@ export const MessagesPage = () => {
 	const selectedConversation = conversations.find(
 		c => c.id === selectedConversationId,
 	);
-	const otherUser = selectedConversation
-		? selectedConversation.user1_id === profile?.id
-			? selectedConversation.user2
-			: selectedConversation.user1
-		: null;
+	const otherUser =
+		selectedConversation ?
+			selectedConversation.user1_id === profile?.id ?
+				selectedConversation.user2
+			:	selectedConversation.user1
+		:	null;
 
 	// On mobile, show messages view when conversation is selected
 	// On desktop, always show both side-by-side
@@ -298,9 +301,9 @@ export const MessagesPage = () => {
 					singleSelect={true}
 					maxVisibleFriends={5}
 					className={
-						isCreatingNewConversation && creatingConversation
-							? "opacity-50 pointer-events-none"
-							: ""
+						isCreatingNewConversation && creatingConversation ?
+							"opacity-50 pointer-events-none"
+						:	""
 					}
 				/>
 				<h2 className='text-xl font-semibold text-primary'>Conversations</h2>
@@ -309,41 +312,39 @@ export const MessagesPage = () => {
 						<p className='text-sm text-red-500'>{error}</p>
 					</div>
 				)}
-				{conversations.length === 0 ? (
+				{conversations.length === 0 ?
 					<EmptyState
 						icon={<FaEnvelope className='w-16 h-16' />}
 						title='No conversations yet'
 						message='Start a conversation with your friends to begin messaging.'
 					/>
-				) : (
-					<div className='md:space-y-2'>
+				:	<div className='md:space-y-2'>
 						{conversations.map(conversation => {
 							const otherUser =
-								conversation.user1_id === profile?.id
-									? conversation.user2
-									: conversation.user1;
+								conversation.user1_id === profile?.id ?
+									conversation.user2
+								:	conversation.user1;
 
 							return (
 								<button
 									key={conversation.id}
 									onClick={() => handleConversationClick(conversation.id)}
 									className={`hover:cursor-pointer w-full text-left p-3 rounded-lg transition-all duration-200 min-h-[44px] ${
-										selectedConversationId === conversation.id
-											? "bg-accent text-bg-secondary shadow-sm"
-											: "bg-secondary hover:bg-tertiary hover:shadow-sm text-primary"
+										selectedConversationId === conversation.id ?
+											"bg-accent text-bg-secondary shadow-sm"
+										:	"bg-secondary hover:bg-tertiary hover:shadow-sm text-primary"
 									}`}>
 									<div className='flex items-center gap-3'>
-										{otherUser?.avatar_url ? (
+										{otherUser?.avatar_url ?
 											<img
 												src={otherUser.avatar_url}
 												alt={otherUser.name || "User"}
 												className='w-10 h-10 rounded-full object-cover'
 											/>
-										) : (
-											<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+										:	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
 												<FaUser className='w-5 h-5' />
 											</div>
-										)}
+										}
 										<div className='flex-1 min-w-0'>
 											<div className='flex items-center justify-between'>
 												<p className='font-medium truncate'>
@@ -366,17 +367,17 @@ export const MessagesPage = () => {
 							);
 						})}
 					</div>
-				)}
+				}
 			</div>
 
 			{/* Messages View */}
 			<div
 				className={`flex-1 flex flex-col ${
-					showMessagesView
-						? "fixed inset-0 md:static md:inset-auto flex flex-col"
-						: "hidden md:flex"
+					showMessagesView ?
+						"fixed inset-0 md:static md:inset-auto flex flex-col"
+					:	"hidden md:flex"
 				}`}>
-				{selectedConversationId && !otherUser ? (
+				{selectedConversationId && !otherUser ?
 					// Loading state when conversation is selected but not loaded yet
 					<div className='flex-1 flex flex-col'>
 						{/* Mobile Header Skeleton */}
@@ -427,7 +428,7 @@ export const MessagesPage = () => {
 							/>
 						</div>
 					</div>
-				) : shouldShowMessagesView ? (
+				: shouldShowMessagesView ?
 					<>
 						{/* Mobile Header - Back arrow and user name on same row */}
 						<div className='md:hidden shrink-0 flex items-center gap-3 px-4 py-2 md:py-3 bg-secondary border-b border-border'>
@@ -437,17 +438,16 @@ export const MessagesPage = () => {
 								<FaArrowLeft className='w-5 h-5' />
 							</button>
 							<div className='flex items-center gap-3 flex-1 min-w-0'>
-								{otherUser?.avatar_url ? (
+								{otherUser?.avatar_url ?
 									<img
 										src={otherUser.avatar_url}
 										alt={otherUser.name || "User"}
 										className='w-8 h-8 rounded-full object-cover shrink-0'
 									/>
-								) : (
-									<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
+								:	<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
 										<FaUser className='w-4 h-4' />
 									</div>
-								)}
+								}
 								<p className='font-semibold text-primary truncate'>
 									{otherUser?.name || "Unknown User"}
 								</p>
@@ -456,17 +456,16 @@ export const MessagesPage = () => {
 
 						{/* Desktop Header */}
 						<div className='hidden md:flex items-center gap-3 pb-4 border-b border-border'>
-							{otherUser?.avatar_url ? (
+							{otherUser?.avatar_url ?
 								<img
 									src={otherUser.avatar_url}
 									alt={otherUser.name || "User"}
 									className='w-10 h-10 rounded-full object-cover'
 								/>
-							) : (
-								<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+							:	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
 									<FaUser className='w-5 h-5' />
 								</div>
-							)}
+							}
 							<div>
 								<p className='font-semibold text-primary'>
 									{otherUser?.name || "Unknown User"}
@@ -488,9 +487,9 @@ export const MessagesPage = () => {
 										}`}>
 										<div
 											className={`max-w-[85%] md:max-w-xs p-2 md:p-3 rounded-lg ${
-												isOwn
-													? "bg-accent text-bg-secondary"
-													: "bg-tertiary text-primary"
+												isOwn ?
+													"bg-accent text-bg-secondary"
+												:	"bg-tertiary text-primary"
 											}`}>
 											<p className='wrap-break-word'>{message.content}</p>
 										</div>
@@ -522,13 +521,12 @@ export const MessagesPage = () => {
 							</Button>
 						</form>
 					</>
-				) : (
-					<EmptyState
+				:	<EmptyState
 						icon={<FaComment className='w-16 h-16' />}
 						title='No conversation selected'
 						message='Select a conversation from the list to start messaging, or start a new conversation using the search above.'
 					/>
-				)}
+				}
 			</div>
 		</div>
 	);

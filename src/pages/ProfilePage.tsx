@@ -10,7 +10,7 @@ import { Button } from "../components/common/Button";
 import { SkeletonProfilePage } from "../components/common/Skeleton";
 import { FaArrowLeft } from "react-icons/fa";
 
-// Zod schema: no numbers allowed in name or location
+// Zod schema: no numbers allowed in name; location allows address characters
 const profileSchema = z.object({
 	name: z
 		.string()
@@ -20,8 +20,8 @@ const profileSchema = z.object({
 			"Name cannot contain numbers or special characters",
 		),
 	location: z.string().regex(
-		/^$|^[a-zA-Z\s'-]+$/, // Allow empty string OR letters/spaces/hyphens/apostrophes
-		"Location cannot contain numbers or special characters",
+		/^$|^[\w\s.,'#/()-]+$/, // Allow empty string OR word chars, spaces, and common address punctuation
+		"Location contains invalid characters",
 	),
 });
 
@@ -125,10 +125,10 @@ export const ProfilePage = () => {
 					/>
 					<Input
 						label='Location'
-						placeholder='e.g., Los Angeles County'
+						placeholder='e.g., 123 Main St., Los Angeles, CA 90001'
 						{...register("location")}
 						error={errors.location?.message}
-						helperText='Optional: Your general location (letters, spaces, hyphens, and apostrophes only)'
+						helperText='Optional: Your address or location (supports full addresses with numbers and common punctuation)'
 					/>
 
 					<Button
