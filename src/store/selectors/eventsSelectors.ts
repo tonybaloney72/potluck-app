@@ -95,17 +95,33 @@ export const selectInvitedEvents = createSelector(
 	},
 );
 
+// Helper function to normalize event - ensures contributions and comments are always arrays
+const normalizeEvent = (event: Event | null): Event | null => {
+	if (!event) return null;
+	return {
+		...event,
+		contributions: event.contributions ?? [],
+		comments: event.comments ?? [],
+		participants: event.participants ?? [],
+	};
+};
+
 // Select current event - O(1) lookup from eventsById
 export const selectCurrentEvent = createSelector(
 	[selectEventsById, selectCurrentEventId],
-	(eventsById, currentEventId) =>
-		currentEventId ? eventsById[currentEventId] || null : null,
+	(eventsById, currentEventId) => {
+		const event = currentEventId ? eventsById[currentEventId] || null : null;
+		return normalizeEvent(event);
+	},
 );
 
 // Select event by ID - O(1) lookup
 export const selectEventById = createSelector(
 	[selectEventsById, (_state: RootState, eventId: string) => eventId],
-	(eventsById, eventId) => eventsById[eventId] || null,
+	(eventsById, eventId) => {
+		const event = eventsById[eventId] || null;
+		return normalizeEvent(event);
+	},
 );
 
 // Check if event is being fetched (prevents duplicate fetches)

@@ -1004,7 +1004,13 @@ const eventsSlice = createSlice({
 				}
 
 				// ✅ Store/update event in normalized store
-				state.eventsById[event.id] = event;
+				// Ensure contributions and comments are always arrays (never undefined)
+				state.eventsById[event.id] = {
+					...event,
+					contributions: event.contributions ?? [],
+					comments: event.comments ?? [],
+					participants: event.participants ?? [],
+				};
 				state.currentEventId = event.id;
 				state.loading = false;
 			})
@@ -1034,7 +1040,13 @@ const eventsSlice = createSlice({
 				state.loading = false;
 				state.refreshingEvents = false;
 				// ✅ Add the new event to normalized store
-				state.eventsById[action.payload.id] = action.payload;
+				// Ensure contributions and comments are always arrays (never undefined)
+				state.eventsById[action.payload.id] = {
+					...action.payload,
+					contributions: action.payload.contributions ?? [],
+					comments: action.payload.comments ?? [],
+					participants: action.payload.participants ?? [],
+				};
 			})
 			.addCase(createEvent.rejected, (state, action) => {
 				state.loading = false;
