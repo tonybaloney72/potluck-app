@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchUserEvents,
-	setCurrentEventId,
 	retryFetchEvents,
 	clearError,
 } from "../store/slices/eventsSlice";
@@ -49,8 +48,6 @@ export const MyEventsPage = () => {
 	}, [dispatch, user?.id, loading]);
 
 	const handleEventClick = (eventId: string) => {
-		// Use setCurrentEventId instead of setCurrentEvent
-		dispatch(setCurrentEventId(eventId));
 		navigate(`/events/${eventId}`);
 	};
 
@@ -109,97 +106,98 @@ export const MyEventsPage = () => {
 					/>
 				)}
 
-				{isInitialLoading ? (
-					// Show skeleton loaders for all three sections during initial load
-					<div className='space-y-8 md:space-y-12'>
-						<div>
-							<Skeleton
-								variant='text'
-								width='30%'
-								height={28}
-								className='mb-3 md:mb-4'
-							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-								{Array.from({ length: 3 }).map((_, i) => (
-									<SkeletonEventCard key={i} />
-								))}
+				{
+					isInitialLoading ?
+						// Show skeleton loaders for all three sections during initial load
+						<div className='space-y-8 md:space-y-12'>
+							<div>
+								<Skeleton
+									variant='text'
+									width='30%'
+									height={28}
+									className='mb-3 md:mb-4'
+								/>
+								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+									{Array.from({ length: 3 }).map((_, i) => (
+										<SkeletonEventCard key={i} />
+									))}
+								</div>
+							</div>
+							<div>
+								<Skeleton
+									variant='text'
+									width='30%'
+									height={28}
+									className='mb-3 md:mb-4'
+								/>
+								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+									{Array.from({ length: 2 }).map((_, i) => (
+										<SkeletonEventCard key={i} />
+									))}
+								</div>
+							</div>
+							<div>
+								<Skeleton
+									variant='text'
+									width='30%'
+									height={28}
+									className='mb-3 md:mb-4'
+								/>
+								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+									{Array.from({ length: 2 }).map((_, i) => (
+										<SkeletonEventCard key={i} />
+									))}
+								</div>
 							</div>
 						</div>
-						<div>
-							<Skeleton
-								variant='text'
-								width='30%'
-								height={28}
-								className='mb-3 md:mb-4'
+						// Show actual content after loading
+					:	<>
+							{/* Hosted Events Section */}
+							<EventCard
+								events={hostedEvents}
+								title="Events I'm Hosting"
+								emptyStateProps={{
+									icon: <FaCalendarTimes className='w-16 h-16' />,
+									title: "No events yet",
+									message:
+										"You're not hosting any events yet. Create your first event to get started!",
+									actionLabel: "Create Event",
+									onAction: () => navigate("/create-event"),
+								}}
+								onEventClick={handleEventClick}
+								loading={loading}
 							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-								{Array.from({ length: 2 }).map((_, i) => (
-									<SkeletonEventCard key={i} />
-								))}
-							</div>
-						</div>
-						<div>
-							<Skeleton
-								variant='text'
-								width='30%'
-								height={28}
-								className='mb-3 md:mb-4'
-							/>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-								{Array.from({ length: 2 }).map((_, i) => (
-									<SkeletonEventCard key={i} />
-								))}
-							</div>
-						</div>
-					</div>
-				) : (
-					// Show actual content after loading
-					<>
-						{/* Hosted Events Section */}
-						<EventCard
-							events={hostedEvents}
-							title="Events I'm Hosting"
-							emptyStateProps={{
-								icon: <FaCalendarTimes className='w-16 h-16' />,
-								title: "No events yet",
-								message:
-									"You're not hosting any events yet. Create your first event to get started!",
-								actionLabel: "Create Event",
-								onAction: () => navigate("/create-event"),
-							}}
-							onEventClick={handleEventClick}
-							loading={loading}
-						/>
 
-						{/* Attending Events Section */}
-						<EventCard
-							events={attendingEvents}
-							title="Events I'm Attending"
-							emptyStateProps={{
-								icon: <FaCalendarTimes className='w-16 h-16' />,
-								title: "No events yet",
-								message:
-									"You're not attending any events yet. Check your invitations or browse upcoming events!",
-							}}
-							onEventClick={handleEventClick}
-							loading={loading}
-						/>
+							{/* Attending Events Section */}
+							<EventCard
+								events={attendingEvents}
+								title="Events I'm Attending"
+								emptyStateProps={{
+									icon: <FaCalendarTimes className='w-16 h-16' />,
+									title: "No events yet",
+									message:
+										"You're not attending any events yet. Check your invitations or browse upcoming events!",
+								}}
+								onEventClick={handleEventClick}
+								loading={loading}
+							/>
 
-						{/* Invited Events Section */}
-						<EventCard
-							events={invitedEvents}
-							title="Events I'm Invited To"
-							emptyStateProps={{
-								icon: <FaCalendarTimes className='w-16 h-16' />,
-								title: "No invitations yet",
-								message:
-									"You haven't received any event invitations yet. Share events with friends to invite them!",
-							}}
-							onEventClick={handleEventClick}
-							loading={loading}
-						/>
-					</>
-				)}
+							{/* Invited Events Section */}
+							<EventCard
+								events={invitedEvents}
+								title="Events I'm Invited To"
+								emptyStateProps={{
+									icon: <FaCalendarTimes className='w-16 h-16' />,
+									title: "No invitations yet",
+									message:
+										"You haven't received any event invitations yet. Share events with friends to invite them!",
+								}}
+								onEventClick={handleEventClick}
+								loading={loading}
+							/>
+						</>
+
+				}
 			</div>
 		</main>
 	);

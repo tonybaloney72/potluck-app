@@ -4,8 +4,6 @@ import type { Event } from "../../types";
 
 // Basic selectors - simple functions that return a piece of state
 export const selectEventsById = (state: RootState) => state.events.eventsById;
-export const selectCurrentEventId = (state: RootState) =>
-	state.events.currentEventId;
 export const selectCurrentUserId = (state: RootState) => state.auth.user?.id;
 
 // Helper function to categorize an event (used in selectors)
@@ -95,32 +93,11 @@ export const selectInvitedEvents = createSelector(
 	},
 );
 
-// Helper function to normalize event - ensures contributions and comments are always arrays
-const normalizeEvent = (event: Event | null): Event | null => {
-	if (!event) return null;
-	return {
-		...event,
-		contributions: event.contributions ?? [],
-		comments: event.comments ?? [],
-		participants: event.participants ?? [],
-	};
-};
-
-// Select current event - O(1) lookup from eventsById
-export const selectCurrentEvent = createSelector(
-	[selectEventsById, selectCurrentEventId],
-	(eventsById, currentEventId) => {
-		const event = currentEventId ? eventsById[currentEventId] || null : null;
-		return normalizeEvent(event);
-	},
-);
-
 // Select event by ID - O(1) lookup
 export const selectEventById = createSelector(
 	[selectEventsById, (_state: RootState, eventId: string) => eventId],
 	(eventsById, eventId) => {
-		const event = eventsById[eventId] || null;
-		return normalizeEvent(event);
+		return eventsById[eventId] || null;
 	},
 );
 

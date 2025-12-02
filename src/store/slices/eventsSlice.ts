@@ -12,7 +12,6 @@ import type {
 	RSVPStatus,
 	EventRole,
 } from "../../types";
-import type { RootState } from "../index";
 import { requireAuth } from "../../utils/auth";
 import { getEventHostId } from "../../utils/events";
 import { getOperationErrorMessage } from "../../utils/errors";
@@ -22,7 +21,6 @@ interface EventsState {
 	eventsById: {
 		[eventId: string]: Event;
 	};
-	currentEventId: string | null;
 
 	// Track which events are being fetched (prevents duplicate fetches)
 	fetchingEventIds: string[];
@@ -43,7 +41,6 @@ interface EventsState {
 const initialState: EventsState = {
 	// ✅ Normalized structure - single source of truth
 	eventsById: {},
-	currentEventId: null,
 	fetchingEventIds: [],
 
 	loading: false,
@@ -109,46 +106,8 @@ export const fetchUserEvents = createAsyncThunk(
 // Fetch a single event with all related data
 export const fetchEventById = createAsyncThunk(
 	"events/fetchEventById",
-	async (eventId: string, { getState }) => {
+	async (eventId: string) => {
 		await requireAuth();
-
-		const state = getState() as RootState;
-
-		// ✅ Check if event is already in store
-		const existingEvent = state.events.eventsById[eventId];
-		const isFetching = state.events.fetchingEventIds.includes(eventId);
-
-		// If we have full event data (with participants, contributions, comments), return it
-		// Check for arrays to handle both normalized and non-normalized events
-		if (
-			existingEvent &&
-			Array.isArray(existingEvent.participants) &&
-			Array.isArray(existingEvent.contributions) &&
-			Array.isArray(existingEvent.comments) &&
-			!isFetching
-		) {
-			// Return from cache - no need to fetch, but still update currentEventId
-			// Normalize the event before returning to ensure consistency
-			return {
-				event: {
-					...existingEvent,
-					contributions: existingEvent.contributions ?? [],
-					comments: existingEvent.comments ?? [],
-					participants: existingEvent.participants ?? [],
-				},
-				fromCache: true,
-				skipFetch: false,
-			};
-		}
-
-		// If already fetching, don't fetch again (prevent duplicate requests)
-		if (isFetching) {
-			return {
-				event: existingEvent || null,
-				fromCache: true,
-				skipFetch: true,
-			};
-		}
 
 		// Fetch event with creator
 		const { data: event, error: eventError } = await supabase
@@ -248,7 +207,43 @@ export const fetchEventById = createAsyncThunk(
 			comments: commentsWithProfiles || [],
 		} as Event;
 
-		return { event: fullEvent, fromCache: false };
+		return fullEvent;
+	},
+);
+
+// Check if event has been updated (lightweight check for timestamp)
+export const checkEventUpdated = createAsyncThunk(
+	"events/checkEventUpdated",
+	async ({
+		eventId,
+		currentUpdatedAt,
+	}: {
+		eventId: string;
+		currentUpdatedAt: string;
+	}) => {
+		await requireAuth();
+
+		const { data, error } = await supabase
+			.from("events")
+			.select("updated_at")
+			.eq("id", eventId)
+			.single();
+
+		if (error) throw error;
+
+		// Compare timestamps
+		if (data?.updated_at) {
+			const dbUpdatedAt = new Date(data.updated_at);
+			const storedUpdatedAt = new Date(currentUpdatedAt);
+
+			// Return true if database has newer timestamp
+			return {
+				needsRefresh: dbUpdatedAt > storedUpdatedAt,
+				updatedAt: data.updated_at,
+			};
+		}
+
+		return { needsRefresh: false, updatedAt: currentUpdatedAt };
 	},
 );
 
@@ -510,13 +505,10 @@ export const updateRSVP = createAsyncThunk(
 
 		if (hostId && hostId !== user.id && event && userProfile) {
 			const rsvpStatusLabel =
-				rsvpStatus === "going"
-					? "going"
-					: rsvpStatus === "maybe"
-					? "maybe"
-					: rsvpStatus === "not_going"
-					? "not going"
-					: "pending";
+				rsvpStatus === "going" ? "going"
+				: rsvpStatus === "maybe" ? "maybe"
+				: rsvpStatus === "not_going" ? "not going"
+				: "pending";
 
 			// Create notification for the host
 			await supabase.from("notifications").insert({
@@ -712,19 +704,11 @@ const eventsSlice = createSlice({
 	name: "events",
 	initialState,
 	reducers: {
-		setCurrentEventId: (state, action: PayloadAction<string | null>) => {
-			state.currentEventId = action.payload;
-		},
 		removeEvent: (state, action: PayloadAction<string>) => {
 			const eventId = action.payload;
 
 			// ✅ Remove from normalized store only
 			delete state.eventsById[eventId];
-
-			// Clear currentEventId if it's the deleted event
-			if (state.currentEventId === eventId) {
-				state.currentEventId = null;
-			}
 		},
 		clearError: state => {
 			state.error = null;
@@ -948,13 +932,13 @@ const eventsSlice = createSlice({
 						state.eventsById[event.id] = {
 							...event,
 							contributions:
-								existingEvent.contributions !== undefined
-									? existingEvent.contributions
-									: event.contributions,
+								existingEvent.contributions !== undefined ?
+									existingEvent.contributions
+								:	event.contributions,
 							comments:
-								existingEvent.comments !== undefined
-									? existingEvent.comments
-									: event.comments,
+								existingEvent.comments !== undefined ?
+									existingEvent.comments
+								:	event.comments,
 							// Ensure participants are updated (they come from fetchUserEvents)
 							participants:
 								event.participants || existingEvent.participants || [],
@@ -993,26 +977,13 @@ const eventsSlice = createSlice({
 				state.error = null;
 			})
 			.addCase(fetchEventById.fulfilled, (state, action) => {
-				const { event, skipFetch } = action.payload;
+				const event = action.payload;
 				const eventId = action.meta.arg;
 
 				// Remove from fetching set
 				state.fetchingEventIds = state.fetchingEventIds.filter(
 					id => id !== eventId,
 				);
-
-				// If skipFetch is true, we were already fetching - just clear loading
-				if (skipFetch) {
-					if (state.loading) {
-						state.loading = false;
-					}
-					return;
-				}
-
-				if (!event) {
-					state.loading = false;
-					return;
-				}
 
 				// ✅ Store/update event in normalized store
 				// Ensure contributions and comments are always arrays (never undefined)
@@ -1022,7 +993,6 @@ const eventsSlice = createSlice({
 					comments: event.comments ?? [],
 					participants: event.participants ?? [],
 				};
-				state.currentEventId = event.id;
 				state.loading = false;
 			})
 			.addCase(fetchEventById.rejected, (state, action) => {
@@ -1098,11 +1068,6 @@ const eventsSlice = createSlice({
 			const eventId = action.payload;
 			// ✅ Remove from normalized store only
 			delete state.eventsById[eventId];
-
-			// Clear currentEventId if deleted
-			if (state.currentEventId === eventId) {
-				state.currentEventId = null;
-			}
 		});
 
 		// Add participant
@@ -1312,7 +1277,6 @@ export const retryFetchEvent = createAsyncThunk(
 );
 
 export const {
-	setCurrentEventId,
 	removeEvent,
 	clearError,
 	updateParticipantRSVP,

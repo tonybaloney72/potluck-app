@@ -31,12 +31,28 @@
 
 html {
 	@apply bg-gray-50 text-gray-900;
-	transition: background-color 0.3s ease, color 0.3s ease;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
+	overflow: hidden;
+	height: 100%;
+}
+
+body {
+	overflow: hidden;
+	height: 100%;
+}
+
+#root {
+	height: 100%;
+	overflow: hidden;
 }
 
 html[data-theme="dark"] {
 	@apply bg-gray-900 text-gray-50;
-	transition: background-color 0.3s ease, color 0.3s ease;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
 }
 
 /* Background utilities */

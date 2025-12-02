@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { FaArrowLeft, FaEdit, FaTimes } from "react-icons/fa";
 import {
 	fetchEventById,
+	checkEventUpdated,
 	updateRSVP,
 	addComment,
 	deleteComment,
@@ -32,7 +33,6 @@ import {
 	selectEventById,
 	selectIsEventFetching,
 } from "../store/selectors/eventsSelectors";
-import { setCurrentEventId } from "../store/slices/eventsSlice";
 
 // Confirmation modal type - consolidated state
 type ConfirmationModal =
@@ -69,9 +69,12 @@ export const EventDetailPage = () => {
 	// Track editing state for EventHeader
 	const [isEditing, setIsEditing] = useState(false);
 
+	// Track which eventId we've already checked (prevents re-checking on event updates)
+	const lastCheckedEventIdRef = useRef<string | null>(null);
+
 	useEventDetailsRealtime(eventId || null);
 
-	// ✅ Get event from URL eventId (this is what we should display)
+	// Get event from URL eventId
 	const event = useAppSelector(state =>
 		eventId ? selectEventById(state, eventId) : null,
 	);
@@ -79,22 +82,45 @@ export const EventDetailPage = () => {
 		eventId ? selectIsEventFetching(state, eventId) : false,
 	);
 
-	// Effect 1: Fetch event when eventId changes (only runs on mount or eventId change)
+	// Single effect: Fetch event if we don't have it or are missing data
 	useEffect(() => {
 		if (!eventId) return;
 
-		// Check if we already have the event with full nested data
-		// With normalization, contributions/comments are always arrays, so check for event existence
+		// Check if we have the event with all required data
+		// The slice ensures participants, contributions, and comments are always arrays
 		const hasFullData =
 			event &&
-			Array.isArray(event.participants) &&
-			Array.isArray(event.contributions) &&
-			Array.isArray(event.comments);
+			event.participants !== undefined &&
+			event.contributions !== undefined &&
+			event.comments !== undefined;
 
-		// If we have full data, no need to fetch
 		if (hasFullData) {
+			// Only check if we haven't already checked this eventId
+			// This prevents re-checking when event updates via realtime
+			if (lastCheckedEventIdRef.current !== eventId && event.updated_at) {
+				lastCheckedEventIdRef.current = eventId;
+
+				// Check if event has been updated since we last fetched
+				dispatch(
+					checkEventUpdated({
+						eventId,
+						currentUpdatedAt: event.updated_at,
+					}),
+				).then(result => {
+					if (
+						checkEventUpdated.fulfilled.match(result) &&
+						result.payload.needsRefresh
+					) {
+						// Database has newer timestamp, fetch fresh data
+						dispatch(fetchEventById(eventId));
+					}
+				});
+			}
 			return;
 		}
+
+		// Reset checked ref when we don't have full data (new event being loaded)
+		lastCheckedEventIdRef.current = null;
 
 		// If already fetching, don't fetch again
 		if (isFetching) {
@@ -103,39 +129,8 @@ export const EventDetailPage = () => {
 
 		// Otherwise, fetch the event to get full details
 		dispatch(fetchEventById(eventId));
-
-		// Timeout safeguard: if fetch takes too long (30 seconds), clear error to show error state
-		// This prevents infinite loading if the fetch gets stuck
-		const timeoutId = setTimeout(() => {
-			if (!event && isFetching) {
-				dispatch(clearError());
-				// The error will be set by the rejected case, but if it's stuck, we want to show error
-			}
-		}, 30000);
-
-		return () => {
-			clearTimeout(timeoutId);
-		};
-		// Only depend on eventId to prevent infinite loops
-		// We check event in the body but don't include it in deps
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dispatch, eventId]);
-
-	// Effect 2: Set currentEventId when we have full event data
-	useEffect(() => {
-		if (!eventId) return;
-
-		// With normalization, contributions/comments are always arrays, so check for event existence
-		const hasFullData =
-			event &&
-			Array.isArray(event.participants) &&
-			Array.isArray(event.contributions) &&
-			Array.isArray(event.comments);
-
-		if (hasFullData && !isFetching) {
-			dispatch(setCurrentEventId(eventId));
-		}
-	}, [dispatch, eventId, event, isFetching]);
+	}, [dispatch, eventId, isFetching]);
 
 	// Filter out friends that have been added as participants
 	// This ensures they don't appear in the selected chips after being added
@@ -148,19 +143,11 @@ export const EventDetailPage = () => {
 		}
 	}, [event?.participants]);
 
-	// Show loading if:
-	// 1. We're actively fetching, OR
-	// 2. We have an eventId but no event yet (initial load state)
-	// Stop loading once we have an event OR an error
-	// Note: With normalization, contributions/comments are always arrays, so we check for event existence
-	// Also add a safeguard: if we've been loading for too long without an event or error, show error state
-	const isLoading = isFetching || (eventId && !event && !error);
+	// Show skeleton only on initial load (when we have eventId but no event)
+	// Don't show skeleton during background refresh (when event exists but we're fetching updates)
+	const isInitialLoad = eventId && !event && !error;
 
-	if (isLoading) {
-		console.log("eventId, :", eventId);
-		console.log("event:", event);
-		console.log("isFetching:", isFetching);
-		console.log("error:", error);
+	if (isInitialLoad) {
 		return <SkeletonEventDetails />;
 	}
 
@@ -409,7 +396,10 @@ export const EventDetailPage = () => {
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
 	return (
-		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
+		<main
+			id='main-content'
+			className='bg-secondary p-4 md:p-8 min-h-0'
+			role='main'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button, Edit, and Delete */}
 				<div className='flex justify-between items-center gap-3 mb-4'>

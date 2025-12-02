@@ -20,7 +20,7 @@ import type {
 	Contribution,
 	EventRole,
 } from "../types";
-import { selectCurrentEvent } from "../store/selectors/eventsSelectors";
+import { selectEventById } from "../store/selectors/eventsSelectors";
 
 export function useEventDetailsRealtime(eventId: string | null) {
 	const dispatch = useAppDispatch();
@@ -127,10 +127,13 @@ export function useEventDetailsRealtime(eventId: string | null) {
 			if (payload.eventType === "DELETE" && payload.old) {
 				const deletedCommentId = payload.old.id;
 
-				// Check if this comment exists in currentEvent (only process if viewing that event)
+				// Check if this comment exists in the event (only process if viewing that event)
 				const state = store.getState();
-				const currentEvent = selectCurrentEvent(state);
-				const commentExists = currentEvent?.comments?.some(
+				const event =
+					eventIdRef.current ?
+						selectEventById(state, eventIdRef.current)
+					:	null;
+				const commentExists = event?.comments?.some(
 					c => c.id === deletedCommentId,
 				);
 
@@ -194,9 +197,12 @@ export function useEventDetailsRealtime(eventId: string | null) {
 			if (payload.eventType === "DELETE" && payload.old) {
 				const deletedContributionId = payload.old.id;
 
-				// Check if this contribution exists in the current event being viewed
+				// Check if this contribution exists in the event being viewed
 				const state = store.getState();
-				const event = selectCurrentEvent(state);
+				const event =
+					eventIdRef.current ?
+						selectEventById(state, eventIdRef.current)
+					:	null;
 				const contributionExists = event?.contributions?.some(
 					c => c.id === deletedContributionId,
 				);
@@ -300,10 +306,13 @@ export function useEventDetailsRealtime(eventId: string | null) {
 			if (payload.eventType === "DELETE" && payload.old) {
 				const deletedParticipantId = payload.old.id;
 
-				// Check if this participant exists in currentEvent (only process if viewing that event)
+				// Check if this participant exists in the event (only process if viewing that event)
 				const state = store.getState();
-				const currentEvent = selectCurrentEvent(state);
-				const participantExists = currentEvent?.participants?.some(
+				const event =
+					eventIdRef.current ?
+						selectEventById(state, eventIdRef.current)
+					:	null;
+				const participantExists = event?.participants?.some(
 					p => p.id === deletedParticipantId,
 				);
 
@@ -328,13 +337,16 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				const updatedEvent = payload.new;
 
 				// Ignore updates from current user (they're handled optimistically)
-				// Note: We check if currentEvent exists and if we're currently updating
+				// Note: We check if event exists and if we're currently updating
 				// to avoid processing our own optimistic updates
 				const state = store.getState();
-				const currentEvent = selectCurrentEvent(state);
+				const event =
+					eventIdRef.current ?
+						selectEventById(state, eventIdRef.current)
+					:	null;
 				const isCurrentlyUpdating = state.events.updatingEvent;
 				const isCurrentUserUpdate =
-					currentEvent?.created_by === user?.id && isCurrentlyUpdating;
+					event?.created_by === user?.id && isCurrentlyUpdating;
 
 				// Skip if this is our own update (handled optimistically)
 				if (isCurrentUserUpdate) {
@@ -342,8 +354,8 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				}
 
 				if (
-					currentEvent?.id === updatedEvent.id &&
-					currentEvent?.updated_at === updatedEvent.updated_at &&
+					event?.id === updatedEvent.id &&
+					event?.updated_at === updatedEvent.updated_at &&
 					isCurrentlyUpdating
 				) {
 					return;
