@@ -12,7 +12,7 @@ import {
 	type SelectedFriend,
 } from "../components/common/FriendSelector";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
-import { Map } from "../components/common/Map";
+// import { Map } from "../components/common/Map";
 import { FaArrowLeft } from "react-icons/fa";
 
 interface CreateEventFormData {
@@ -172,7 +172,7 @@ export const CreateEventPage = () => {
 							placeholder='e.g., Central Park, New York'
 						/>
 
-						<Map />
+						{/* <Map /> */}
 
 						{/* <Input
 							label='Location URL (optional)'
