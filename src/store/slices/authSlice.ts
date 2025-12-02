@@ -119,8 +119,6 @@ export const resetPassword = createAsyncThunk(
 	"auth/resetPassword",
 	async (email: string) => {
 		const redirectUrl = getRedirectUrl();
-		// Log for debugging - remove in production if desired
-		console.log("Password reset redirect URL:", redirectUrl);
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
 			redirectTo: redirectUrl,
 		});

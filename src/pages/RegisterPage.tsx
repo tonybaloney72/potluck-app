@@ -3,11 +3,12 @@ import { useNavigate, Link } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { signUp } from "../store/slices/authSlice";
+import { signUp, clearError } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
+import { useEffect } from "react";
 
 // Zod schema: name cannot contain numbers, same validation as ProfilePage
 const registerSchema = z
@@ -36,7 +37,9 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export const RegisterPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { loading, error } = useAppSelector(state => state.auth);
+	const { loading, error, user, initializing } = useAppSelector(
+		state => state.auth,
+	);
 
 	const {
 		register,
@@ -45,6 +48,27 @@ export const RegisterPage = () => {
 	} = useForm<RegisterFormData>({
 		resolver: zodResolver(registerSchema),
 	});
+
+	// Clear any previous errors when component mounts
+	useEffect(() => {
+		dispatch(clearError());
+	}, [dispatch]);
+
+	// Redirect to home if already logged in
+	useEffect(() => {
+		if (user && !initializing) {
+			navigate("/", { replace: true });
+		}
+	}, [user, initializing, navigate]);
+
+	// Don't show register form while checking auth status
+	if (initializing) {
+		return (
+			<div className='h-screen flex items-center justify-center bg-primary'>
+				<div className='text-lg'>Loading...</div>
+			</div>
+		);
+	}
 
 	const onSubmit = async (data: RegisterFormData) => {
 		const { confirmPassword, ...signUpData } = data;

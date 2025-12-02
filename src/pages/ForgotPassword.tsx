@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { resetPassword } from "../store/slices/authSlice";
+import { resetPassword, clearError } from "../store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { useNavigate } from "react-router";
 
@@ -19,7 +19,9 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export const ForgotPassword = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
-	const { loading, error } = useAppSelector(state => state.auth);
+	const { loading, error, user, initializing } = useAppSelector(
+		state => state.auth,
+	);
 	const [isSent, setIsSent] = useState(false);
 	const [sentEmail, setSentEmail] = useState<string>("");
 
@@ -31,6 +33,27 @@ export const ForgotPassword = () => {
 	} = useForm<ForgotPasswordFormData>({
 		resolver: zodResolver(forgotPasswordSchema),
 	});
+
+	// Clear any previous errors when component mounts
+	useEffect(() => {
+		dispatch(clearError());
+	}, [dispatch]);
+
+	// Redirect to home if already logged in
+	useEffect(() => {
+		if (user && !initializing) {
+			navigate("/", { replace: true });
+		}
+	}, [user, initializing, navigate]);
+
+	// Don't show form while checking auth status
+	if (initializing) {
+		return (
+			<div className='h-screen flex items-center justify-center bg-primary'>
+				<div className='text-lg'>Loading...</div>
+			</div>
+		);
+	}
 
 	const onSubmit = async (data: ForgotPasswordFormData) => {
 		const result = await dispatch(resetPassword(data.email));

@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { updatePassword } from "../store/slices/authSlice";
+import { updatePassword, clearError } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { motion, AnimatePresence } from "motion/react";
@@ -28,6 +28,11 @@ export const PasswordReset = () => {
 	const dispatch = useAppDispatch();
 	const { loading, error } = useAppSelector(state => state.auth);
 	const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
+
+	// Clear any previous errors when component mounts
+	useEffect(() => {
+		dispatch(clearError());
+	}, [dispatch]);
 
 	// Check if user has a valid recovery session from the password reset link
 	useEffect(() => {
@@ -83,8 +88,8 @@ export const PasswordReset = () => {
 	const onSubmit = async (data: PasswordResetFormData) => {
 		const result = await dispatch(updatePassword(data.password));
 		if (updatePassword.fulfilled.match(result)) {
-			// Password updated successfully, redirect to login
-			navigate("/login");
+			// Password updated successfully - user is already logged in, redirect to home
+			navigate("/");
 		}
 	};
 

@@ -1,11 +1,12 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, Link, useSearchParams } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { signIn } from "../store/slices/authSlice";
+import { signIn, clearError } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
+import { useEffect } from "react";
 
 interface LoginFormData {
 	email: string;
@@ -16,13 +17,41 @@ export const LoginPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 	const [searchParams] = useSearchParams();
-	const { loading, error } = useAppSelector(state => state.auth);
+	const { loading, error, user, initializing } = useAppSelector(
+		state => state.auth,
+	);
+
+	// Clear any previous errors when component mounts
+	useEffect(() => {
+		dispatch(clearError());
+	}, [dispatch]);
+
+	// Redirect to home if already logged in
+	useEffect(() => {
+		if (user && !initializing) {
+			const returnUrl = searchParams.get("returnUrl");
+			if (returnUrl) {
+				navigate(decodeURIComponent(returnUrl), { replace: true });
+			} else {
+				navigate("/", { replace: true });
+			}
+		}
+	}, [user, initializing, navigate, searchParams]);
 
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
 	} = useForm<LoginFormData>();
+
+	// Don't show login form while checking auth status
+	if (initializing) {
+		return (
+			<div className='h-screen flex items-center justify-center bg-primary'>
+				<div className='text-lg'>Loading...</div>
+			</div>
+		);
+	}
 
 	const onSubmit = async (data: LoginFormData) => {
 		const result = await dispatch(signIn(data));
