@@ -4,10 +4,11 @@ import { useNavigate } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { updateProfile } from "../store/slices/authSlice";
+import { updateProfile, clearError } from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { SkeletonProfilePage } from "../components/common/Skeleton";
+import { AvatarUpload } from "../components/common/AvatarUpload";
 import { FaArrowLeft } from "react-icons/fa";
 
 // Zod schema: no numbers allowed in name; location allows address characters
@@ -45,6 +46,11 @@ export const ProfilePage = () => {
 		},
 	});
 
+	// Clear errors when component mounts
+	useEffect(() => {
+		dispatch(clearError());
+	}, [dispatch]);
+
 	// Initialize form when profile loads (only when profile ID changes)
 	// This handles the case where profile loads after component mounts
 	useEffect(() => {
@@ -67,6 +73,7 @@ export const ProfilePage = () => {
 				keepSubmitCount: false,
 			},
 		);
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [profile?.id]); // Only reset when profile ID changes (initial load or user switch)
 
@@ -115,6 +122,9 @@ export const ProfilePage = () => {
 				<h1 className='text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary'>
 					Profile Settings
 				</h1>
+
+				{/* Avatar Upload Section */}
+				<AvatarUpload />
 
 				<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 					<Input
