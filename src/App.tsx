@@ -5,12 +5,16 @@ import { AppRoutes } from "./routes/AppRoutes";
 import { useNotificationsRealtime } from "./hooks/useNotificationsRealTime";
 import { useFriendshipsRealtime } from "./hooks/useFriendshipsRealtime";
 import { useEventsRealtime } from "./hooks/useEventsRealtime";
+import { useMessagesRealtime } from "./hooks/useMessagesRealtime";
+import { useConversationsRealtime } from "./hooks/useConversationsRealtime";
 
 function App() {
 	useAuth();
 	useNotificationsRealtime();
 	useFriendshipsRealtime();
 	useEventsRealtime();
+	useMessagesRealtime();
+	useConversationsRealtime();
 
 	return (
 		<ThemeProvider>

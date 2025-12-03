@@ -136,6 +136,14 @@ export const FriendSelector = ({
 		};
 	}, [isOpen]);
 
+	useEffect(() => {
+		// Auto-close dropdown when all available friends are selected
+		// Only close if dropdown is open, no search query, and no filtered friends
+		if (isOpen && !searchQuery.trim() && availableFriends.length === 0) {
+			setIsOpen(false);
+		}
+	}, [isOpen, searchQuery, availableFriends.length]);
+
 	// Get selected friend profiles
 	const selectedFriendProfiles = useMemo(() => {
 		if (!profile || !friendships) return [];
@@ -153,9 +161,9 @@ export const FriendSelector = ({
 				if (!friendship) return null;
 
 				const friendProfile =
-					friendship.user_id === profile.id
-						? friendship.friend
-						: friendship.user;
+					friendship.user_id === profile.id ?
+						friendship.friend
+					:	friendship.user;
 
 				if (!friendProfile || friendProfile.id === profile.id) return null;
 
@@ -219,7 +227,10 @@ export const FriendSelector = ({
 			<div className='relative' ref={dropdownRef}>
 				{/* Search Input (Trigger) */}
 				<div className='relative'>
-					<FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10' aria-hidden='true' />
+					<FaSearch
+						className='absolute left-3 top-1/2 -translate-y-1/2 text-tertiary w-4 h-4 pointer-events-none z-10'
+						aria-hidden='true'
+					/>
 					<Input
 						type='text'
 						placeholder='Search friends'
@@ -267,20 +278,19 @@ export const FriendSelector = ({
 								transition={{ duration: 0.15 }}
 								role='listbox'
 								aria-label='Available friends'>
-								{availableFriends.length === 0 ? (
+								{availableFriends.length === 0 ?
 									<div className='p-6 text-center border border-border rounded-lg'>
 										<p className='text-tertiary text-sm'>
 											No friends available to invite.
 										</p>
 									</div>
-								) : filteredFriends.length === 0 ? (
+								: filteredFriends.length === 0 ?
 									<div className='p-4 text-center text-tertiary text-sm'>
-										{searchQuery.trim()
-											? `No friends found matching "${searchQuery}"`
-											: "No friends available to invite"}
+										{searchQuery.trim() ?
+											`No friends found matching "${searchQuery}"`
+										:	"No friends available to invite"}
 									</div>
-								) : (
-									<>
+								:	<>
 										<div className='max-h-[320px] overflow-y-auto overflow-x-visible'>
 											<ul className='[&>*:not(:first-child)]:border-t [&>*:not(:first-child)]:border-border'>
 												{filteredFriends.map(friend => (
@@ -292,17 +302,19 @@ export const FriendSelector = ({
 														<div className='flex items-center justify-between gap-3'>
 															{/* Friend Info */}
 															<div className='flex items-center gap-3 flex-1 min-w-0'>
-																{friend.avatar_url ? (
+																{friend.avatar_url ?
 																	<img
 																		src={friend.avatar_url}
 																		alt={`${friend.name || "User"} avatar`}
 																		className='w-10 h-10 rounded-full object-cover shrink-0'
 																	/>
-																) : (
-																	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
-																		<FaUser className='w-5 h-5' aria-hidden='true' />
+																:	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
+																		<FaUser
+																			className='w-5 h-5'
+																			aria-hidden='true'
+																		/>
 																	</div>
-																)}
+																}
 																<div className='min-w-0 flex-1'>
 																	<p className='font-medium text-primary truncate'>
 																		{friend.name || "Unknown User"}
@@ -322,7 +334,10 @@ export const FriendSelector = ({
 																onClick={() => handleAddFriend(friend.id)}
 																className='flex items-center gap-1.5 h-8 px-3 text-sm shrink-0'
 																aria-label={`Add ${friend.name || "friend"}`}>
-																<FaPlus className='w-3 h-3' aria-hidden='true' />
+																<FaPlus
+																	className='w-3 h-3'
+																	aria-hidden='true'
+																/>
 																Add
 															</Button>
 														</div>
@@ -342,7 +357,7 @@ export const FriendSelector = ({
 												</div>
 											)}
 									</>
-								)}
+								}
 							</motion.div>
 						</>
 					)}
@@ -365,17 +380,16 @@ export const FriendSelector = ({
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.9 }}
 									className='flex items-center gap-2 px-3 py-2 bg-tertiary border border-border rounded-lg text-sm min-w-[280px] max-w-[280px]'>
-									{friend.avatar_url ? (
+									{friend.avatar_url ?
 										<img
 											src={friend.avatar_url}
 											alt={friend.name || "User"}
 											className='w-6 h-6 rounded-full object-cover shrink-0'
 										/>
-									) : (
-										<div className='w-6 h-6 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
+									:	<div className='w-6 h-6 rounded-full bg-tertiary flex items-center justify-center shrink-0'>
 											<FaUser className='w-3 h-3' />
 										</div>
-									)}
+									}
 									<span
 										className='text-primary font-medium truncate min-w-0 flex-1'
 										title={friend.name || "Unknown"}>
@@ -385,12 +399,12 @@ export const FriendSelector = ({
 									<RoleSelector
 										value={role}
 										onChange={newRole => handleRoleChange(friend.id, newRole)}
-										className='h-8 shrink-0'
+										className='shrink-0'
 									/>
 									<button
 										type='button'
 										onClick={() => handleRemoveFriend(friend.id)}
-										className='text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-full p-1 transition-all duration-200 shrink-0 hover:cursor-pointer'
+										className='text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-full p-1 transition-all duration-200 shrink-0 hover:cursor-pointer flex items-center justify-center'
 										aria-label={`Remove ${friend.name || "friend"}`}>
 										<FaTimes className='w-3 h-3' aria-hidden='true' />
 									</button>

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { useRealtimeSubscription } from "./useRealtimeSubscription";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { store } from "../store";
@@ -11,15 +10,13 @@ import {
 import { supabase } from "../services/supabase";
 import type { Message, Conversation } from "../types";
 
-export function useMessagesRealtime(currentConversationId: string | null) {
+export function useMessagesRealtime() {
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector(state => state.auth);
-	const currentConversationIdRef = useRef<string | null>(null);
-
-	// Keep ref in sync with prop
-	useEffect(() => {
-		currentConversationIdRef.current = currentConversationId;
-	}, [currentConversationId]);
+	// Get current conversation from Redux state
+	const currentConversationId = useAppSelector(
+		state => state.conversations.currentConversationId,
+	);
 
 	useRealtimeSubscription({
 		channelName: `messages:${user?.id}:insert`,
@@ -60,10 +57,11 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 					sender: senderProfile || undefined,
 				};
 
-				// If viewing this conversation, add message directly
-				if (currentConversationIdRef.current === newMessage.conversation_id) {
-					dispatch(addMessage(message));
-					// Mark as read immediately since user is viewing
+				// ALWAYS add message to Redux (regardless of current page)
+				dispatch(addMessage(message));
+
+				// If viewing this conversation, mark as read immediately
+				if (currentConversationId === newMessage.conversation_id) {
 					await supabase
 						.from("messages")
 						.update({ read: true })
@@ -81,9 +79,8 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 
 				// Check if conversation exists in state - if not, add it
 				const state = store.getState();
-				const conversationExists = state.conversations.conversations.some(
-					c => c.id === newMessage.conversation_id,
-				);
+				const conversationExists =
+					!!state.conversations.conversationsById[newMessage.conversation_id];
 
 				if (!conversationExists) {
 					// Conversation doesn't exist in list, add it
@@ -127,7 +124,7 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 					);
 
 					// Increment unread count if not viewing this conversation
-					if (currentConversationIdRef.current !== newMessage.conversation_id) {
+					if (currentConversationId !== newMessage.conversation_id) {
 						dispatch(incrementUnreadCount(newMessage.conversation_id));
 					}
 				}
@@ -163,7 +160,7 @@ export function useMessagesRealtime(currentConversationId: string | null) {
 				if (
 					updatedMessage.read &&
 					!payload.old.read &&
-					currentConversationIdRef.current === updatedMessage.conversation_id
+					currentConversationId === updatedMessage.conversation_id
 				) {
 					// Unread count will be handled by markMessagesAsRead
 				}

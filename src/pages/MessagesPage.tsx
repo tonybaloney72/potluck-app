@@ -9,7 +9,12 @@ import {
 import {
 	fetchConversations,
 	getOrCreateConversation,
+	setCurrentConversationId,
 } from "../store/slices/conversationsSlice";
+import {
+	selectAllConversations,
+	selectConversationById,
+} from "../store/selectors/conversationsSelectors";
 import { markConversationNotificationsAsRead } from "../store/slices/notificationsSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/common/Button";
@@ -26,8 +31,6 @@ import {
 	FriendSelector,
 	type SelectedFriend,
 } from "../components/common/FriendSelector";
-import { useMessagesRealtime } from "../hooks/useMessagesRealtime";
-import { useConversationsRealtime } from "../hooks/useConversationsRealtime";
 import {
 	SkeletonConversationItem,
 	SkeletonMessage,
@@ -47,20 +50,15 @@ export const MessagesPage = () => {
 		sending,
 		error,
 	} = useAppSelector(state => state.messages);
-	const {
-		conversations,
-		loading: conversationsLoading,
-		creatingConversation,
-	} = useAppSelector(state => state.conversations);
+	const conversations = useAppSelector(selectAllConversations);
+	const { loading: conversationsLoading, creatingConversation } =
+		useAppSelector(state => state.conversations);
 	const { profile, user } = useAppSelector(state => state.auth);
 	const [selectedConversationId, setSelectedConversationId] = useState<
 		string | null
 	>(location.state?.conversationId || null);
 	const messages =
 		selectedConversationId ? allMessages[selectedConversationId] || [] : [];
-
-	useMessagesRealtime(selectedConversationId);
-	useConversationsRealtime();
 
 	const [hasLoaded, setHasLoaded] = useState(false);
 	const [isCreatingNewConversation, setIsCreatingNewConversation] =
@@ -105,6 +103,14 @@ export const MessagesPage = () => {
 			window.history.replaceState({}, document.title);
 		}
 	}, [location.state, hasLoaded, dispatch]);
+
+	// Update Redux state with current conversation ID for realtime hook
+	useEffect(() => {
+		dispatch(setCurrentConversationId(selectedConversationId));
+		return () => {
+			dispatch(setCurrentConversationId(null));
+		};
+	}, [selectedConversationId, dispatch]);
 
 	useEffect(() => {
 		if (selectedConversationId && user) {
@@ -206,6 +212,19 @@ export const MessagesPage = () => {
 		}
 	}, [messages, selectedConversationId]);
 
+	// Get selected conversation - MUST be before any early returns
+	const selectedConversation = useAppSelector(state =>
+		selectedConversationId ?
+			selectConversationById(state, selectedConversationId)
+		:	null,
+	);
+	const otherUser =
+		selectedConversation ?
+			selectedConversation.user1_id === profile?.id ?
+				selectedConversation.user2
+			:	selectedConversation.user1
+		:	null;
+
 	// Show loading only on initial load when we have no data
 	if (
 		(conversationsLoading || loading) &&
@@ -255,16 +274,6 @@ export const MessagesPage = () => {
 			</div>
 		);
 	}
-
-	const selectedConversation = conversations.find(
-		c => c.id === selectedConversationId,
-	);
-	const otherUser =
-		selectedConversation ?
-			selectedConversation.user1_id === profile?.id ?
-				selectedConversation.user2
-			:	selectedConversation.user1
-		:	null;
 
 	// On mobile, show messages view when conversation is selected
 	// On desktop, always show both side-by-side

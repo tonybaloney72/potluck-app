@@ -130,9 +130,7 @@ export function useConversationsRealtime() {
 
 				// Check if conversation exists in state - if not, add it (upsert pattern)
 				const state = store.getState();
-				const exists = state.conversations.conversations.some(
-					c => c.id === payload.new.id,
-				);
+				const exists = !!state.conversations.conversationsById[payload.new.id];
 
 				if (exists) {
 					dispatch(
@@ -177,9 +175,7 @@ export function useConversationsRealtime() {
 
 				// Check if conversation exists in state - if not, add it (upsert pattern)
 				const state = store.getState();
-				const exists = state.conversations.conversations.some(
-					c => c.id === payload.new.id,
-				);
+				const exists = !!state.conversations.conversationsById[payload.new.id];
 
 				if (exists) {
 					dispatch(

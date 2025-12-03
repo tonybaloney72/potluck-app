@@ -11,14 +11,22 @@ import { fetchFriendships } from "./friendsSlice";
 import { requireAuth } from "../../utils/auth";
 
 interface ConversationsState {
-	conversations: Conversation[];
+	// ✅ Normalized structure - single source of truth
+	conversationsById: {
+		[conversationId: string]: Conversation;
+	};
+	// Maintain sorted order by last_message_at (descending)
+	conversationIds: string[];
+	currentConversationId: string | null;
 	loading: boolean;
 	creatingConversation: boolean;
 	error: string | null;
 }
 
 const initialState: ConversationsState = {
-	conversations: [],
+	conversationsById: {},
+	conversationIds: [],
+	currentConversationId: null,
 	loading: false,
 	creatingConversation: false,
 	error: null,
@@ -51,7 +59,8 @@ export const fetchConversations = createAsyncThunk(
 			}
 		});
 
-		if (friendIds.size === 0) return [];
+		if (friendIds.size === 0)
+			return { conversationsById: {}, conversationIds: [] };
 
 		const { data, error } = await supabase
 			.from("conversations")
@@ -98,12 +107,33 @@ export const fetchConversations = createAsyncThunk(
 				return {
 					...conv,
 					last_message: lastMessageData as Message,
-					unread_count: unreadCount,
+					unread_count: unreadCount ?? undefined,
 				};
 			}),
 		);
 
-		return conversationsWithDetails as Conversation[];
+		// Return normalized structure: { conversationsById, conversationIds }
+		const conversationsById: { [id: string]: Conversation } = {};
+		const conversationIds: string[] = [];
+
+		conversationsWithDetails.forEach(conv => {
+			conversationsById[conv.id] = conv;
+			conversationIds.push(conv.id);
+		});
+
+		// Sort conversationIds by last_message_at descending
+		conversationIds.sort((a, b) => {
+			const aTime =
+				conversationsById[a].last_message_at || conversationsById[a].created_at;
+			const bTime =
+				conversationsById[b].last_message_at || conversationsById[b].created_at;
+			return new Date(bTime).getTime() - new Date(aTime).getTime();
+		});
+
+		return { conversationsById, conversationIds } as {
+			conversationsById: { [id: string]: Conversation };
+			conversationIds: string[];
+		};
 	},
 );
 
@@ -156,6 +186,21 @@ export const getOrCreateConversation = createAsyncThunk(
 	},
 );
 
+// Helper function to maintain sorted conversationIds
+const maintainSortedOrder = (
+	conversationsById: { [id: string]: Conversation },
+	conversationIds: string[],
+): string[] => {
+	return [...conversationIds].sort((a, b) => {
+		const aTime =
+			conversationsById[a]?.last_message_at || conversationsById[a]?.created_at;
+		const bTime =
+			conversationsById[b]?.last_message_at || conversationsById[b]?.created_at;
+		if (!aTime || !bTime) return 0;
+		return new Date(bTime).getTime() - new Date(aTime).getTime();
+	});
+};
+
 const conversationsSlice = createSlice({
 	name: "conversations",
 	initialState,
@@ -163,61 +208,65 @@ const conversationsSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		setCurrentConversationId: (state, action: PayloadAction<string | null>) => {
+			state.currentConversationId = action.payload;
+		},
 		updateConversationLastMessage: (
 			state,
 			action: PayloadAction<{ conversationId: string; message: Message }>,
 		) => {
 			const { conversationId, message } = action.payload;
-			const conversation = state.conversations.find(
-				c => c.id === conversationId,
-			);
+			const conversation = state.conversationsById[conversationId];
 			if (conversation) {
 				conversation.last_message = message;
 				conversation.last_message_at = message.created_at;
+				// Re-sort conversationIds
+				state.conversationIds = maintainSortedOrder(
+					state.conversationsById,
+					state.conversationIds,
+				);
 			}
 		},
 		incrementUnreadCount: (state, action) => {
-			const conversation = state.conversations.find(
-				c => c.id === action.payload,
-			);
+			const conversation = state.conversationsById[action.payload];
 			if (conversation) {
 				conversation.unread_count = (conversation.unread_count || 0) + 1;
 			}
 		},
 		resetUnreadCount: (state, action) => {
-			const conversation = state.conversations.find(
-				c => c.id === action.payload,
-			);
+			const conversation = state.conversationsById[action.payload];
 			if (conversation) {
 				conversation.unread_count = 0;
 			}
 		},
 		addConversation: (state, action: PayloadAction<Conversation>) => {
 			// Prevent duplicates
-			const exists = state.conversations.some(c => c.id === action.payload.id);
-			if (!exists) {
-				state.conversations.push(action.payload);
-				// Sort by last_message_at descending
-				state.conversations.sort((a, b) => {
-					const aTime = a.last_message_at || a.created_at;
-					const bTime = b.last_message_at || b.created_at;
-					return new Date(bTime).getTime() - new Date(aTime).getTime();
-				});
+			if (!state.conversationsById[action.payload.id]) {
+				state.conversationsById[action.payload.id] = action.payload;
+				// Add to conversationIds if not already present
+				if (!state.conversationIds.includes(action.payload.id)) {
+					state.conversationIds.push(action.payload.id);
+				}
+				// Re-sort conversationIds
+				state.conversationIds = maintainSortedOrder(
+					state.conversationsById,
+					state.conversationIds,
+				);
 			}
 		},
 		// Update conversation from realtime subscription
 		updateConversation: (state, action: PayloadAction<Conversation>) => {
-			const index = state.conversations.findIndex(
-				c => c.id === action.payload.id,
-			);
-			if (index !== -1) {
-				state.conversations[index] = action.payload;
-				// Re-sort by last_message_at descending
-				state.conversations.sort((a, b) => {
-					const aTime = a.last_message_at || a.created_at;
-					const bTime = b.last_message_at || b.created_at;
-					return new Date(bTime).getTime() - new Date(aTime).getTime();
-				});
+			if (state.conversationsById[action.payload.id]) {
+				state.conversationsById[action.payload.id] = action.payload;
+				// Add to conversationIds if not already present
+				if (!state.conversationIds.includes(action.payload.id)) {
+					state.conversationIds.push(action.payload.id);
+				}
+				// Re-sort conversationIds
+				state.conversationIds = maintainSortedOrder(
+					state.conversationsById,
+					state.conversationIds,
+				);
 			}
 		},
 	},
@@ -229,7 +278,9 @@ const conversationsSlice = createSlice({
 			})
 			.addCase(fetchConversations.fulfilled, (state, action) => {
 				state.loading = false;
-				state.conversations = action.payload;
+				// ✅ Store in normalized structure
+				state.conversationsById = action.payload.conversationsById;
+				state.conversationIds = action.payload.conversationIds;
 			})
 			.addCase(fetchConversations.rejected, (state, action) => {
 				state.loading = false;
@@ -244,11 +295,17 @@ const conversationsSlice = createSlice({
 			})
 			.addCase(getOrCreateConversation.fulfilled, (state, action) => {
 				state.creatingConversation = false;
-				const exists = state.conversations.some(
-					c => c.id === action.payload.id,
-				);
-				if (!exists) {
-					state.conversations.push(action.payload);
+				// ✅ Add to normalized structure
+				if (!state.conversationsById[action.payload.id]) {
+					state.conversationsById[action.payload.id] = action.payload;
+					if (!state.conversationIds.includes(action.payload.id)) {
+						state.conversationIds.push(action.payload.id);
+					}
+					// Re-sort conversationIds
+					state.conversationIds = maintainSortedOrder(
+						state.conversationsById,
+						state.conversationIds,
+					);
 				}
 			})
 			.addCase(getOrCreateConversation.rejected, (state, action) => {
@@ -257,9 +314,7 @@ const conversationsSlice = createSlice({
 			});
 
 		builder.addCase(markMessagesAsRead.fulfilled, (state, action) => {
-			const conversation = state.conversations.find(
-				c => c.id === action.payload,
-			);
+			const conversation = state.conversationsById[action.payload];
 			if (conversation) {
 				conversation.unread_count = 0;
 			}
@@ -269,6 +324,7 @@ const conversationsSlice = createSlice({
 
 export const {
 	clearError,
+	setCurrentConversationId,
 	updateConversationLastMessage,
 	incrementUnreadCount,
 	resetUnreadCount,
