@@ -111,7 +111,7 @@ export const AvatarUpload = ({ className = "" }: AvatarUploadProps) => {
 	const dispatch = useAppDispatch();
 
 	// File selection state
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [_selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imageSrc, setImageSrc] = useState<string | null>(null);
 
 	// Crop state
@@ -217,7 +217,7 @@ export const AvatarUpload = ({ className = "" }: AvatarUploadProps) => {
 
 	// Handle crop completion
 	const onCropComplete = useCallback(
-		(croppedArea: Area, croppedAreaPixels: Area) => {
+		(_croppedArea: Area, croppedAreaPixels: Area) => {
 			setCroppedAreaPixels(croppedAreaPixels);
 		},
 		[],
