@@ -51,6 +51,9 @@ export const MessagesPage = () => {
 		error,
 	} = useAppSelector(state => state.messages);
 	const conversations = useAppSelector(selectAllConversations);
+	const conversationsById = useAppSelector(
+		state => state.conversations.conversationsById,
+	);
 	const { loading: conversationsLoading, creatingConversation } =
 		useAppSelector(state => state.conversations);
 	const { profile, user } = useAppSelector(state => state.auth);
@@ -67,7 +70,7 @@ export const MessagesPage = () => {
 	const [showMessagesView, setShowMessagesView] = useState(
 		(
 			location.state?.conversationId &&
-				conversations.some(c => c.id === location.state.conversationId)
+				!!conversationsById[location.state.conversationId]
 		) ?
 			location.state.conversationId
 		:	null,
@@ -79,7 +82,10 @@ export const MessagesPage = () => {
 		handleSubmit,
 		reset,
 		formState: { errors },
-	} = useForm<MessageFormData>();
+	} = useForm<MessageFormData>({
+		mode: "onSubmit", // Only validate on submit, not on blur or change
+		reValidateMode: "onSubmit", // Don't re-validate on blur even after field is touched
+	});
 
 	useEffect(() => {
 		dispatch(fetchConversations()).then(() => {
@@ -127,10 +133,8 @@ export const MessagesPage = () => {
 		if (location.state?.conversationId && hasLoaded) {
 			const conversationId = location.state.conversationId;
 
-			// Check if conversation exists in state
-			const conversationExists = conversations.some(
-				c => c.id === conversationId,
-			);
+			// Check if conversation exists in state (O(1) lookup)
+			const conversationExists = !!conversationsById[conversationId];
 
 			if (!conversationExists) {
 				// Conversation doesn't exist, fetch conversations first
@@ -153,10 +157,8 @@ export const MessagesPage = () => {
 	const onSubmit = async (data: MessageFormData) => {
 		if (!selectedConversationId) return;
 
-		// Get the other user's ID from the selected conversation
-		const selectedConversation = conversations.find(
-			c => c.id === selectedConversationId,
-		);
+		// Get the other user's ID from the selected conversation (O(1) lookup)
+		const selectedConversation = conversationsById[selectedConversationId];
 		if (!selectedConversation) return;
 
 		const receiverId =
@@ -511,7 +513,7 @@ export const MessagesPage = () => {
 						{/* Input Form */}
 						<form
 							onSubmit={handleSubmit(onSubmit)}
-							className='flex gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
+							className='flex items-center gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
 							<Input
 								placeholder='Type a message...'
 								autoComplete='off'

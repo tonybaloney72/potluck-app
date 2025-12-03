@@ -8,14 +8,20 @@ import type { Friendship } from "../../types";
 import { requireAuth } from "../../utils/auth";
 
 interface FriendsState {
-	friendships: Friendship[];
+	// ✅ Normalized structure - single source of truth
+	friendshipsById: {
+		[friendshipId: string]: Friendship;
+	};
+	// Array of IDs for iteration (order doesn't matter for friendships)
+	friendshipIds: string[];
 	loading: boolean;
 	sendingRequest: boolean;
 	error: string | null;
 }
 
 const initialState: FriendsState = {
-	friendships: [],
+	friendshipsById: {},
+	friendshipIds: [],
 	loading: false,
 	sendingRequest: false,
 	error: null,
@@ -56,7 +62,20 @@ export const fetchFriendships = createAsyncThunk(
 				};
 			}),
 		);
-		return friendshipsWithProfiles as Friendship[];
+		
+		// Return normalized structure: { friendshipsById, friendshipIds }
+		const friendshipsById: { [id: string]: Friendship } = {};
+		const friendshipIds: string[] = [];
+
+		friendshipsWithProfiles.forEach(friendship => {
+			friendshipsById[friendship.id] = friendship;
+			friendshipIds.push(friendship.id);
+		});
+
+		return { friendshipsById, friendshipIds } as {
+			friendshipsById: { [id: string]: Friendship };
+			friendshipIds: string[];
+		};
 	},
 );
 
@@ -159,25 +178,27 @@ const friendsSlice = createSlice({
 		// Add friendship from realtime subscription
 		addFriendship: (state, action: PayloadAction<Friendship>) => {
 			// Prevent duplicates
-			const exists = state.friendships.some(f => f.id === action.payload.id);
-			if (!exists) {
-				state.friendships.push(action.payload);
+			if (!state.friendshipsById[action.payload.id]) {
+				state.friendshipsById[action.payload.id] = action.payload;
+				if (!state.friendshipIds.includes(action.payload.id)) {
+					state.friendshipIds.push(action.payload.id);
+				}
 			}
 		},
 		// Update friendship from realtime subscription
 		updateFriendship: (state, action: PayloadAction<Friendship>) => {
-			const index = state.friendships.findIndex(
-				f => f.id === action.payload.id,
-			);
-			if (index !== -1) {
-				state.friendships[index] = action.payload;
+			if (state.friendshipsById[action.payload.id]) {
+				state.friendshipsById[action.payload.id] = action.payload;
 			}
 		},
 		// Remove friendship from realtime subscription
 		removeFriendship: (state, action: PayloadAction<string>) => {
-			state.friendships = state.friendships.filter(
-				f => f.id !== action.payload,
-			);
+			if (state.friendshipsById[action.payload]) {
+				delete state.friendshipsById[action.payload];
+				state.friendshipIds = state.friendshipIds.filter(
+					id => id !== action.payload,
+				);
+			}
 		},
 	},
 	extraReducers: builder => {
@@ -189,7 +210,9 @@ const friendsSlice = createSlice({
 			})
 			.addCase(fetchFriendships.fulfilled, (state, action) => {
 				state.loading = false;
-				state.friendships = action.payload;
+				// ✅ Store in normalized structure
+				state.friendshipsById = action.payload.friendshipsById;
+				state.friendshipIds = action.payload.friendshipIds;
 			})
 			.addCase(fetchFriendships.rejected, (state, action) => {
 				state.loading = false;
@@ -204,7 +227,13 @@ const friendsSlice = createSlice({
 			})
 			.addCase(sendFriendRequest.fulfilled, (state, action) => {
 				state.sendingRequest = false;
-				state.friendships.push(action.payload);
+				// ✅ Add to normalized structure
+				if (!state.friendshipsById[action.payload.id]) {
+					state.friendshipsById[action.payload.id] = action.payload;
+					if (!state.friendshipIds.includes(action.payload.id)) {
+						state.friendshipIds.push(action.payload.id);
+					}
+				}
 			})
 			.addCase(sendFriendRequest.rejected, (state, action) => {
 				state.sendingRequest = false;
@@ -213,26 +242,32 @@ const friendsSlice = createSlice({
 
 		// Accept friend request
 		builder.addCase(acceptFriendRequest.fulfilled, (state, action) => {
-			const index = state.friendships.findIndex(
-				f => f.id === action.payload.id,
-			);
-			if (index !== -1) {
-				state.friendships[index] = action.payload;
+			// ✅ Update in normalized structure
+			if (state.friendshipsById[action.payload.id]) {
+				state.friendshipsById[action.payload.id] = action.payload;
 			}
 		});
 
 		// Remove friend
 		builder.addCase(removeFriend.fulfilled, (state, action) => {
-			state.friendships = state.friendships.filter(
-				f => f.id !== action.payload,
-			);
+			// ✅ Remove from normalized structure
+			if (state.friendshipsById[action.payload]) {
+				delete state.friendshipsById[action.payload];
+				state.friendshipIds = state.friendshipIds.filter(
+					id => id !== action.payload,
+				);
+			}
 		});
 
 		// Cancel friend request
 		builder.addCase(cancelFriendRequest.fulfilled, (state, action) => {
-			state.friendships = state.friendships.filter(
-				f => f.id !== action.payload,
-			);
+			// ✅ Remove from normalized structure
+			if (state.friendshipsById[action.payload]) {
+				delete state.friendshipsById[action.payload];
+				state.friendshipIds = state.friendshipIds.filter(
+					id => id !== action.payload,
+				);
+			}
 		});
 	},
 });

@@ -6,17 +6,15 @@ import {
 	updateConversationLastMessage,
 	incrementUnreadCount,
 	addConversation,
+	resetUnreadCount,
 } from "../store/slices/conversationsSlice";
+import { markConversationNotificationsAsRead } from "../store/slices/notificationsSlice";
 import { supabase } from "../services/supabase";
 import type { Message, Conversation } from "../types";
 
 export function useMessagesRealtime() {
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector(state => state.auth);
-	// Get current conversation from Redux state
-	const currentConversationId = useAppSelector(
-		state => state.conversations.currentConversationId,
-	);
 
 	useRealtimeSubscription({
 		channelName: `messages:${user?.id}:insert`,
@@ -26,6 +24,11 @@ export function useMessagesRealtime() {
 			if (payload.eventType === "INSERT" && payload.new && user) {
 				const newMessage = payload.new;
 				const currentUserId = user.id;
+
+				// Get current conversation ID fresh from Redux state (not from closure)
+				// This ensures we always have the latest value
+				const state = store.getState();
+				const currentConversationId = state.conversations.currentConversationId;
 
 				// Get conversation to check receiver_id
 				const { data: conversation } = await supabase
@@ -67,20 +70,22 @@ export function useMessagesRealtime() {
 						.update({ read: true })
 						.eq("id", newMessage.id);
 
-					// Mark any related notifications as read
-					await supabase
-						.from("notifications")
-						.update({ read: true })
-						.eq("user_id", currentUserId)
-						.eq("type", "message")
-						.eq("related_id", newMessage.conversation_id)
-						.eq("read", false);
+					// Mark any related notifications as read (updates both DB and Redux)
+					dispatch(
+						markConversationNotificationsAsRead(newMessage.conversation_id),
+					);
+
+					// Reset conversation unread_count since we're viewing it
+					dispatch(resetUnreadCount(newMessage.conversation_id));
 				}
 
 				// Check if conversation exists in state - if not, add it
-				const state = store.getState();
+				// Get fresh state to ensure we have latest conversation data
+				const latestState = store.getState();
 				const conversationExists =
-					!!state.conversations.conversationsById[newMessage.conversation_id];
+					!!latestState.conversations.conversationsById[
+						newMessage.conversation_id
+					];
 
 				if (!conversationExists) {
 					// Conversation doesn't exist in list, add it
@@ -98,19 +103,26 @@ export function useMessagesRealtime() {
 						.single();
 
 					if (fullConversation) {
-						// Fetch unread count
-						const { count: unreadCount } = await supabase
-							.from("messages")
-							.select("*", { count: "exact", head: true })
-							.eq("conversation_id", newMessage.conversation_id)
-							.eq("read", false)
-							.neq("sender_id", currentUserId);
+						// If we're viewing this conversation, unread_count should be 0
+						// Otherwise, fetch actual unread count
+						const isViewing =
+							currentConversationId === newMessage.conversation_id;
+						let unreadCount = 0;
+						if (!isViewing) {
+							const { count } = await supabase
+								.from("messages")
+								.select("*", { count: "exact", head: true })
+								.eq("conversation_id", newMessage.conversation_id)
+								.eq("read", false)
+								.neq("sender_id", currentUserId);
+							unreadCount = count || 0;
+						}
 
 						dispatch(
 							addConversation({
 								...fullConversation,
 								last_message: message,
-								unread_count: unreadCount || 0,
+								unread_count: unreadCount,
 							} as Conversation),
 						);
 					}
@@ -124,7 +136,10 @@ export function useMessagesRealtime() {
 					);
 
 					// Increment unread count if not viewing this conversation
-					if (currentConversationId !== newMessage.conversation_id) {
+					// Re-check currentConversationId to ensure we have latest value
+					const latestCurrentConversationId =
+						store.getState().conversations.currentConversationId;
+					if (latestCurrentConversationId !== newMessage.conversation_id) {
 						dispatch(incrementUnreadCount(newMessage.conversation_id));
 					}
 				}
@@ -139,6 +154,10 @@ export function useMessagesRealtime() {
 		onUpdate: async (payload: { eventType: "UPDATE"; new: any; old: any }) => {
 			if (payload.eventType === "UPDATE" && payload.new) {
 				const updatedMessage = payload.new;
+
+				// Get current conversation ID fresh from Redux state
+				const currentConversationId =
+					store.getState().conversations.currentConversationId;
 
 				// Fetch sender profile
 				const { data: senderProfile } = await supabase

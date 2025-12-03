@@ -8,14 +8,20 @@ import type { Notification, NotificationType } from "../../types";
 import { requireAuth } from "../../utils/auth";
 
 interface NotificationsState {
-	notifications: Notification[];
+	// ✅ Normalized structure - single source of truth
+	notificationsById: {
+		[notificationId: string]: Notification;
+	};
+	// Maintain sorted order by created_at (descending - newest first)
+	notificationIds: string[];
 	unreadCount: number;
 	loading: boolean;
 	error: string | null;
 }
 
 const initialState: NotificationsState = {
-	notifications: [],
+	notificationsById: {},
+	notificationIds: [],
 	unreadCount: 0,
 	loading: false,
 	error: null,
@@ -31,11 +37,31 @@ export const fetchNotifications = createAsyncThunk(
 			.from("notifications")
 			.select("*")
 			.eq("user_id", user.id)
-			.order("created_at", { ascending: false })
-			.limit(50); // Limit to 50 most recent notifications
+		.order("created_at", { ascending: false })
+		.limit(50); // Limit to 50 most recent notifications
 
 		if (error) throw error;
-		return data as Notification[];
+		
+		// Return normalized structure: { notificationsById, notificationIds }
+		const notificationsById: { [id: string]: Notification } = {};
+		const notificationIds: string[] = [];
+
+		(data as Notification[]).forEach(notification => {
+			notificationsById[notification.id] = notification;
+			notificationIds.push(notification.id);
+		});
+
+		// Sort notificationIds by created_at descending (newest first)
+		notificationIds.sort((a, b) => {
+			const aTime = notificationsById[a].created_at;
+			const bTime = notificationsById[b].created_at;
+			return new Date(bTime).getTime() - new Date(aTime).getTime();
+		});
+
+		return { notificationsById, notificationIds } as {
+			notificationsById: { [id: string]: Notification };
+			notificationIds: string[];
+		};
 	},
 );
 
@@ -83,11 +109,12 @@ export const markConversationNotificationsAsRead = createAsyncThunk(
 			.eq("user_id", user.id)
 			.eq("type", "message")
 			.eq("related_id", conversationId)
-			.eq("read", false)
-			.select();
+		.eq("read", false)
+		.select();
 
 		if (error) throw error;
-		return data as Notification[];
+		// Return array of notification IDs that were marked as read
+		return (data as Notification[]).map(n => n.id);
 	},
 );
 
@@ -141,6 +168,19 @@ export const createNotification = createAsyncThunk(
 	},
 );
 
+// Helper function to maintain sorted notificationIds (newest first)
+const maintainSortedOrder = (
+	notificationsById: { [id: string]: Notification },
+	notificationIds: string[],
+): string[] => {
+	return [...notificationIds].sort((a, b) => {
+		const aTime = notificationsById[a]?.created_at;
+		const bTime = notificationsById[b]?.created_at;
+		if (!aTime || !bTime) return 0;
+		return new Date(bTime).getTime() - new Date(aTime).getTime();
+	});
+};
+
 const notificationsSlice = createSlice({
 	name: "notifications",
 	initialState,
@@ -148,27 +188,39 @@ const notificationsSlice = createSlice({
 		// Add notification from realtime subscription
 		addNotification: (state, action: PayloadAction<Notification>) => {
 			// Prevent duplicates
-			const exists = state.notifications.some(n => n.id === action.payload.id);
-			if (!exists) {
-				state.notifications.unshift(action.payload);
+			if (!state.notificationsById[action.payload.id]) {
+				state.notificationsById[action.payload.id] = action.payload;
+				// Add to notificationIds if not already present
+				if (!state.notificationIds.includes(action.payload.id)) {
+					state.notificationIds.push(action.payload.id);
+				}
+				// Re-sort notificationIds (newest first)
+				state.notificationIds = maintainSortedOrder(
+					state.notificationsById,
+					state.notificationIds,
+				);
+				
 				if (!action.payload.read) {
 					state.unreadCount += 1;
 				}
+				
 				// Keep only the most recent 50 notifications in state
-				if (state.notifications.length > 50) {
-					state.notifications = state.notifications.slice(0, 50);
+				if (state.notificationIds.length > 50) {
+					// Remove oldest notifications
+					const idsToRemove = state.notificationIds.slice(50);
+					idsToRemove.forEach(id => {
+						delete state.notificationsById[id];
+					});
+					state.notificationIds = state.notificationIds.slice(0, 50);
 				}
 			}
 		},
 		// Update notification from realtime subscription
 		updateNotification: (state, action: PayloadAction<Notification>) => {
-			const index = state.notifications.findIndex(
-				n => n.id === action.payload.id,
-			);
-			if (index !== -1) {
-				const wasUnread = !state.notifications[index].read;
+			if (state.notificationsById[action.payload.id]) {
+				const wasUnread = !state.notificationsById[action.payload.id].read;
 				const isUnread = !action.payload.read;
-				state.notifications[index] = action.payload;
+				state.notificationsById[action.payload.id] = action.payload;
 
 				// Update unread count
 				if (wasUnread && !isUnread) {
@@ -180,13 +232,15 @@ const notificationsSlice = createSlice({
 		},
 		// Remove notification from realtime subscription
 		removeNotification: (state, action: PayloadAction<string>) => {
-			const index = state.notifications.findIndex(n => n.id === action.payload);
-			if (index !== -1) {
-				const notification = state.notifications[index];
+			if (state.notificationsById[action.payload]) {
+				const notification = state.notificationsById[action.payload];
 				if (!notification.read) {
 					state.unreadCount = Math.max(0, state.unreadCount - 1);
 				}
-				state.notifications.splice(index, 1);
+				delete state.notificationsById[action.payload];
+				state.notificationIds = state.notificationIds.filter(
+					id => id !== action.payload,
+				);
 			}
 		},
 		clearError: state => {
@@ -202,8 +256,13 @@ const notificationsSlice = createSlice({
 			})
 			.addCase(fetchNotifications.fulfilled, (state, action) => {
 				state.loading = false;
-				state.notifications = action.payload;
-				state.unreadCount = action.payload.filter(n => !n.read).length;
+				// ✅ Store in normalized structure
+				state.notificationsById = action.payload.notificationsById;
+				state.notificationIds = action.payload.notificationIds;
+				// Calculate unread count
+				state.unreadCount = Object.values(action.payload.notificationsById).filter(
+					n => !n.read,
+				).length;
 			})
 			.addCase(fetchNotifications.rejected, (state, action) => {
 				state.loading = false;
@@ -213,9 +272,7 @@ const notificationsSlice = createSlice({
 		// Mark notification as read
 		builder
 			.addCase(markNotificationAsRead.fulfilled, (state, action) => {
-				const notification = state.notifications.find(
-					n => n.id === action.payload,
-				);
+				const notification = state.notificationsById[action.payload];
 				if (notification && !notification.read) {
 					notification.read = true;
 					state.unreadCount = Math.max(0, state.unreadCount - 1);
@@ -229,8 +286,10 @@ const notificationsSlice = createSlice({
 		// Mark all as read
 		builder
 			.addCase(markAllNotificationsAsRead.fulfilled, state => {
-				state.notifications.forEach(n => {
-					n.read = true;
+				state.notificationIds.forEach(id => {
+					if (state.notificationsById[id]) {
+						state.notificationsById[id].read = true;
+					}
 				});
 				state.unreadCount = 0;
 			})
@@ -244,12 +303,10 @@ const notificationsSlice = createSlice({
 			.addCase(
 				markConversationNotificationsAsRead.fulfilled,
 				(state, action) => {
-					action.payload.forEach(notification => {
-						const index = state.notifications.findIndex(
-							n => n.id === notification.id,
-						);
-						if (index !== -1 && !state.notifications[index].read) {
-							state.notifications[index].read = true;
+					action.payload.forEach(notificationId => {
+						const notification = state.notificationsById[notificationId];
+						if (notification && !notification.read) {
+							notification.read = true;
 							state.unreadCount = Math.max(0, state.unreadCount - 1);
 						}
 					});
@@ -267,15 +324,15 @@ const notificationsSlice = createSlice({
 		// Delete notification
 		builder
 			.addCase(deleteNotification.fulfilled, (state, action) => {
-				const index = state.notifications.findIndex(
-					n => n.id === action.payload,
-				);
-				if (index !== -1) {
-					const notification = state.notifications[index];
+				const notification = state.notificationsById[action.payload];
+				if (notification) {
 					if (!notification.read) {
 						state.unreadCount = Math.max(0, state.unreadCount - 1);
 					}
-					state.notifications.splice(index, 1);
+					delete state.notificationsById[action.payload];
+					state.notificationIds = state.notificationIds.filter(
+						id => id !== action.payload,
+					);
 				}
 			})
 			.addCase(deleteNotification.rejected, (state, action) => {
@@ -285,9 +342,27 @@ const notificationsSlice = createSlice({
 		// Create notification
 		builder.addCase(createNotification.fulfilled, (state, action) => {
 			// Only add if it's for the current user (handled by realtime in practice)
-			state.notifications.unshift(action.payload);
-			if (!action.payload.read) {
-				state.unreadCount += 1;
+			if (!state.notificationsById[action.payload.id]) {
+				state.notificationsById[action.payload.id] = action.payload;
+				if (!state.notificationIds.includes(action.payload.id)) {
+					state.notificationIds.push(action.payload.id);
+				}
+				// Re-sort notificationIds (newest first)
+				state.notificationIds = maintainSortedOrder(
+					state.notificationsById,
+					state.notificationIds,
+				);
+				if (!action.payload.read) {
+					state.unreadCount += 1;
+				}
+				// Keep only the most recent 50 notifications
+				if (state.notificationIds.length > 50) {
+					const idsToRemove = state.notificationIds.slice(50);
+					idsToRemove.forEach(id => {
+						delete state.notificationsById[id];
+					});
+					state.notificationIds = state.notificationIds.slice(0, 50);
+				}
 			}
 		});
 	},

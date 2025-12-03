@@ -69,9 +69,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 		// For password strength, use the value prop if available, otherwise get from ref
 		const passwordValue =
-			value !== undefined && value !== null
-				? value
-				: inputRef.current?.value || "";
+			value !== undefined && value !== null ?
+				value
+			:	inputRef.current?.value || "";
 
 		const inputId =
 			props.id ||
@@ -108,9 +108,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 					type={type}
 					maxLength={maxLength}
 					className={`w-full px-4 py-2 bg-secondary border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 ${
-						error
-							? "border-red-500 focus:ring-red-500"
-							: "border-border focus:ring-accent"
+						error ?
+							"border-red-500 focus:ring-red-500"
+						:	"border-border focus:ring-accent"
 					} ${className}`}
 					autoComplete={autoComplete ?? "off"}
 					aria-invalid={error ? "true" : "false"}
@@ -119,7 +119,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 					aria-label={!label ? props["aria-label"] : undefined}
 					{...props}
 				/>
-				<div className='mt-1 flex justify-between items-start'>
+				<div
+					className={`flex justify-between items-start ${error ? "items-center mt-1" : "items-start mt-0"}`}>
 					<div className='flex-1'>
 						{error && (
 							<p id={errorId} className='text-sm text-red-500' role='alert'>
@@ -135,9 +136,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 					{showCharacterCount && maxLength && (
 						<span
 							className={`text-xs ml-2 ${
-								currentLength > maxLength * 0.9
-									? "text-orange-500"
-									: "text-tertiary"
+								currentLength > maxLength * 0.9 ?
+									"text-orange-500"
+								:	"text-tertiary"
 							}`}>
 							{currentLength}/{maxLength}
 						</span>

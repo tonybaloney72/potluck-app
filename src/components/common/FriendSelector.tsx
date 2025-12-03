@@ -2,6 +2,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useAppSelector, useAppDispatch } from "../../store/hooks";
 import { fetchFriendships } from "../../store/slices/friendsSlice";
 import {
+	selectAllFriendships,
+	selectFriendshipsByUserPair,
+} from "../../store/selectors/friendsSelectors";
+import {
 	FaUser,
 	FaSearch,
 	FaTimes,
@@ -58,7 +62,9 @@ export const FriendSelector = ({
 	singleSelect = false,
 }: FriendSelectorProps) => {
 	const dispatch = useAppDispatch();
-	const { friendships } = useAppSelector(state => state.friends);
+	const friendships = useAppSelector(selectAllFriendships);
+	const friendshipsByUserPair = useAppSelector(selectFriendshipsByUserPair);
+	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
 	const { profile } = useAppSelector(state => state.auth);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
@@ -66,10 +72,10 @@ export const FriendSelector = ({
 
 	// Fetch friendships if not already loaded
 	useEffect(() => {
-		if (profile && friendships.length === 0) {
+		if (profile && friendshipIds.length === 0) {
 			dispatch(fetchFriendships());
 		}
-	}, [dispatch, profile, friendships.length]);
+	}, [dispatch, profile, friendshipIds.length]);
 
 	// Get available friends (accepted, not self, not excluded, not already selected)
 	const availableFriends = useMemo(() => {
@@ -150,15 +156,12 @@ export const FriendSelector = ({
 
 		return selectedFriends
 			.map(selected => {
-				const friendship = friendships.find(
-					f =>
-						f.status === "accepted" &&
-						(f.user_id === profile.id || f.friend_id === profile.id) &&
-						(f.user_id === selected.friendId ||
-							f.friend_id === selected.friendId),
-				);
+				// O(1) lookup using user pair map
+				const key = [profile.id, selected.friendId].sort().join("-");
+				const friendship = friendshipsByUserPair[key];
 
-				if (!friendship) return null;
+				// Only include accepted friendships
+				if (!friendship || friendship.status !== "accepted") return null;
 
 				const friendProfile =
 					friendship.user_id === profile.id ?

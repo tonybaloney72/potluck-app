@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
 	fetchFriendships,
@@ -7,6 +7,12 @@ import {
 	sendFriendRequest,
 	cancelFriendRequest,
 } from "../store/slices/friendsSlice";
+import {
+	selectAcceptedFriendships,
+	selectPendingReceivedRequests,
+	selectPendingSentRequests,
+	selectFriendshipsByUserPair,
+} from "../store/selectors/friendsSelectors";
 import { useNavigate } from "react-router";
 import { searchUsers } from "../store/slices/usersSlice";
 import { Button } from "../components/common/Button";
@@ -30,9 +36,7 @@ export const FriendsPage = () => {
 	const navigate = useNavigate();
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
-	const { friendships, loading, sendingRequest } = useAppSelector(
-		state => state.friends,
-	);
+	const { loading, sendingRequest } = useAppSelector(state => state.friends);
 	const { searchResults, searchLoading } = useAppSelector(state => state.users);
 	const { profile } = useAppSelector(state => state.auth);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -90,23 +94,26 @@ export const FriendsPage = () => {
 		setSearchQuery("");
 	};
 
-	const getRelationshipStatus = (
-		userId: string,
-	): "none" | "pending" | "accepted" | "sent" => {
-		const friendship = friendships.find(
-			f =>
-				(f.user_id === profile?.id && f.friend_id === userId) ||
-				(f.user_id === userId && f.friend_id === profile?.id),
-		);
+	const friendshipsByUserPair = useAppSelector(selectFriendshipsByUserPair);
 
-		if (!friendship) return "none";
-		if (friendship.status === "accepted") return "accepted";
-		if (friendship.status === "pending" && friendship.user_id === profile?.id)
-			return "sent";
-		return "pending";
-	};
+	const getRelationshipStatus = useMemo(() => {
+		return (userId: string): "none" | "pending" | "accepted" | "sent" => {
+			if (!profile?.id) return "none";
 
-	if (loading && friendships.length === 0) {
+			// O(1) lookup using user pair map
+			const key = [profile.id, userId].sort().join("-");
+			const friendship = friendshipsByUserPair[key];
+
+			if (!friendship) return "none";
+			if (friendship.status === "accepted") return "accepted";
+			if (friendship.status === "pending" && friendship.user_id === profile.id)
+				return "sent";
+			return "pending";
+		};
+	}, [profile?.id, friendshipsByUserPair]);
+
+	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
+	if (loading && friendshipIds.length === 0) {
 		return (
 			<div className='max-w-4xl mx-auto p-8'>
 				<Skeleton variant='text' width='20%' height={32} className='mb-8' />
@@ -131,12 +138,12 @@ export const FriendsPage = () => {
 		);
 	}
 
-	const acceptedFriends = friendships.filter(f => f.status === "accepted");
-	const pendingRequests = friendships.filter(
-		f => f.status === "pending" && f.friend_id === profile?.id,
+	const acceptedFriends = useAppSelector(selectAcceptedFriendships);
+	const pendingRequests = useAppSelector(state =>
+		selectPendingReceivedRequests(state, profile?.id),
 	);
-	const sentRequests = friendships.filter(
-		f => f.status === "pending" && f.user_id === profile?.id,
+	const sentRequests = useAppSelector(state =>
+		selectPendingSentRequests(state, profile?.id),
 	);
 
 	return (
@@ -160,18 +167,17 @@ export const FriendsPage = () => {
 				{/* Search Results */}
 				{searchQuery.trim() && (
 					<div className='mt-4'>
-						{searchLoading ? (
+						{searchLoading ?
 							<div className='text-center py-4 text-secondary'>
 								{Array.from({ length: 3 }).map((_, i) => (
 									<SkeletonFriendCard key={i} />
 								))}
 							</div>
-						) : searchResults.length === 0 ? (
+						: searchResults.length === 0 ?
 							<div className='text-center py-4 text-secondary'>
 								No users found
 							</div>
-						) : (
-							<div className='space-y-3'>
+						:	<div className='space-y-3'>
 								{searchResults.map(user => {
 									const status = getRelationshipStatus(user.id);
 									return (
@@ -213,7 +219,7 @@ export const FriendsPage = () => {
 									);
 								})}
 							</div>
-						)}
+						}
 					</div>
 				)}
 			</div>
@@ -288,7 +294,7 @@ export const FriendsPage = () => {
 				<h2 className='text-xl font-semibold mb-4 text-primary'>
 					Your Friends ({acceptedFriends.length})
 				</h2>
-				{acceptedFriends.length === 0 ? (
+				{acceptedFriends.length === 0 ?
 					<EmptyState
 						icon={<FaUsers className='w-16 h-16' />}
 						title='No friends yet'
@@ -296,15 +302,14 @@ export const FriendsPage = () => {
 						actionLabel='Search Friends'
 						onAction={() => searchInputRef.current?.focus()}
 					/>
-				) : (
-					<div className='space-y-3'>
+				:	<div className='space-y-3'>
 						{acceptedFriends.map(friendship => {
 							// If current user is the requester (user_id), the friend is friend_id
 							// If current user is the friend (friend_id), the other person is user_id
 							const friend =
-								friendship.user_id === profile?.id
-									? friendship.friend
-									: friendship.user;
+								friendship.user_id === profile?.id ?
+									friendship.friend
+								:	friendship.user;
 							return (
 								<FriendCard
 									key={friendship.id}
@@ -337,7 +342,7 @@ export const FriendsPage = () => {
 							);
 						})}
 					</div>
-				)}
+				}
 			</div>
 
 			{/* Remove Friend / Decline Request Confirmation Modal */}
@@ -349,18 +354,18 @@ export const FriendsPage = () => {
 				}}
 				onConfirm={handleConfirmRemove}
 				title={
-					friendshipToRemove?.isDecliningRequest
-						? "Decline Friend Request"
-						: "Remove Friend"
+					friendshipToRemove?.isDecliningRequest ?
+						"Decline Friend Request"
+					:	"Remove Friend"
 				}
 				message={
-					friendshipToRemove?.isDecliningRequest
-						? `Are you sure you want to decline the friend request from ${
-								friendshipToRemove?.friendName || "this user"
-						  }?`
-						: `Are you sure you want to remove ${
-								friendshipToRemove?.friendName || "this friend"
-						  } from your friends list?`
+					friendshipToRemove?.isDecliningRequest ?
+						`Are you sure you want to decline the friend request from ${
+							friendshipToRemove?.friendName || "this user"
+						}?`
+					:	`Are you sure you want to remove ${
+							friendshipToRemove?.friendName || "this friend"
+						} from your friends list?`
 				}
 				confirmText={
 					friendshipToRemove?.isDecliningRequest ? "Decline" : "Remove"

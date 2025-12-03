@@ -38,19 +38,22 @@ export const fetchConversations = createAsyncThunk(
 		const user = await requireAuth();
 
 		const state = getState() as RootState;
-		let friendships = state.friends.friendships;
+		let friendshipsById = state.friends.friendshipsById;
+		let friendshipIds = state.friends.friendshipIds;
 
 		// Fetch friendships if not already loaded
-		if (friendships.length === 0) {
+		if (friendshipIds.length === 0) {
 			const friendshipsResult = await dispatch(fetchFriendships());
 			if (fetchFriendships.fulfilled.match(friendshipsResult)) {
-				friendships = friendshipsResult.payload;
+				friendshipsById = friendshipsResult.payload.friendshipsById;
+				friendshipIds = friendshipsResult.payload.friendshipIds;
 			}
 		}
 
 		const friendIds = new Set<string>();
-		friendships.forEach(friendship => {
-			if (friendship.status === "accepted") {
+		friendshipIds.forEach(friendshipId => {
+			const friendship = friendshipsById[friendshipId];
+			if (friendship && friendship.status === "accepted") {
 				if (friendship.user_id === user.id) {
 					friendIds.add(friendship.friend_id);
 				} else if (friendship.friend_id === user.id) {
@@ -143,19 +146,26 @@ export const getOrCreateConversation = createAsyncThunk(
 		const user = await requireAuth();
 
 		const state = getState() as RootState;
-		let friendships = state.friends.friendships;
-		if (friendships.length === 0) {
+		let friendshipsById = state.friends.friendshipsById;
+		let friendshipIds = state.friends.friendshipIds;
+		if (friendshipIds.length === 0) {
 			const result = await dispatch(fetchFriendships());
 			if (fetchFriendships.fulfilled.match(result)) {
-				friendships = result.payload;
+				friendshipsById = result.payload.friendshipsById;
+				friendshipIds = result.payload.friendshipIds;
 			}
 		}
-		const isFriend = friendships.some(
-			f =>
-				f.status === "accepted" &&
-				((f.user_id === user.id && f.friend_id === otherUserId) ||
-					(f.user_id === otherUserId && f.friend_id === user.id)),
-		);
+		const isFriend = friendshipIds.some(friendshipId => {
+			const friendship = friendshipsById[friendshipId];
+			return (
+				friendship &&
+				friendship.status === "accepted" &&
+				((friendship.user_id === user.id &&
+					friendship.friend_id === otherUserId) ||
+					(friendship.user_id === otherUserId &&
+						friendship.friend_id === user.id))
+			);
+		});
 
 		if (!isFriend) {
 			throw new Error("You can only message your friends");

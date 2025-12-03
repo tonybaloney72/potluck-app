@@ -7,6 +7,10 @@ import {
 	markAllNotificationsAsRead,
 	deleteNotification,
 } from "../../store/slices/notificationsSlice";
+import {
+	selectAllNotifications,
+	selectUnreadCount,
+} from "../../store/selectors/notificationsSelectors";
 import { fetchConversations } from "../../store/slices/conversationsSlice";
 import { FaBell, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
 import { SkeletonNotificationItem } from "../common/Skeleton";
@@ -16,9 +20,9 @@ import type { Notification } from "../../types";
 export const NotificationDropdown = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
-	const { notifications, unreadCount, loading } = useAppSelector(
-		state => state.notifications,
-	);
+	const notifications = useAppSelector(selectAllNotifications);
+	const unreadCount = useAppSelector(selectUnreadCount);
+	const { loading } = useAppSelector(state => state.notifications);
 	const { user } = useAppSelector(state => state.auth);
 
 	const [isOpen, setIsOpen] = useState(false);

@@ -106,9 +106,7 @@ export function useFriendshipsRealtime() {
 
 				// Check if this friendship exists in our Redux state
 				const state = store.getState();
-				const friendshipExists = state.friends.friendships.some(
-					f => f.id === deletedFriendshipId,
-				);
+				const friendshipExists = !!state.friends.friendshipsById[deletedFriendshipId];
 
 				if (friendshipExists) {
 					dispatch(removeFriendship(deletedFriendshipId));
