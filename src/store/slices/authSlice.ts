@@ -6,6 +6,11 @@ import {
 import { supabase } from "../../services/supabase";
 import type { Profile } from "../../types";
 import { requireAuth } from "../../utils/auth";
+import {
+	compressImage,
+	isValidImageFile,
+	isValidFileSize,
+} from "../../utils/imageCompression";
 
 interface AuthState {
 	user: { id: string; email?: string } | null;
@@ -139,6 +144,101 @@ export const updatePassword = createAsyncThunk(
 	},
 );
 
+/**
+ * Helper function to extract file path from Supabase storage URL
+ * Extracts the path portion after the bucket name
+ */
+const extractStoragePath = (url: string, bucketName: string): string | null => {
+	try {
+		const urlObj = new URL(url);
+		const pathParts = urlObj.pathname.split("/");
+		const bucketIndex = pathParts.findIndex(part => part === bucketName);
+
+		if (bucketIndex === -1) return null;
+
+		// Get everything after the bucket name
+		const pathAfterBucket = pathParts.slice(bucketIndex + 1).join("/");
+		return pathAfterBucket || null;
+	} catch {
+		return null;
+	}
+};
+
+export const uploadAvatar = createAsyncThunk(
+	"auth/uploadAvatar",
+	async (file: File) => {
+		const user = await requireAuth();
+
+		// Validate file type
+		if (!isValidImageFile(file)) {
+			throw new Error("File must be an image");
+		}
+
+		// Validate file size (allow up to 10MB before compression)
+		if (!isValidFileSize(file, 10)) {
+			throw new Error("File size must be less than 10MB");
+		}
+
+		// Get current profile to check for existing avatar
+		const { data: currentProfile } = await supabase
+			.from("profiles")
+			.select("avatar_url")
+			.eq("id", user.id)
+			.single();
+
+		// Delete old avatar if it exists
+		if (currentProfile?.avatar_url) {
+			const oldPath = extractStoragePath(currentProfile.avatar_url, "avatars");
+			if (oldPath) {
+				// Attempt to delete old avatar (don't fail if it doesn't exist)
+				await supabase.storage.from("avatars").remove([oldPath]);
+			}
+		}
+
+		// Compress the image to fit within 200KB limit
+		const compressedBlob = await compressImage(file, {
+			maxSizeKB: 200,
+			maxWidth: 800,
+			maxHeight: 800,
+			quality: 0.8,
+		});
+
+		// Generate unique filename using user ID and timestamp
+		// Always use .jpg extension since we convert to JPEG for compression
+		const fileName = `${user.id}-${Date.now()}.jpg`;
+		const filePath = `${user.id}/${fileName}`;
+
+		// Upload the compressed file
+		const { error: uploadError, data: uploadData } = await supabase.storage
+			.from("avatars")
+			.upload(filePath, compressedBlob, {
+				cacheControl: "3600",
+				upsert: false,
+				contentType: "image/jpeg", // Always JPEG after compression
+			});
+
+		if (uploadError) {
+			throw new Error(uploadError.message || "Failed to upload avatar");
+		}
+
+		// Get the public URL
+		const { data: urlData } = supabase.storage
+			.from("avatars")
+			.getPublicUrl(uploadData.path);
+
+		// Update profile with new avatar URL
+		const { data, error } = await supabase
+			.from("profiles")
+			.update({ avatar_url: urlData.publicUrl })
+			.eq("id", user.id)
+			.select()
+			.single();
+
+		if (error) throw error;
+		return data as Profile;
+	},
+);
+
 const authSlice = createSlice({
 	name: "auth",
 	initialState,
@@ -164,9 +264,10 @@ const authSlice = createSlice({
 			})
 			.addCase(signUp.fulfilled, (state, action) => {
 				state.loading = false;
-				state.user = action.payload
-					? { id: action.payload.id, email: action.payload.email }
-					: null;
+				state.user =
+					action.payload ?
+						{ id: action.payload.id, email: action.payload.email }
+					:	null;
 			})
 			.addCase(signUp.rejected, (state, action) => {
 				state.loading = false;
@@ -180,9 +281,10 @@ const authSlice = createSlice({
 			})
 			.addCase(signIn.fulfilled, (state, action) => {
 				state.loading = false;
-				state.user = action.payload
-					? { id: action.payload.id, email: action.payload.email }
-					: null;
+				state.user =
+					action.payload ?
+						{ id: action.payload.id, email: action.payload.email }
+					:	null;
 				// User is authenticated, no longer initializing
 				state.initializing = false;
 			})
@@ -212,6 +314,20 @@ const authSlice = createSlice({
 		builder.addCase(updateProfile.fulfilled, (state, action) => {
 			state.profile = action.payload;
 		});
+
+		builder
+			.addCase(uploadAvatar.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(uploadAvatar.fulfilled, (state, action) => {
+				state.loading = false;
+				state.profile = action.payload;
+			})
+			.addCase(uploadAvatar.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to upload avatar";
+			});
 
 		builder
 			.addCase(resetPassword.pending, state => {
