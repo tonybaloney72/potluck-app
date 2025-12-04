@@ -6,7 +6,7 @@ import { createEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { Textarea } from "../components/common/Textarea";
-import { DatePicker } from "../components/common/DatePicker";
+import { DateTime } from "../components/common/DateTime";
 import {
 	FriendSelector,
 	type SelectedFriend,
@@ -148,7 +148,7 @@ export const CreateEventPage = () => {
 							showCharacterCount={true}
 						/>
 
-						<DatePicker
+						<DateTime
 							control={control}
 							name='event_datetime'
 							label='Event Date & Time'

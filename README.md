@@ -97,7 +97,6 @@ Potluck App is a modern web application designed to simplify the organization of
    ```
 
 4. Set up Supabase:
-
    - Create a Supabase project at [supabase.com](https://supabase.com)
    - Run the database migrations (see database setup in project documentation)
    - Configure authentication settings
@@ -184,6 +183,20 @@ This project is currently in active development.
 
 - **Redux State Normalization**: Events state changed from array to normalized object structure (`eventsById`) for O(1) lookup complexity
 - **Efficient Data Access**: Direct event access by ID eliminates need for array searches, improving performance with large event lists
+- **Extended State Normalization**: Friends, conversations, and notifications now use normalized state structures for improved performance and consistency
+- **Centralized Realtime Hooks**: Realtime subscription hooks moved to App component for better organization and lifecycle management
+- **Enhanced Login Data Fetching**: Login process now fetches comprehensive user data (friends, conversations, notifications) for immediate availability
+
+### Messaging & Navigation Improvements
+
+- **URL-Based Messaging**: Messages now use URL-based routing for better navigation, deep linking, and browser history support
+- **Improved Friend Page Navigation**: Enhanced navigation flow between friends list and messaging interface
+- **Smart Message Notifications**: Improved notification handling for messaging friends with better context awareness
+
+### Mobile & UI Refinements
+
+- **Mobile Styling Fixes**: Resolved mobile-specific styling issues for better responsive experience across devices
+- **Improved Language**: Enhanced copy and messaging on MyEventsPage for clearer user communication
 
 ## Future Plans
 
