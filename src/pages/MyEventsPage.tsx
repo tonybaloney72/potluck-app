@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -15,21 +15,119 @@ import {
 import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
-import { FaCalendarTimes } from "react-icons/fa";
+import {
+	FaCalendarPlus,
+	FaCalendarCheck,
+	FaCalendarTimes,
+} from "react-icons/fa";
 import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
+
+// Helper function to get a rotating message from an array
+// Uses a simple hash of user ID + category to keep it consistent per user
+const getRotatingMessage = (messages: string[]): string =>
+	messages[Math.floor(Math.random() * messages.length)];
+
+// Message arrays for each category and user state
+const HOSTING_MESSAGES_NEW = [
+	"You have no hosted events. Get hosting!",
+	"No events yet? Time to throw your first potluck!",
+	"Your hosting journey starts here. Create an event!",
+	"Ready to host? Let's plan your first gathering!",
+	"Empty calendar? Perfect time to start hosting!",
+];
+
+const HOSTING_MESSAGES_EXPERIENCED = [
+	"No events currently. Time to plan the next one!",
+	"Your event calendar is clear. Ready to host again?",
+	"No active events. What's the next gathering?",
+	"Between events? Perfect time to plan something new!",
+	"Calendar's open. Ready for your next hosting adventure?",
+];
+
+const ATTENDING_MESSAGES_NEW = [
+	"You're not attending any events. Check your invites!",
+	"No events on your calendar? Someone's missing out!",
+	"Your social calendar is empty. Time to RSVP!",
+	"Not attending anything yet? Check those invitations!",
+	"Zero events? Time to get social!",
+];
+
+const ATTENDING_MESSAGES_EXPERIENCED = [
+	"No events on your schedule. Check for new invites!",
+	"Your calendar's free. Perfect time for a new event!",
+	"No upcoming events. Someone's bound to invite you soon!",
+	"Between events? Keep an eye on those invites!",
+	"Calendar's clear. Ready for the next adventure?",
+];
+
+const PENDING_RSVP_MESSAGES_NEW = [
+	"You have no events pending RSVP. You're so responsive!",
+	"All caught up! No pending invites here.",
+	"Zero pending RSVPs. You're on top of things!",
+	"No pending invites. You're ahead of the game!",
+	"All clear! No RSVPs waiting on you.",
+];
+
+const PENDING_RSVP_MESSAGES_EXPERIENCED = [
+	"All caught up! No pending invites.",
+	"You're all set. No RSVPs needed right now.",
+	"Zero pending invites. You're so responsive!",
+	"Nothing pending. You're staying on top of it!",
+	"All clear! No RSVPs waiting for you.",
+];
 
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 	const { loading, error } = useAppSelector(state => state.events);
 	const eventsById = useAppSelector(selectEventsById);
-	const { user } = useAppSelector(state => state.auth);
+	const { user, profile } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
 
 	// ✅ Use memoized selectors instead of filtering
 	const hostedEvents = useAppSelector(selectHostedEvents);
 	const attendingEvents = useAppSelector(selectAttendingEvents);
 	const invitedEvents = useAppSelector(selectInvitedEvents);
+
+	// Get rotating messages based on user activity
+	const hostingMessage = useMemo(() => {
+		const messages =
+			profile?.has_created_event ?
+				HOSTING_MESSAGES_EXPERIENCED
+			:	HOSTING_MESSAGES_NEW;
+		return getRotatingMessage(messages);
+	}, [profile?.has_created_event]);
+
+	const attendingMessage = useMemo(() => {
+		const messages =
+			profile?.has_rsvped_to_event ?
+				ATTENDING_MESSAGES_EXPERIENCED
+			:	ATTENDING_MESSAGES_NEW;
+		return getRotatingMessage(messages);
+	}, [profile?.has_rsvped_to_event]);
+
+	const pendingRsvpMessage = useMemo(() => {
+		const messages =
+			profile?.has_rsvped_to_event ?
+				PENDING_RSVP_MESSAGES_EXPERIENCED
+			:	PENDING_RSVP_MESSAGES_NEW;
+		return getRotatingMessage(messages);
+	}, [profile?.has_rsvped_to_event]);
+
+	// Get dynamic titles based on user activity
+	const hostingTitle = useMemo(() => {
+		return profile?.has_created_event ? "No events" : "No events yet";
+	}, [profile?.has_created_event]);
+
+	const attendingTitle = useMemo(() => {
+		return profile?.has_rsvped_to_event ? "No events" : "No events yet";
+	}, [profile?.has_rsvped_to_event]);
+
+	const pendingRsvpTitle = useMemo(() => {
+		return profile?.has_rsvped_to_event ? "No invitations" : (
+				"No invitations yet"
+			);
+	}, [profile?.has_rsvped_to_event]);
 
 	const handleRetry = () => {
 		dispatch(clearError());
@@ -155,12 +253,11 @@ export const MyEventsPage = () => {
 							{/* Hosted Events Section */}
 							<EventCard
 								events={hostedEvents}
-								title="Events I'm Hosting"
+								title='Hosting'
 								emptyStateProps={{
-									icon: <FaCalendarTimes className='w-16 h-16' />,
-									title: "No events yet",
-									message:
-										"You're not hosting any events yet. Create your first event to get started!",
+									icon: <FaCalendarPlus className='w-16 h-16' />,
+									title: hostingTitle,
+									message: hostingMessage,
 									actionLabel: "Create Event",
 									onAction: () => navigate("/create-event"),
 								}}
@@ -171,12 +268,11 @@ export const MyEventsPage = () => {
 							{/* Attending Events Section */}
 							<EventCard
 								events={attendingEvents}
-								title="Events I'm Attending"
+								title='Attending'
 								emptyStateProps={{
-									icon: <FaCalendarTimes className='w-16 h-16' />,
-									title: "No events yet",
-									message:
-										"You're not attending any events yet. Check your invitations or browse upcoming events!",
+									icon: <FaCalendarCheck className='w-16 h-16' />,
+									title: attendingTitle,
+									message: attendingMessage,
 								}}
 								onEventClick={handleEventClick}
 								loading={loading}
@@ -185,12 +281,11 @@ export const MyEventsPage = () => {
 							{/* Invited Events Section */}
 							<EventCard
 								events={invitedEvents}
-								title="Events I'm Invited To"
+								title='Pending'
 								emptyStateProps={{
 									icon: <FaCalendarTimes className='w-16 h-16' />,
-									title: "No invitations yet",
-									message:
-										"You haven't received any event invitations yet. Share events with friends to invite them!",
+									title: pendingRsvpTitle,
+									message: pendingRsvpMessage,
 								}}
 								onEventClick={handleEventClick}
 								loading={loading}

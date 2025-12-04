@@ -33,7 +33,7 @@ export function Layout({ children }: LayoutProps) {
 	}, [location.pathname]);
 
 	return (
-		<div className='h-screen flex flex-col'>
+		<div className='h-full flex flex-col'>
 			<Header />
 			<div ref={scrollContainerRef} className='flex-1 overflow-y-auto'>
 				<AnimatePresence mode='wait'>{children}</AnimatePresence>

@@ -7,6 +7,8 @@ export interface Profile {
 	avatar_url: string | null;
 	location: string | null;
 	theme_preference: ThemePreference;
+	has_created_event: boolean;
+	has_rsvped_to_event: boolean;
 	created_at: string;
 	updated_at: string;
 }
