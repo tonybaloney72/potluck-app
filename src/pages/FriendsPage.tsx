@@ -7,6 +7,7 @@ import {
 	sendFriendRequest,
 	cancelFriendRequest,
 } from "../store/slices/friendsSlice";
+import { getOrCreateConversation } from "../store/slices/conversationsSlice";
 import {
 	selectAcceptedFriendships,
 	selectPendingReceivedRequests,
@@ -46,6 +47,9 @@ export const FriendsPage = () => {
 		friendName: string;
 		isDecliningRequest?: boolean;
 	} | null>(null);
+	const [loadingConversationId, setLoadingConversationId] = useState<
+		string | null
+	>(null);
 
 	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -57,7 +61,9 @@ export const FriendsPage = () => {
 		if (debouncedSearchQuery.trim()) {
 			dispatch(searchUsers(debouncedSearchQuery));
 		} else {
-			dispatch({ type: "friends/searchUsers/fulfilled", payload: [] });
+			// Clear search results by dispatching searchUsers with empty string
+			// The thunk will return empty array for empty queries
+			dispatch(searchUsers(""));
 		}
 	}, [debouncedSearchQuery, dispatch]);
 
@@ -94,7 +100,32 @@ export const FriendsPage = () => {
 		setSearchQuery("");
 	};
 
+	const handleMessage = async (userId: string) => {
+		if (!userId) return;
+
+		setLoadingConversationId(userId);
+		try {
+			const result = await dispatch(getOrCreateConversation(userId));
+			if (getOrCreateConversation.fulfilled.match(result)) {
+				navigate(`/messages/${result.payload.id}`);
+			}
+			// If rejected, error is handled by Redux - user stays on page
+		} catch (error) {
+			console.error("Failed to create conversation:", error);
+		} finally {
+			setLoadingConversationId(null);
+		}
+	};
+
 	const friendshipsByUserPair = useAppSelector(selectFriendshipsByUserPair);
+	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
+	const acceptedFriends = useAppSelector(selectAcceptedFriendships);
+	const pendingRequests = useAppSelector(state =>
+		selectPendingReceivedRequests(state, profile?.id),
+	);
+	const sentRequests = useAppSelector(state =>
+		selectPendingSentRequests(state, profile?.id),
+	);
 
 	const getRelationshipStatus = useMemo(() => {
 		return (userId: string): "none" | "pending" | "accepted" | "sent" => {
@@ -112,7 +143,7 @@ export const FriendsPage = () => {
 		};
 	}, [profile?.id, friendshipsByUserPair]);
 
-	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
+	// Early return after all hooks
 	if (loading && friendshipIds.length === 0) {
 		return (
 			<div className='max-w-4xl mx-auto p-8'>
@@ -137,14 +168,6 @@ export const FriendsPage = () => {
 			</div>
 		);
 	}
-
-	const acceptedFriends = useAppSelector(selectAcceptedFriendships);
-	const pendingRequests = useAppSelector(state =>
-		selectPendingReceivedRequests(state, profile?.id),
-	);
-	const sentRequests = useAppSelector(state =>
-		selectPendingSentRequests(state, profile?.id),
-	);
 
 	return (
 		<div className='max-w-4xl mx-auto p-4 md:p-8'>
@@ -319,10 +342,11 @@ export const FriendsPage = () => {
 											<Button
 												className='flex items-center'
 												variant='primary'
-												onClick={() =>
-													navigate("/messages", {
-														state: { selectedUserId: friend?.id },
-													})
+												onClick={() => friend?.id && handleMessage(friend.id)}
+												loading={loadingConversationId === friend?.id || false}
+												loadingText='Opening...'
+												disabled={
+													!friend?.id || loadingConversationId !== null
 												}>
 												<FaEnvelope className='w-4 h-4 mr-2' /> Message
 											</Button>

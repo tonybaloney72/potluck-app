@@ -124,7 +124,7 @@ export const EventHeader = ({
 			animate={{ opacity: 1, y: 0 }}
 			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
 			<div className='flex flex-col justify-between items-start gap-4 mb-4'>
-				{isEditing ? (
+				{isEditing ?
 					<div className='space-y-2 mb-2'>
 						<Input
 							label='Event Title *'
@@ -144,8 +144,7 @@ export const EventHeader = ({
 							showCharacterCount={true}
 						/>
 					</div>
-				) : (
-					<>
+				:	<>
 						<div className='flex justify-between items-center w-full'>
 							<h1 className='text-2xl md:text-3xl font-bold text-primary mb-2'>
 								{event.title}
@@ -184,11 +183,11 @@ export const EventHeader = ({
 							</div>
 						</div>
 					</>
-				)}
+				}
 			</div>
 
 			{/* Description */}
-			{isEditing ? (
+			{isEditing ?
 				<Textarea
 					label='Description'
 					{...eventUpdateForm.register("description")}
@@ -198,17 +197,16 @@ export const EventHeader = ({
 					showCharacterCount={true}
 					maxLength={500}
 				/>
-			) : (
-				event.description && (
+			:	event.description && (
 					<div className='mb-4'>
 						<p className='text-sm text-tertiary'>Description</p>
 						<p className='text-primary'>{event.description}</p>
 					</div>
 				)
-			)}
+			}
 
 			{/* Date & Time */}
-			{isEditing ? (
+			{isEditing ?
 				<div className='space-y-4'>
 					<DatePicker
 						control={eventUpdateForm.control}
@@ -222,16 +220,15 @@ export const EventHeader = ({
 						{...eventUpdateForm.register("location")}
 						placeholder='e.g., Central Park, New York'
 					/>
-					<Input
+					{/* <Input
 						label='Location URL (optional)'
 						{...eventUpdateForm.register("location_url")}
 						placeholder='https://maps.google.com/...'
 						type='url'
 						error={eventUpdateForm.formState.errors.location_url?.message}
-					/>
+					/> */}
 				</div>
-			) : (
-				<div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
+			:	<div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
 					<div>
 						<p className='text-tertiary'>Date & Time</p>
 						<p className='font-semibold text-primary'>
@@ -241,7 +238,7 @@ export const EventHeader = ({
 					{event.location && (
 						<div>
 							<p className='text-tertiary'>Location</p>
-							{event.location_url ? (
+							{event.location_url ?
 								<a
 									href={event.location_url}
 									target='_blank'
@@ -249,13 +246,11 @@ export const EventHeader = ({
 									className='font-semibold text-accent hover:text-accent-secondary hover:underline transition-all duration-200'>
 									{event.location} →
 								</a>
-							) : (
-								<p className='font-semibold text-primary'>{event.location}</p>
-							)}
+							:	<p className='font-semibold text-primary'>{event.location}</p>}
 						</div>
 					)}
 				</div>
-			)}
+			}
 
 			{/* Save/Cancel Buttons */}
 			{isEditing && (

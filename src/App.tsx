@@ -1,5 +1,6 @@
 import { BrowserRouter } from "react-router";
 import { useAuth } from "./hooks/useAuth";
+import { useInitialDataLoader } from "./hooks/useInitialDataLoader";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AppRoutes } from "./routes/AppRoutes";
 import { useNotificationsRealtime } from "./hooks/useNotificationsRealTime";
@@ -10,6 +11,7 @@ import { useConversationsRealtime } from "./hooks/useConversationsRealtime";
 
 function App() {
 	useAuth();
+	useInitialDataLoader();
 	useNotificationsRealtime();
 	useFriendshipsRealtime();
 	useEventsRealtime();

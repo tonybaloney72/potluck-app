@@ -54,6 +54,18 @@ export function AppRoutes() {
 				}
 			/>
 			<Route
+				path='/messages/:conversationId'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<PageTransition>
+								<MessagesPage />
+							</PageTransition>
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
 				path='/messages'
 				element={
 					<Layout>

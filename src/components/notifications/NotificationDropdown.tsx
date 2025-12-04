@@ -11,7 +11,6 @@ import {
 	selectAllNotifications,
 	selectUnreadCount,
 } from "../../store/selectors/notificationsSelectors";
-import { fetchConversations } from "../../store/slices/conversationsSlice";
 import { FaBell, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
 import { SkeletonNotificationItem } from "../common/Skeleton";
 import { motion, AnimatePresence } from "motion/react";
@@ -77,11 +76,7 @@ export const NotificationDropdown = () => {
 			navigate("/friends");
 		} else if (notification.type === "message" && notification.related_id) {
 			dispatch(markNotificationAsRead(notification.id));
-			dispatch(fetchConversations()).then(() => {
-				navigate("/messages", {
-					state: { conversationId: notification.related_id },
-				});
-			});
+			navigate(`/messages/${notification.related_id}`);
 		} else if (
 			notification.type === "event_invitation" &&
 			notification.related_id
