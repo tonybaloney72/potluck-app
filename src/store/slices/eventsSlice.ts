@@ -90,7 +90,7 @@ export const fetchUserEvents = createAsyncThunk(
 					joined_at,
 					created_at,
 					updated_at,
-					user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+					user:profiles!event_participants_user_id_fkey(id, name, avatar_url, location)
 				)
 			`,
 			)
@@ -136,7 +136,7 @@ export const fetchEventById = createAsyncThunk(
 			(participants || []).map(async participant => {
 				const { data: userProfile } = await supabase
 					.from("profiles")
-					.select("id, name, avatar_url")
+					.select("id, name, avatar_url, location")
 					.eq("id", participant.user_id)
 					.single();
 

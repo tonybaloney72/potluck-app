@@ -55,7 +55,7 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				// Fetch user profile for the participant
 				const { data: userProfile } = await supabase
 					.from("profiles")
-					.select("id, name, avatar_url")
+					.select("id, name, avatar_url, location")
 					.eq("id", updatedParticipant.user_id)
 					.single();
 
@@ -232,7 +232,7 @@ export function useEventDetailsRealtime(eventId: string | null) {
 					if (!payload.new.user) {
 						const { data: userProfile } = await supabase
 							.from("profiles")
-							.select("id, name, avatar_url")
+							.select("id, name, avatar_url, location")
 							.eq("id", payload.new.user_id)
 							.single();
 
@@ -274,7 +274,7 @@ export function useEventDetailsRealtime(eventId: string | null) {
 				// Fetch user profile for the participant
 				const { data: userProfile } = await supabase
 					.from("profiles")
-					.select("id, name, avatar_url")
+					.select("id, name, avatar_url, location")
 					.eq("id", newParticipant.user_id)
 					.single();
 

@@ -1,32 +1,14 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import {
-	fetchFriendships,
-	acceptFriendRequest,
-	removeFriend,
-	sendFriendRequest,
-	cancelFriendRequest,
-} from "../store/slices/friendsSlice";
-import { getOrCreateConversation } from "../store/slices/conversationsSlice";
+import { fetchFriendships } from "../store/slices/friendsSlice";
 import {
 	selectAcceptedFriendships,
 	selectPendingReceivedRequests,
 	selectPendingSentRequests,
-	selectFriendshipsByUserPair,
 } from "../store/selectors/friendsSelectors";
-import { useNavigate } from "react-router";
 import { searchUsers } from "../store/slices/usersSlice";
-import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { ConfirmModal } from "../components/common/ConfirmModal";
-import {
-	FaCheck,
-	FaTimes,
-	FaSearch,
-	FaUserPlus,
-	FaEnvelope,
-	FaUsers,
-} from "react-icons/fa";
+import { FaSearch, FaUsers } from "react-icons/fa";
 import { useDebounce } from "../hooks/useDebounce";
 import { FriendCard } from "../components/friends/FriendCard";
 import { EmptyState } from "../components/common/EmptyState";
@@ -34,22 +16,12 @@ import { Skeleton, SkeletonFriendCard } from "../components/common/Skeleton";
 
 export const FriendsPage = () => {
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
-	const { loading, sendingRequest } = useAppSelector(state => state.friends);
+	const { loading } = useAppSelector(state => state.friends);
 	const { searchResults, searchLoading } = useAppSelector(state => state.users);
 	const { profile } = useAppSelector(state => state.auth);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
-	const [friendshipToRemove, setFriendshipToRemove] = useState<{
-		id: string;
-		friendName: string;
-		isDecliningRequest?: boolean;
-	} | null>(null);
-	const [loadingConversationId, setLoadingConversationId] = useState<
-		string | null
-	>(null);
 
 	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -67,57 +39,6 @@ export const FriendsPage = () => {
 		}
 	}, [debouncedSearchQuery, dispatch]);
 
-	const handleAccept = (friendshipId: string) => {
-		dispatch(acceptFriendRequest(friendshipId));
-	};
-
-	const handleRemove = (
-		friendshipId: string,
-		friendName: string,
-		isDecliningRequest = false,
-	) => {
-		setFriendshipToRemove({
-			id: friendshipId,
-			friendName,
-			isDecliningRequest,
-		});
-		setShowRemoveConfirm(true);
-	};
-
-	const handleConfirmRemove = () => {
-		if (friendshipToRemove) {
-			dispatch(removeFriend(friendshipToRemove.id));
-			setFriendshipToRemove(null);
-		}
-	};
-
-	const handleCancel = (friendshipId: string) => {
-		dispatch(cancelFriendRequest(friendshipId));
-	};
-
-	const handleSendRequest = (userId: string) => {
-		dispatch(sendFriendRequest(userId));
-		setSearchQuery("");
-	};
-
-	const handleMessage = async (userId: string) => {
-		if (!userId) return;
-
-		setLoadingConversationId(userId);
-		try {
-			const result = await dispatch(getOrCreateConversation(userId));
-			if (getOrCreateConversation.fulfilled.match(result)) {
-				navigate(`/messages/${result.payload.id}`);
-			}
-			// If rejected, error is handled by Redux - user stays on page
-		} catch (error) {
-			console.error("Failed to create conversation:", error);
-		} finally {
-			setLoadingConversationId(null);
-		}
-	};
-
-	const friendshipsByUserPair = useAppSelector(selectFriendshipsByUserPair);
 	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
 	const acceptedFriends = useAppSelector(selectAcceptedFriendships);
 	const pendingRequests = useAppSelector(state =>
@@ -126,22 +47,6 @@ export const FriendsPage = () => {
 	const sentRequests = useAppSelector(state =>
 		selectPendingSentRequests(state, profile?.id),
 	);
-
-	const getRelationshipStatus = useMemo(() => {
-		return (userId: string): "none" | "pending" | "accepted" | "sent" => {
-			if (!profile?.id) return "none";
-
-			// O(1) lookup using user pair map
-			const key = [profile.id, userId].sort().join("-");
-			const friendship = friendshipsByUserPair[key];
-
-			if (!friendship) return "none";
-			if (friendship.status === "accepted") return "accepted";
-			if (friendship.status === "pending" && friendship.user_id === profile.id)
-				return "sent";
-			return "pending";
-		};
-	}, [profile?.id, friendshipsByUserPair]);
 
 	// Early return after all hooks
 	if (loading && friendshipIds.length === 0) {
@@ -201,46 +106,14 @@ export const FriendsPage = () => {
 								No users found
 							</div>
 						:	<div className='space-y-3'>
-								{searchResults.map(user => {
-									const status = getRelationshipStatus(user.id);
-									return (
-										<FriendCard
-											key={user.id}
-											profile={user}
-											actions={
-												<>
-													{status === "none" && (
-														<Button
-															className='flex items-center'
-															variant='primary'
-															onClick={() => handleSendRequest(user.id)}
-															loading={sendingRequest}
-															loadingText='Sending...'
-															disabled={sendingRequest}>
-															<FaUserPlus className='w-4 h-4 mr-2' />
-															Send Request
-														</Button>
-													)}
-													{status === "sent" && (
-														<span className='text-sm text-secondary'>
-															Request Sent
-														</span>
-													)}
-													{status === "pending" && (
-														<span className='text-sm text-secondary'>
-															Pending Request
-														</span>
-													)}
-													{status === "accepted" && (
-														<span className='text-sm text-secondary'>
-															Already Friends
-														</span>
-													)}
-												</>
-											}
-										/>
-									);
-								})}
+								{searchResults.map(user => (
+									<FriendCard
+										key={user.id}
+										userId={user.id}
+										profile={user}
+										forceVertical={false}
+									/>
+								))}
 							</div>
 						}
 					</div>
@@ -257,28 +130,9 @@ export const FriendsPage = () => {
 						{pendingRequests.map(friendship => (
 							<FriendCard
 								key={friendship.id}
+								userId={friendship.user?.id}
 								profile={friendship.user}
 								subtitle='Wants to be friends'
-								actions={
-									<div className='flex gap-2'>
-										<Button
-											variant='primary'
-											onClick={() => handleAccept(friendship.id)}>
-											<FaCheck className='w-4 h-4' />
-										</Button>
-										<Button
-											variant='secondary'
-											onClick={() =>
-												handleRemove(
-													friendship.id,
-													friendship.user?.name || "Unknown User",
-													true,
-												)
-											}>
-											<FaTimes className='w-4 h-4' />
-										</Button>
-									</div>
-								}
 							/>
 						))}
 					</div>
@@ -295,17 +149,9 @@ export const FriendsPage = () => {
 						{sentRequests.map(friendship => (
 							<FriendCard
 								key={friendship.id}
+								userId={friendship.friend?.id}
 								profile={friendship.friend}
 								subtitle='Waiting for response'
-								actions={
-									<Button
-										className='flex items-center gap-2'
-										variant='secondary'
-										onClick={() => handleCancel(friendship.id)}>
-										<FaTimes className='w-4 h-4 mt-0.5' />
-										Cancel Request
-									</Button>
-								}
 							/>
 						))}
 					</div>
@@ -336,67 +182,14 @@ export const FriendsPage = () => {
 							return (
 								<FriendCard
 									key={friendship.id}
+									userId={friend?.id}
 									profile={friend}
-									actions={
-										<div className='flex gap-2'>
-											<Button
-												className='flex items-center'
-												variant='primary'
-												onClick={() => friend?.id && handleMessage(friend.id)}
-												loading={loadingConversationId === friend?.id || false}
-												loadingText='Opening...'
-												disabled={
-													!friend?.id || loadingConversationId !== null
-												}>
-												<FaEnvelope className='w-4 h-4 mr-2' /> Message
-											</Button>
-											<Button
-												variant='secondary'
-												onClick={() =>
-													handleRemove(
-														friendship.id,
-														friend?.name || "Unknown User",
-													)
-												}>
-												Remove
-											</Button>
-										</div>
-									}
 								/>
 							);
 						})}
 					</div>
 				}
 			</div>
-
-			{/* Remove Friend / Decline Request Confirmation Modal */}
-			<ConfirmModal
-				isOpen={showRemoveConfirm}
-				onClose={() => {
-					setShowRemoveConfirm(false);
-					setFriendshipToRemove(null);
-				}}
-				onConfirm={handleConfirmRemove}
-				title={
-					friendshipToRemove?.isDecliningRequest ?
-						"Decline Friend Request"
-					:	"Remove Friend"
-				}
-				message={
-					friendshipToRemove?.isDecliningRequest ?
-						`Are you sure you want to decline the friend request from ${
-							friendshipToRemove?.friendName || "this user"
-						}?`
-					:	`Are you sure you want to remove ${
-							friendshipToRemove?.friendName || "this friend"
-						} from your friends list?`
-				}
-				confirmText={
-					friendshipToRemove?.isDecliningRequest ? "Decline" : "Remove"
-				}
-				cancelText='Cancel'
-				confirmVariant='primary'
-			/>
 		</div>
 	);
 };
