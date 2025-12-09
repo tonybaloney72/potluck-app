@@ -218,21 +218,21 @@ export const EventHeader = ({
 				)
 			}
 
-			{event.location &&
-				(isEditing ?
+			{isEditing ?
+				<div className='space-y-4'>
+					<Map
+						label='Location'
+						onLocationSelect={location => {
+							eventUpdateForm.setValue("location", location, {
+								shouldValidate: true,
+								shouldDirty: true,
+							});
+						}}
+						selectedLocation={eventUpdateForm.watch("location")}
+					/>
+				</div>
+			:	event.location && (
 					<div className='space-y-4'>
-						<Map
-							label='Location'
-							onLocationSelect={location => {
-								eventUpdateForm.setValue("location", location, {
-									shouldValidate: true,
-									shouldDirty: true,
-								});
-							}}
-							selectedLocation={eventUpdateForm.watch("location")}
-						/>
-					</div>
-				:	<div className='space-y-4'>
 						<div>
 							<p className='text-tertiary'>Location</p>
 							<p
@@ -247,7 +247,9 @@ export const EventHeader = ({
 							height='300px'
 							canSearch={false}
 						/>
-					</div>)}
+					</div>
+				)
+			}
 
 			{/* Save/Cancel Buttons */}
 			{isEditing && (
