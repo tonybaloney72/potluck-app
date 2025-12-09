@@ -12,6 +12,7 @@
 		"deploy": "gh-pages -d dist"
 	},
 	"dependencies": {
+		"@geoapify/geocoder-autocomplete": "^3.0.1",
 		"@hookform/resolvers": "^5.2.2",
 		"@reduxjs/toolkit": "^2.10.1",
 		"@supabase/supabase-js": "^2.83.0",

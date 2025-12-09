@@ -12,7 +12,7 @@ import {
 	type SelectedFriend,
 } from "../components/common/FriendSelector";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
-// import { Map } from "../components/common/Map";
+import { Map } from "../components/common/Map";
 import { FaArrowLeft } from "react-icons/fa";
 
 interface CreateEventFormData {
@@ -20,8 +20,11 @@ interface CreateEventFormData {
 	description: string;
 	theme: string;
 	event_datetime: string;
-	location: string;
-	location_url: string;
+	location: {
+		lat: number;
+		lng: number;
+		address: string;
+	} | null;
 	is_public: boolean;
 }
 
@@ -46,6 +49,7 @@ export const CreateEventPage = () => {
 		register,
 		handleSubmit,
 		control,
+		setValue,
 		formState: { errors },
 	} = useForm<CreateEventFormData>({
 		defaultValues: {
@@ -53,6 +57,12 @@ export const CreateEventPage = () => {
 			event_datetime: getDefaultDateTime(),
 		},
 	});
+
+	const [selectedLocation, setSelectedLocation] = useState<{
+		lat: number;
+		lng: number;
+		address: string;
+	} | null>(null);
 
 	const onSubmit = async (data: CreateEventFormData) => {
 		setLoading(true);
@@ -75,7 +85,6 @@ export const CreateEventPage = () => {
 					theme: data.theme || undefined,
 					event_datetime: data.event_datetime,
 					location: data.location || undefined,
-					location_url: data.location_url || undefined,
 					is_public: data.is_public,
 					invitedParticipants,
 				}),
@@ -163,20 +172,17 @@ export const CreateEventPage = () => {
 							helperText='Select friends to invite and assign their roles'
 						/>
 
-						<Input
+						<Map
 							label='Location'
-							{...register("location")}
-							placeholder='e.g., Central Park, New York'
+							onLocationSelect={location => {
+								setSelectedLocation(location);
+								setValue("location", location, {
+									shouldValidate: true,
+									shouldDirty: true,
+								});
+							}}
+							selectedLocation={selectedLocation}
 						/>
-
-						{/* <Map /> */}
-
-						{/* <Input
-							label='Location URL (optional)'
-							{...register("location_url")}
-							placeholder='https://maps.google.com/...'
-							type='url'
-						/> */}
 
 						{error && (
 							<ErrorDisplay message={error} variant='inline' className='mb-4' />

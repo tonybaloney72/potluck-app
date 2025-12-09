@@ -48,13 +48,13 @@ export const EventCard = ({
 			<h2 className='text-xl md:text-2xl font-semibold text-primary mb-3 md:mb-4'>
 				{title}
 			</h2>
-			{loading ? (
+			{loading ?
 				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 					{Array.from({ length: 3 }).map((_, i) => (
 						<SkeletonEventCard key={i} />
 					))}
 				</div>
-			) : events.length === 0 && emptyStateProps ? (
+			: events.length === 0 && emptyStateProps ?
 				<EmptyState
 					icon={emptyStateProps.icon}
 					title={emptyStateProps.title}
@@ -62,10 +62,9 @@ export const EventCard = ({
 					actionLabel={emptyStateProps.actionLabel}
 					onAction={emptyStateProps.onAction}
 				/>
-			) : events.length === 0 ? (
+			: events.length === 0 ?
 				<p className='text-tertiary'>No events found.</p>
-			) : (
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+			:	<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
 					{events.map(event => (
 						<article
 							key={event.id}
@@ -123,7 +122,7 @@ export const EventCard = ({
 									{event.location && (
 										<p className='truncate'>
 											<span aria-hidden='true'>📍</span>{" "}
-											<span>{event.location}</span>
+											<span>{event.location.address}</span>
 										</p>
 									)}
 								</div>
@@ -131,7 +130,7 @@ export const EventCard = ({
 						</article>
 					))}
 				</div>
-			)}
+			}
 		</div>
 	);
 };

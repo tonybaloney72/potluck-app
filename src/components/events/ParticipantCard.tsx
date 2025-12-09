@@ -97,100 +97,95 @@ export const ParticipantCard = ({
 	};
 
 	return (
-		<>
-			<article
-				key={participant.id}
-				className='p-3 bg-secondary rounded-lg relative'
-				ref={friendCardRef}>
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					exit={{ opacity: 0, y: -20 }}
-					transition={{ duration: 0.3 }}>
-					{/* Delete button in top-right corner */}
-					{canRemoveParticipant && (
-						<div className='absolute top-2 right-2'>
-							<DeleteButton
-								variant='icon'
-								onDelete={() =>
-									onRemoveParticipant(
-										participant.user_id,
-										participant.user?.name || "Unknown",
-									)
-								}
-								label={`Remove attendee ${participant.user?.name || "Unknown"}`}
-							/>
-						</div>
-					)}
+		<article
+			className='p-3 bg-secondary rounded-lg relative'
+			ref={friendCardRef}>
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				exit={{ opacity: 0, y: -20 }}
+				transition={{ duration: 0.3 }}>
+				{/* Delete button in top-right corner */}
+				{canRemoveParticipant && (
+					<div className='absolute top-2 right-2'>
+						<DeleteButton
+							variant='icon'
+							onDelete={() =>
+								onRemoveParticipant(
+									participant.user_id,
+									participant.user?.name || "Unknown",
+								)
+							}
+							label={`Remove attendee ${participant.user?.name || "Unknown"}`}
+						/>
+					</div>
+				)}
 
-					{/* Main content */}
-					<div className='flex gap-3 pr-8 sm:pr-0'>
-						<span
-							onClick={handleToggleFriend}
+				{/* Main content */}
+				<div className='flex gap-3 pr-8 sm:pr-0'>
+					<span
+						onClick={handleToggleFriend}
+						className={isNotCurrentUser ? "cursor-pointer" : "cursor-default"}>
+						<Avatar user={participant.user} size='md' />
+					</span>
+					<div className='flex-1 min-w-0'>
+						<p
 							className={
-								isNotCurrentUser ? "cursor-pointer" : "cursor-default"
-							}>
-							<Avatar user={participant.user} size='md' />
-						</span>
-						<div className='flex-1 min-w-0'>
-							<p
-								className={
-									isNotCurrentUser ?
-										"font-semibold text-primary mb-1 sm:mb-0 cursor-pointer"
-									:	"font-semibold text-primary mb-1 sm:mb-0"
-								}
-								onClick={handleToggleFriend}>
-								{participant.user?.name || "Unknown"}
-							</p>
-							{/* Mobile: Stack role and RSVP vertically */}
-							<div className='flex flex-col gap-1 sm:gap-2'>
-								<div className='flex items-center gap-2'>
-									<p className='text-xs text-tertiary capitalize'>
-										{participant.role}
-									</p>
-									<span className='inline text-xs text-tertiary'>•</span>
-									<p className='text-xs text-tertiary capitalize'>
-										{participant.rsvp_status}
-									</p>
-								</div>
-								{canModifyRole && (
-									<RoleSelector
-										value={participant.role}
-										onChange={role => {
-											onUpdateParticipantRole(
-												participant.id,
-												participant.user_id,
-												role,
-											);
-										}}
-										disabled={updatingRole === participant.id}
-										className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
-									/>
-								)}
+								isNotCurrentUser ?
+									"font-semibold text-primary mb-1 sm:mb-0 cursor-pointer"
+								:	"font-semibold text-primary mb-1 sm:mb-0"
+							}
+							onClick={handleToggleFriend}>
+							{participant.user?.name || "Unknown"}
+						</p>
+						{/* Mobile: Stack role and RSVP vertically */}
+						<div className='flex flex-col gap-1 sm:gap-2'>
+							<div className='flex items-center gap-2'>
+								<p className='text-xs text-tertiary capitalize'>
+									{participant.role}
+								</p>
+								<span className='inline text-xs text-tertiary'>•</span>
+								<p className='text-xs text-tertiary capitalize'>
+									{participant.rsvp_status}
+								</p>
 							</div>
+							{canModifyRole && (
+								<RoleSelector
+									value={participant.role}
+									onChange={role => {
+										onUpdateParticipantRole(
+											participant.id,
+											participant.user_id,
+											role,
+										);
+									}}
+									disabled={updatingRole === participant.id}
+									className='text-xs py-1 w-full sm:w-auto sm:min-w-[140px]'
+								/>
+							)}
 						</div>
 					</div>
-				</motion.div>
-				<AnimatePresence>
-					{isFriendOpen && participant.user?.id && isNotCurrentUser && (
-						<motion.div
-							ref={friendCardContentRef}
-							initial={{ opacity: 0, y: openAbove ? -20 : 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: openAbove ? -20 : 20 }}
-							transition={{ duration: 0.3, ease: "easeInOut" }}
-							className={`absolute left-0 z-50 w-full max-w-md ${
-								openAbove ? "bottom-full mb-2" : "top-full mt-2"
-							}`}>
-							<FriendCard
-								profile={participant.user}
-								forceVertical={true}
-								limitedActions={true}
-							/>
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</article>
-		</>
+				</div>
+			</motion.div>
+			<AnimatePresence>
+				{isFriendOpen && participant.user?.id && isNotCurrentUser && (
+					<motion.div
+						ref={friendCardContentRef}
+						initial={{ opacity: 0, y: openAbove ? -20 : 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: openAbove ? -20 : 20 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+						className={`absolute left-0 z-50 w-full max-w-md ${
+							openAbove ? "bottom-full mb-2" : "top-full mt-2"
+						}`}>
+						<FriendCard
+							profile={participant.user}
+							forceVertical={true}
+							limitedActions={true}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</article>
 	);
 };

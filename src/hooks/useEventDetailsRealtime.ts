@@ -379,7 +379,6 @@ export function useEventDetailsRealtime(eventId: string | null) {
 					description: updatedEvent.description,
 					event_datetime: updatedEvent.event_datetime,
 					location: updatedEvent.location,
-					location_url: updatedEvent.location_url,
 					updated_at: updatedEvent.updated_at,
 					// Include creator profile if we fetched it
 					...(creatorProfile && { creator: creatorProfile }),

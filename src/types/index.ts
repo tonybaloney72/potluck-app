@@ -89,8 +89,11 @@ export interface Event {
 	description: string | null;
 	theme: string | null;
 	event_datetime: string; // ISO datetime string
-	location: string | null;
-	location_url: string | null;
+	location: {
+		lat: number;
+		lng: number;
+		address: string;
+	} | null;
 	is_public: boolean;
 	created_at: string;
 	updated_at: string;

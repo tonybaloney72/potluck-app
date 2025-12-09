@@ -62,14 +62,16 @@ export const ParticipantsSection = ({
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
 					{event.participants.map(participant => {
 						return (
-							<ParticipantCard
-								participant={participant}
-								currentUserId={currentUserId}
-								canManage={canManage}
-								onRemoveParticipant={onRemoveParticipant}
-								onUpdateParticipantRole={onUpdateParticipantRole}
-								updatingRole={updatingRole}
-							/>
+							<article key={participant.id}>
+								<ParticipantCard
+									participant={participant}
+									currentUserId={currentUserId}
+									canManage={canManage}
+									onRemoveParticipant={onRemoveParticipant}
+									onUpdateParticipantRole={onUpdateParticipantRole}
+									updatingRole={updatingRole}
+								/>
+							</article>
 						);
 					})}
 				</div>

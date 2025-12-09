@@ -255,8 +255,11 @@ export const createEvent = createAsyncThunk(
 		description?: string;
 		theme?: string;
 		event_datetime: string;
-		location?: string;
-		location_url?: string;
+		location?: {
+			lat: number;
+			lng: number;
+			address: string;
+		};
 		is_public?: boolean;
 		invitedUserIds?: string[];
 		invitedParticipants?: Array<{ userId: string; role: EventRole }>;
@@ -272,7 +275,6 @@ export const createEvent = createAsyncThunk(
 				theme: eventData.theme || null,
 				event_datetime: eventData.event_datetime,
 				location: eventData.location || null,
-				location_url: eventData.location_url || null,
 				is_public: eventData.is_public || false,
 			})
 			.select(
@@ -742,8 +744,11 @@ const eventsSlice = createSlice({
 					theme?: string | null;
 					description?: string | null;
 					event_datetime?: string;
-					location?: string | null;
-					location_url?: string | null;
+					location?: {
+						lat: number;
+						lng: number;
+						address: string;
+					} | null;
 					updated_at?: string;
 				};
 			}>,

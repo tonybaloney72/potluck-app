@@ -17,7 +17,7 @@ export const generateGoogleCalendarUrl = (event: Event): string => {
 		text: event.title,
 		dates: `${formatDate(startDate)}/${formatDate(endDate)}`,
 		details: event.description || "",
-		location: event.location || "",
+		location: event.location?.address || "",
 	});
 
 	return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -44,10 +44,10 @@ const generateAppleCalendarData = (event: Event): string => {
 		`DTSTART:${formatDate(startDate)}`,
 		`DTEND:${formatDate(endDate)}`,
 		`SUMMARY:${event.title}`,
-		event.description
-			? `DESCRIPTION:${event.description.replace(/\n/g, "\\n")}`
-			: "",
-		event.location ? `LOCATION:${event.location}` : "",
+		event.description ?
+			`DESCRIPTION:${event.description.replace(/\n/g, "\\n")}`
+		:	"",
+		event.location ? `LOCATION:${event.location.address}` : "",
 		"END:VEVENT",
 		"END:VCALENDAR",
 	]

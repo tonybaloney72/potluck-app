@@ -57,7 +57,7 @@ CREATE TABLE public.events (
   description text,
   theme text,
   location text,
-  location_url text,
+  location_coordinates text,
   is_public boolean NOT NULL DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),

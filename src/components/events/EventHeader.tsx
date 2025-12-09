@@ -8,24 +8,34 @@ import { Textarea } from "../common/Textarea";
 import { DateTime } from "../common/DateTime";
 import { motion } from "motion/react";
 import { RSVPButtonGroup } from "./RSVPButtonGroup";
+import { Map } from "../common/Map";
 import {
 	generateGoogleCalendarUrl,
 	downloadAppleCalendar,
 } from "../../utils/calendar";
-import { FaApple, FaGoogle, FaCheck, FaTimes } from "react-icons/fa";
+import {
+	FaApple,
+	FaGoogle,
+	FaCheck,
+	FaTimes,
+	FaExternalLinkAlt,
+} from "react-icons/fa";
 import type { Event, EventParticipant, RSVPStatus } from "../../types";
+
+const locationSchema = z
+	.object({
+		lat: z.number(),
+		lng: z.number(),
+		address: z.string(),
+	})
+	.nullable();
 
 const eventUpdateSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	theme: z.string().optional(),
 	description: z.string().optional(),
 	event_datetime: z.string().min(1, "Date and time is required"),
-	location: z.string().optional(),
-	location_url: z
-		.string()
-		.url("Must be a valid URL")
-		.optional()
-		.or(z.literal("")),
+	location: locationSchema,
 });
 
 type EventUpdateFormData = z.infer<typeof eventUpdateSchema>;
@@ -42,8 +52,11 @@ interface EventHeaderProps {
 		theme?: string | null;
 		description?: string | null;
 		event_datetime?: string;
-		location?: string | null;
-		location_url?: string | null;
+		location?: {
+			lat: number;
+			lng: number;
+			address: string;
+		} | null;
 	}) => Promise<void>;
 	updatingEvent: boolean;
 	isEditing: boolean;
@@ -70,8 +83,7 @@ export const EventHeader = ({
 			theme: event.theme || "",
 			description: event.description || "",
 			event_datetime: event.event_datetime,
-			location: event.location || "",
-			location_url: event.location_url || "",
+			location: event.location || null,
 		},
 	});
 
@@ -82,8 +94,7 @@ export const EventHeader = ({
 				theme: event.theme || "",
 				description: event.description || "",
 				event_datetime: event.event_datetime,
-				location: event.location || "",
-				location_url: event.location_url || "",
+				location: event.location || null,
 			});
 		}
 	}, [
@@ -94,7 +105,6 @@ export const EventHeader = ({
 		event.description,
 		event.event_datetime,
 		event.location,
-		event.location_url,
 	]);
 
 	const handleCancel = () => {
@@ -110,12 +120,18 @@ export const EventHeader = ({
 				description: data.description || null,
 				event_datetime: data.event_datetime,
 				location: data.location || null,
-				location_url: data.location_url || null,
 			});
 		} catch (error) {
 			console.error("Failed to update event:", error);
 		}
 		setIsEditing(false);
+	};
+
+	const openMapInNewTab = () => {
+		window.open(
+			`https://maps.google.com/?q=${encodeURIComponent(event?.location?.address || "")}`,
+			"_blank",
+		);
 	};
 
 	return (
@@ -125,7 +141,7 @@ export const EventHeader = ({
 			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
 			<div className='flex flex-col justify-between items-start gap-4 mb-4'>
 				{isEditing ?
-					<div className='space-y-2 mb-2'>
+					<div className='space-y-2 mb-2 w-full'>
 						<Input
 							label='Event Title *'
 							{...eventUpdateForm.register("title")}
@@ -143,14 +159,21 @@ export const EventHeader = ({
 							maxLength={50}
 							showCharacterCount={true}
 						/>
+						<DateTime
+							control={eventUpdateForm.control}
+							name='event_datetime'
+							label='Event Date & Time *'
+							error={eventUpdateForm.formState.errors.event_datetime}
+							required
+						/>
 					</div>
 				:	<>
 						<div className='flex justify-between items-center w-full'>
-							<h1 className='text-2xl md:text-3xl font-bold text-primary mb-2'>
+							<h1 className='text-2xl md:text-3xl font-bold text-primary'>
 								{event.title}
 							</h1>
 							{event.creator && (
-								<div className='text-left sm:text-right'>
+								<div className='text-right'>
 									<p className='text-sm text-tertiary'>Hosted by</p>
 									<p className='font-semibold text-primary'>
 										{event.creator.name}
@@ -158,28 +181,18 @@ export const EventHeader = ({
 								</div>
 							)}
 						</div>
-						<div className='flex justify-between items-center w-full'>
+						<div className='flex flex-col md:flex-row justify-between w-full'>
 							{event.theme && (
 								<div className='mt-2'>
 									<p className='text-sm text-tertiary'>Theme</p>
 									<span className='text-primary'>{event.theme}</span>
 								</div>
 							)}
-							<div className='flex flex-wrap gap-2 items-center'>
-								<a
-									href={generateGoogleCalendarUrl(event)}
-									target='_blank'
-									rel='noopener noreferrer'
-									className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 min-h-[44px]'>
-									<FaGoogle className='w-4 h-4' />
-									<span className='hidden md:block'>Google</span>
-								</a>
-								<button
-									onClick={() => downloadAppleCalendar(event)}
-									className='flex items-center gap-2 px-3 py-2 bg-tertiary hover:bg-secondary hover:shadow-md active:scale-[0.98] text-primary rounded-md text-sm transition-all duration-200 cursor-pointer min-h-[44px]'>
-									<FaApple className='w-4 h-4' />
-									<span className='hidden md:block'>Apple</span>
-								</button>
+							<div className='mt-2'>
+								<p className='text-sm text-tertiary'>Date & Time</p>
+								<p className='text-primary'>
+									{eventDateTime.date} at {eventDateTime.time}
+								</p>
 							</div>
 						</div>
 					</>
@@ -205,52 +218,36 @@ export const EventHeader = ({
 				)
 			}
 
-			{/* Date & Time */}
-			{isEditing ?
-				<div className='space-y-4'>
-					<DateTime
-						control={eventUpdateForm.control}
-						name='event_datetime'
-						label='Event Date & Time *'
-						error={eventUpdateForm.formState.errors.event_datetime}
-						required
-					/>
-					<Input
-						label='Location'
-						{...eventUpdateForm.register("location")}
-						placeholder='e.g., Central Park, New York'
-					/>
-					{/* <Input
-						label='Location URL (optional)'
-						{...eventUpdateForm.register("location_url")}
-						placeholder='https://maps.google.com/...'
-						type='url'
-						error={eventUpdateForm.formState.errors.location_url?.message}
-					/> */}
-				</div>
-			:	<div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
-					<div>
-						<p className='text-tertiary'>Date & Time</p>
-						<p className='font-semibold text-primary'>
-							{eventDateTime.date} at {eventDateTime.time}
-						</p>
+			{event.location &&
+				(isEditing ?
+					<div className='space-y-4'>
+						<Map
+							label='Location'
+							onLocationSelect={location => {
+								eventUpdateForm.setValue("location", location, {
+									shouldValidate: true,
+									shouldDirty: true,
+								});
+							}}
+							selectedLocation={eventUpdateForm.watch("location")}
+						/>
 					</div>
-					{event.location && (
+				:	<div className='space-y-4'>
 						<div>
 							<p className='text-tertiary'>Location</p>
-							{event.location_url ?
-								<a
-									href={event.location_url}
-									target='_blank'
-									rel='noopener noreferrer'
-									className='font-semibold text-accent hover:text-accent-secondary hover:underline transition-all duration-200'>
-									{event.location} →
-								</a>
-							:	<p className='font-semibold text-primary'>{event.location}</p>}
+							<p
+								className='font-semibold text-primary underline cursor-pointer flex items-center gap-2 hover:text-accent transition-all duration-200'
+								onClick={openMapInNewTab}>
+								{event.location.address}
+								<FaExternalLinkAlt />
+							</p>
 						</div>
-					)}
-				</div>
-			}
+						<Map
+							initialLocation={event.location}
+							height='300px'
+							canSearch={false}
+						/>
+					</div>)}
 
 			{/* Save/Cancel Buttons */}
 			{isEditing && (
@@ -278,18 +275,41 @@ export const EventHeader = ({
 
 			{/* RSVP Button Group */}
 			{currentUserParticipant && !isEditing && (
-				<div className='mt-3 md:mt-6 pt-3 md:pt-6 border-t border-border'>
-					<p className='text-sm font-medium text-primary mb-2'>
-						Your RSVP Status:{" "}
-						<span className='capitalize'>
-							{currentUserParticipant.rsvp_status}
-						</span>
-					</p>
-					<RSVPButtonGroup
-						currentStatus={currentUserParticipant.rsvp_status}
-						onRSVPChange={onRSVPChange}
-						updatingRSVP={updatingRSVP}
-					/>
+				<div className='flex flex-col md:flex-row gap-4 justify-between w-full mt-3 md:mt-6 pt-3 md:pt-6 border-t border-border'>
+					<div>
+						<p className='text-sm font-medium text-primary mb-2'>
+							Your RSVP Status:{" "}
+							<span className='capitalize'>
+								{currentUserParticipant.rsvp_status}
+							</span>
+						</p>
+						<RSVPButtonGroup
+							currentStatus={currentUserParticipant.rsvp_status}
+							onRSVPChange={onRSVPChange}
+							updatingRSVP={updatingRSVP}
+						/>
+					</div>
+					<div className='flex flex-col'>
+						<p className='text-sm font-medium text-primary mb-2'>
+							Add to Calendar
+						</p>
+						<div className='flex gap-2 items-center'>
+							<a
+								href={generateGoogleCalendarUrl(event)}
+								target='_blank'
+								rel='noopener noreferrer'
+								className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 min-h-[44px]'>
+								<FaGoogle className='w-4 h-4' />
+								<span className='block'>Google</span>
+							</a>
+							<button
+								onClick={() => downloadAppleCalendar(event)}
+								className='flex items-center gap-2 px-3 py-2 bg-tertiary hover:bg-secondary hover:shadow-md active:scale-[0.98] text-primary rounded-md text-sm transition-all duration-200 cursor-pointer min-h-[44px]'>
+								<FaApple className='w-4 h-4' />
+								<span className='block'>Apple</span>
+							</button>
+						</div>
+					</div>
 				</div>
 			)}
 		</motion.div>

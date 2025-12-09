@@ -359,8 +359,11 @@ export const EventDetailPage = () => {
 		theme?: string | null;
 		description?: string | null;
 		event_datetime?: string;
-		location?: string | null;
-		location_url?: string | null;
+		location?: {
+			lat: number;
+			lng: number;
+			address: string;
+		} | null;
 	}) => {
 		if (!eventId) return;
 		await dispatch(updateEvent({ eventId, updates }));
