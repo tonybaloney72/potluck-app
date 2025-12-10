@@ -40,7 +40,7 @@ CREATE TABLE public.event_participants (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   event_id uuid NOT NULL,
   user_id uuid NOT NULL,
-  role text NOT NULL DEFAULT 'guest'::text CHECK (role = ANY (ARRAY['host'::text, 'co_host'::text, 'contributor'::text, 'guest'::text])),
+  role text NOT NULL DEFAULT 'guest'::text CHECK (role = ANY (ARRAY['host'::text, 'co-host'::text, 'contributor'::text, 'guest'::text])),
   rsvp_status text DEFAULT 'pending'::text CHECK (rsvp_status = ANY (ARRAY['pending'::text, 'going'::text, 'not_going'::text, 'maybe'::text])),
   invited_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
   joined_at timestamp with time zone,

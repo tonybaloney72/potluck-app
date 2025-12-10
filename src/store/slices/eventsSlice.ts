@@ -429,7 +429,7 @@ export const addParticipant = createAsyncThunk(
 	}: {
 		eventId: string;
 		userId: string;
-		role?: "host" | "co_host" | "contributor" | "guest";
+		role?: "host" | "co-host" | "contributor" | "guest";
 	}) => {
 		await requireAuth();
 
@@ -680,7 +680,7 @@ export const updateParticipantRole = createAsyncThunk(
 	}: {
 		eventId: string;
 		userId: string;
-		role: "guest" | "contributor" | "co_host"; // Cannot change to/from "host"
+		role: "guest" | "contributor" | "co-host"; // Cannot change to/from "host"
 	}) => {
 		await requireAuth();
 

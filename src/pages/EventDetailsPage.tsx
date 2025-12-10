@@ -338,7 +338,7 @@ export const EventDetailPage = () => {
 			case "participant": {
 				const participantData = data as {
 					friendId: string;
-					role?: "guest" | "contributor" | "co_host";
+					role?: "guest" | "contributor" | "co-host";
 				};
 				if (!addingParticipant) {
 					await dispatch(
@@ -389,7 +389,7 @@ export const EventDetailPage = () => {
 			updateParticipantRole({
 				eventId,
 				userId,
-				role: role as "guest" | "contributor" | "co_host",
+				role: role as "guest" | "contributor" | "co-host",
 			}),
 		);
 	};
@@ -421,7 +421,7 @@ export const EventDetailPage = () => {
 									Delete Event
 								</Button>
 							)}
-							{isEventCreator && isEditing && (
+							{isEditing && (
 								<Button
 									className='flex items-center justify-center gap-2  sm:w-auto min-h-[44px]'
 									type='button'

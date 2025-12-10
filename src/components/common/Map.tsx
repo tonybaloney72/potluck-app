@@ -190,7 +190,8 @@ export const Map = ({
 					autocompleteContainerRef.current,
 					apiKey,
 					{
-						placeholder: "Search for an address...",
+						placeholder:
+							selectedLocation?.address || "Search for an address...",
 						debounceDelay: 300,
 						filter: {
 							countrycode: ["us"],

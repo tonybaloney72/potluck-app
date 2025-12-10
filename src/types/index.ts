@@ -79,7 +79,7 @@ export interface Notification {
 	created_at: string;
 }
 
-export type EventRole = "host" | "co_host" | "contributor" | "guest";
+export type EventRole = "host" | "co-host" | "contributor" | "guest";
 export type RSVPStatus = "pending" | "going" | "not_going" | "maybe";
 
 export interface Event {

@@ -28,7 +28,7 @@ export const RoleSelector = ({
 			description: "Can view, RSVP, and add contributions",
 		},
 		{
-			value: "co_host",
+			value: "co-host",
 			label: "Co-Host",
 			description:
 				"Can view, RSVP, add contributions, and manage event details",
@@ -123,9 +123,9 @@ export const RoleSelector = ({
 									onMouseEnter={() => setHoveredRole(role.value)}
 									onMouseLeave={() => setHoveredRole(null)}
 									className={`w-full px-3 py-2 text-left transition-all duration-200 ${
-										value === role.value
-											? "bg-accent/20 text-accent font-medium"
-											: "text-primary hover:bg-tertiary hover:shadow-sm"
+										value === role.value ?
+											"bg-accent/20 text-accent font-medium"
+										:	"text-primary hover:bg-tertiary hover:shadow-sm"
 									} hover:cursor-pointer active:scale-[0.98]`}
 									role='option'
 									aria-selected={value === role.value}

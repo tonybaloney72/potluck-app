@@ -3,12 +3,12 @@ import { supabase } from "../services/supabase";
 
 export const hasManagePermission = (role: EventRole | undefined): boolean => {
 	if (!role) return false;
-	return role === "host" || role === "co_host";
+	return role === "host" || role === "co-host";
 };
 
 export const canAddContributions = (role: EventRole | undefined): boolean => {
 	if (!role) return false;
-	return role === "host" || role === "co_host" || role === "contributor";
+	return role === "host" || role === "co-host" || role === "contributor";
 };
 
 export const canDeleteItem = (
