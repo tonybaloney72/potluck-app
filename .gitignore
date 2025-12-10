@@ -43,7 +43,7 @@ Thumbs.db
 
 # Project documentation and guides
 *GUIDE.md
-PROJECT_NOTES.md
+*NOTES.md
 .cursor/rules/project-rules.mdc
 *.local.md
 *.sql

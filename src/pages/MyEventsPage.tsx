@@ -12,7 +12,6 @@ import {
 	selectInvitedEvents,
 	selectEventsById,
 } from "../store/selectors/eventsSelectors";
-import { Button } from "../components/common/Button";
 import { EventCard } from "../components/events/EventCard";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import {
@@ -158,15 +157,10 @@ export const MyEventsPage = () => {
 		return (
 			<div className='bg-secondary p-4 md:p-8'>
 				<div className='max-w-7xl mx-auto'>
-					<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8'>
+					<div className='flex items-start sm:items-center mb-6 md:mb-8'>
 						<h1 className='text-2xl md:text-3xl font-bold text-primary'>
 							My Events
 						</h1>
-						<Button
-							onClick={() => navigate("/create-event")}
-							className='w-full sm:w-auto min-h-[44px]'>
-							Create New Event
-						</Button>
 					</div>
 					<ErrorDisplay
 						title='Failed to load events'
@@ -182,17 +176,10 @@ export const MyEventsPage = () => {
 	return (
 		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 			<div className='max-w-7xl mx-auto'>
-				<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8'>
-					<div className='flex items-center gap-3'>
-						<h1 className='text-2xl md:text-3xl font-bold text-primary'>
-							My Events
-						</h1>
-					</div>
-					<Button
-						onClick={() => navigate("/create-event")}
-						className='w-full sm:w-auto min-h-[44px]'>
-						Create New Event
-					</Button>
+				<div className='flex items-start sm:items-center mb-6 md:mb-8'>
+					<h1 className='text-2xl md:text-3xl font-bold text-primary'>
+						My Events
+					</h1>
 				</div>
 
 				{error && hasEvents && (

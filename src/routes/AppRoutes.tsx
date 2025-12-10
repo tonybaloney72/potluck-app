@@ -6,6 +6,7 @@ import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { Layout } from "../components/layout/Layout";
 import { FriendsPage } from "../pages/FriendsPage";
 import { MessagesPage } from "../pages/MessagesPage";
+import { HomePage } from "../pages/HomePage";
 import { MyEventsPage } from "../pages/MyEventsPage";
 import { EventDetailPage } from "../pages/EventDetailsPage";
 import { CreateEventPage } from "../pages/CreateEventPage";
@@ -19,6 +20,18 @@ export function AppRoutes() {
 		<Routes>
 			<Route
 				path='/'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<PageTransition>
+								<HomePage />
+							</PageTransition>
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/events'
 				element={
 					<Layout>
 						<ProtectedRoute>

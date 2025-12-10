@@ -22,16 +22,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		ref,
 	) => {
 		const baseStyles =
-			"px-4 py-2 rounded-md font-medium transition-all duration-200 cursor-pointer active:scale-[0.98]";
+			"px-4 py-2 rounded-md font-medium transition-all duration-200 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed";
 
 		const variants = {
 			primary:
-				"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
+				"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50",
 			secondary:
-				"bg-tertiary text-primary hover:bg-border hover:shadow-md disabled:bg-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
-			toggle: active
-				? "bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md"
-				: "bg-tertiary text-primary hover:bg-border hover:shadow-sm",
+				"bg-tertiary text-primary hover:bg-primary hover:shadow-md disabled:bg-tertiary disabled:opacity-50",
+			toggle:
+				active ?
+					"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50"
+				:	"bg-tertiary text-primary hover:bg-primary hover:shadow-sm disabled:bg-tertiary disabled:opacity-50",
 		};
 
 		// Default loading text based on context, or use provided loadingText
@@ -40,12 +41,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		return (
 			<button
 				ref={ref}
-				className={`${baseStyles} ${variants[variant]} ${className}`}
+				className={`${baseStyles} ${variants[variant]} ${className} `}
 				disabled={disabled || loading}
 				aria-busy={loading}
 				aria-disabled={disabled || loading}
 				{...props}>
-				{loading ? (
+				{loading ?
 					<div className='flex items-center justify-center gap-2'>
 						<div
 							className='animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent'
@@ -57,9 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 							<span aria-live='polite'>{defaultLoadingText}</span>
 						)}
 					</div>
-				) : (
-					children
-				)}
+				:	children}
 			</button>
 		);
 	},

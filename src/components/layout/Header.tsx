@@ -13,11 +13,13 @@ import {
 	FaSun,
 	FaBars,
 	FaTimes,
+	FaPlus,
 } from "react-icons/fa";
 import { LuCookingPot } from "react-icons/lu";
 import { useTheme } from "../../context/ThemeContext";
 import type { ThemePreference } from "../../types";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
+import { Button } from "../common/Button";
 
 export const Header = () => {
 	const { profile } = useAppSelector(state => state.auth);
@@ -47,6 +49,11 @@ export const Header = () => {
 
 	const handleMobileNavClick = () => {
 		setIsMobileMenuOpen(false);
+	};
+
+	const handleCreateEvent = () => {
+		setIsMobileMenuOpen(false);
+		navigate("/create-event");
 	};
 
 	// Close dropdown when clicking outside
@@ -122,6 +129,13 @@ export const Header = () => {
 
 								{/* Desktop Navigation */}
 								<div className='hidden md:flex items-center gap-4'>
+									<Button
+										onClick={handleCreateEvent}
+										variant='primary'
+										className='w-full flex items-center gap-3 justify-center min-h-[44px]'>
+										<FaPlus className='w-5 h-5' aria-hidden='true' />
+										<span>New Event</span>
+									</Button>
 									<Link
 										to='/friends'
 										className='text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
@@ -145,15 +159,13 @@ export const Header = () => {
 												aria-expanded={isDropdownOpen}
 												aria-haspopup='menu'
 												type='button'>
-												{profile?.avatar_url ? (
+												{profile?.avatar_url ?
 													<img
 														src={profile.avatar_url}
 														alt={`${profile?.name || "User"} avatar`}
 														className='w-full h-full rounded-full object-cover'
 													/>
-												) : (
-													<FaUser className='w-5 h-5' aria-hidden='true' />
-												)}
+												:	<FaUser className='w-5 h-5' aria-hidden='true' />}
 											</button>
 
 											<AnimatePresence>
@@ -174,20 +186,19 @@ export const Header = () => {
 																transition={{ delay: 0.1 }}
 																className='px-4 py-3 border-b border-border'>
 																<div className='flex items-center gap-3'>
-																	{profile.avatar_url ? (
+																	{profile.avatar_url ?
 																		<img
 																			src={profile.avatar_url}
 																			alt={`${profile.name} avatar`}
 																			className='w-8 h-8 rounded-full object-cover'
 																		/>
-																	) : (
-																		<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
+																	:	<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
 																			<FaUser
 																				className='w-4 h-4 text-primary'
 																				aria-hidden='true'
 																			/>
 																		</div>
-																	)}
+																	}
 																	<span className='text-sm font-medium text-primary truncate'>
 																		{profile.name.split(" ")[0]}
 																	</span>
@@ -224,17 +235,16 @@ export const Header = () => {
 																	theme === "dark" ? "light" : "dark"
 																} mode`}
 																type='button'>
-																{theme === "dark" ? (
+																{theme === "dark" ?
 																	<FaSun
 																		className='w-4 h-4'
 																		aria-hidden='true'
 																	/>
-																) : (
-																	<FaMoon
+																:	<FaMoon
 																		className='w-4 h-4'
 																		aria-hidden='true'
 																	/>
-																)}
+																}
 																{theme === "dark" ? "Light Mode" : "Dark Mode"}
 															</motion.button>
 															<motion.button
@@ -270,11 +280,9 @@ export const Header = () => {
 										aria-expanded={isMobileMenuOpen}
 										aria-controls='mobile-menu'
 										type='button'>
-										{isMobileMenuOpen ? (
+										{isMobileMenuOpen ?
 											<FaTimes className='w-6 h-6' aria-hidden='true' />
-										) : (
-											<FaBars className='w-6 h-6' aria-hidden='true' />
-										)}
+										:	<FaBars className='w-6 h-6' aria-hidden='true' />}
 									</button>
 								</div>
 							</div>
@@ -324,6 +332,13 @@ export const Header = () => {
 
 								{/* Navigation Links */}
 								<nav className='p-4 space-y-2' aria-label='Mobile navigation'>
+									<Button
+										onClick={handleCreateEvent}
+										variant='primary'
+										className='w-full flex items-center gap-3 justify-center min-h-[44px]'>
+										<FaPlus className='w-5 h-5' aria-hidden='true' />
+										<span>New Event</span>
+									</Button>
 									<Link
 										to='/'
 										onClick={handleMobileNavClick}
@@ -351,20 +366,19 @@ export const Header = () => {
 								<div className='p-4 border-t border-border space-y-2'>
 									{profile?.name && (
 										<div className='flex items-center gap-3 px-4 py-3 mb-2'>
-											{profile.avatar_url ? (
+											{profile.avatar_url ?
 												<img
 													src={profile.avatar_url}
 													alt={`${profile.name} avatar`}
 													className='w-10 h-10 rounded-full object-cover'
 												/>
-											) : (
-												<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
+											:	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
 													<FaUser
 														className='w-5 h-5 text-primary'
 														aria-hidden='true'
 													/>
 												</div>
-											)}
+											}
 											<span className='text-sm font-medium text-primary truncate'>
 												{profile.name}
 											</span>
@@ -389,11 +403,9 @@ export const Header = () => {
 											theme === "dark" ? "light" : "dark"
 										} mode`}
 										type='button'>
-										{theme === "dark" ? (
+										{theme === "dark" ?
 											<FaSun className='w-5 h-5' aria-hidden='true' />
-										) : (
-											<FaMoon className='w-5 h-5' aria-hidden='true' />
-										)}
+										:	<FaMoon className='w-5 h-5' aria-hidden='true' />}
 										<span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
 									</button>
 									<button

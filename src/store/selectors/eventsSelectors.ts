@@ -101,6 +101,26 @@ export const selectEventById = createSelector(
 	},
 );
 
+// Get all upcoming events (future events only, sorted by date)
+export const selectUpcomingEvents = createSelector(
+	[selectAllEvents],
+	allEvents => {
+		const now = new Date();
+		return allEvents.filter(event => {
+			const eventDate = new Date(event.event_datetime);
+			return eventDate > now;
+		});
+	},
+);
+
+// Get upcoming events limited to a specific count (for homepage, etc.)
+export const selectUpcomingEventsLimited = createSelector(
+	[selectUpcomingEvents, (_state: RootState, limit: number = 3) => limit],
+	(upcomingEvents, limit) => {
+		return upcomingEvents.slice(0, limit);
+	},
+);
+
 // Check if event is being fetched (prevents duplicate fetches)
 export const selectIsEventFetching = createSelector(
 	[
