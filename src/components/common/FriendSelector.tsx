@@ -117,7 +117,7 @@ export const FriendSelector = ({
 		return availableFriends.filter(
 			friend =>
 				friend.name?.toLowerCase().includes(query) ||
-				friend.location?.toLowerCase().includes(query) ||
+				friend.location?.address?.toLowerCase().includes(query) ||
 				friend.email?.toLowerCase().includes(query),
 		);
 	}, [availableFriends, searchQuery, maxVisibleFriends]);
@@ -301,7 +301,7 @@ export const FriendSelector = ({
 														key={friend.id}
 														className='p-3 hover:bg-tertiary hover:shadow-sm rounded-md transition-all duration-200'
 														role='option'
-														aria-label={`Add ${friend.name || "Unknown User"}${friend.location ? ` from ${friend.location}` : ""}`}>
+														aria-label={`Add ${friend.name || "Unknown User"}${friend.location ? ` from ${friend.location.address}` : ""}`}>
 														<div className='flex items-center justify-between gap-3'>
 															{/* Friend Info */}
 															<div className='flex items-center gap-3 flex-1 min-w-0'>
@@ -324,7 +324,7 @@ export const FriendSelector = ({
 																	</p>
 																	{friend.location && (
 																		<p className='text-xs text-secondary truncate'>
-																			{friend.location}
+																			{friend.location.address}
 																		</p>
 																	)}
 																</div>

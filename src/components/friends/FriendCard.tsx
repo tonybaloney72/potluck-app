@@ -303,7 +303,7 @@ export const FriendCard = ({
 						{subtitle ?
 							<p className='text-sm text-secondary'>{subtitle}</p>
 						:	profile?.location && (
-								<p className='text-sm text-secondary'>{profile.location}</p>
+								<p className='text-sm text-secondary'>{profile.location.address}</p>
 							)
 						}
 					</div>

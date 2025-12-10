@@ -5,7 +5,11 @@ export interface Profile {
 	email: string | null;
 	name: string | null;
 	avatar_url: string | null;
-	location: string | null;
+	location: {
+		lat: number;
+		lng: number;
+		address: string;
+	} | null;
 	theme_preference: ThemePreference;
 	has_created_event: boolean;
 	has_rsvped_to_event: boolean;

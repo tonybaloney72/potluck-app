@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,9 +9,10 @@ import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { SkeletonProfilePage } from "../components/common/Skeleton";
 import { AvatarUpload } from "../components/common/AvatarUpload";
+import { Map } from "../components/common/Map";
 import { FaArrowLeft } from "react-icons/fa";
 
-// Zod schema: no numbers allowed in name; location allows address characters
+// Zod schema: no numbers allowed in name; location is optional object
 const profileSchema = z.object({
 	name: z
 		.string()
@@ -20,10 +21,14 @@ const profileSchema = z.object({
 			/^[a-zA-Z\s'-]+$/,
 			"Name cannot contain numbers or special characters",
 		),
-	location: z.string().regex(
-		/^$|^[\w\s.,'#/()-]+$/, // Allow empty string OR word chars, spaces, and common address punctuation
-		"Location contains invalid characters",
-	),
+	location: z
+		.object({
+			lat: z.number(),
+			lng: z.number(),
+			address: z.string(),
+		})
+		.nullable()
+		.optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -38,13 +43,21 @@ export const ProfilePage = () => {
 		handleSubmit,
 		formState: { errors, isDirty, isSubmitting },
 		reset,
+		setValue,
 	} = useForm<ProfileFormData>({
 		resolver: zodResolver(profileSchema),
 		defaultValues: {
 			name: profile?.name || "",
-			location: profile?.location || "",
+			location: profile?.location || null,
 		},
 	});
+
+	// Track selected location separately for Map component
+	const [selectedLocation, setSelectedLocation] = useState<{
+		lat: number;
+		lng: number;
+		address: string;
+	} | null>(profile?.location || null);
 
 	// Clear errors when component mounts
 	useEffect(() => {
@@ -58,10 +71,11 @@ export const ProfilePage = () => {
 
 		// Only reset if profile ID actually changed (new profile loaded)
 		// This prevents unnecessary resets when profile data updates but ID stays same
+		const location = profile.location || null;
 		reset(
 			{
 				name: profile.name || "",
-				location: profile.location || "",
+				location,
 			},
 			{
 				keepDefaultValues: false, // Update default values so isDirty works correctly
@@ -73,6 +87,7 @@ export const ProfilePage = () => {
 				keepSubmitCount: false,
 			},
 		);
+		setSelectedLocation(location);
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [profile?.id]); // Only reset when profile ID changes (initial load or user switch)
@@ -83,10 +98,11 @@ export const ProfilePage = () => {
 		// Reset form with saved data to update default values
 		// This should make isDirty work correctly for future edits
 		if (updateProfile.fulfilled.match(result) && result.payload) {
+			const location = result.payload.location || null;
 			reset(
 				{
 					name: result.payload.name || "",
-					location: result.payload.location || "",
+					location,
 				},
 				{
 					keepDefaultValues: false, // This is key - update defaults so isDirty works
@@ -98,6 +114,7 @@ export const ProfilePage = () => {
 					keepSubmitCount: false,
 				},
 			);
+			setSelectedLocation(location);
 		}
 	};
 
@@ -133,12 +150,16 @@ export const ProfilePage = () => {
 						error={errors.name?.message}
 						helperText='Your display name (letters, spaces, hyphens, and apostrophes only)'
 					/>
-					<Input
+					<Map
 						label='Location'
-						placeholder='e.g., 123 Main St., Los Angeles, CA 90001'
-						{...register("location")}
-						error={errors.location?.message}
-						helperText='Optional: Your address or location (supports full addresses with numbers and common punctuation)'
+						onLocationSelect={location => {
+							setSelectedLocation(location);
+							setValue("location", location, {
+								shouldValidate: true,
+								shouldDirty: true,
+							});
+						}}
+						selectedLocation={selectedLocation}
 					/>
 
 					<Button
