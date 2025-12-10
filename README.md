@@ -11,7 +11,9 @@ Potluck App is a modern web application designed to simplify the organization of
 ### Current Features (Phase 1, 2, 3, 4, 5, 6 & 7 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
-- ✅ **User Profiles** - Customizable profiles with avatars, names, and location
+- ✅ **User Profiles** - Customizable profiles with avatars, names, and interactive location selection
+  - ✅ **Interactive Location Map** - Select location using map interface with address search
+  - ✅ **Location Storage** - Locations stored as JSONB with coordinates (lat, lng) and formatted address
 - ✅ **Theme System** - Per-user theme preferences (light, dark, or system)
 - ✅ **Protected Routes** - Secure access to authenticated pages with deep linking support
 - ✅ **Responsive Design** - Modern UI built with Tailwind CSS
@@ -30,6 +32,8 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **RSVP Notifications** - Hosts receive notifications when attendees RSVP to their events
 - ✅ **Event Management** - Create, edit, and delete potluck events with full event details
   - ✅ **Inline Event Editing** - Edit event title, theme, description, location, and date/time directly from event page
+  - ✅ **Interactive Location Selection** - Select event locations using interactive map with address search and click-to-place functionality
+  - ✅ **Location Storage** - Event locations stored as JSONB with coordinates (lat, lng) and formatted address
   - ✅ **Real-time Event Updates** - Instant synchronization of event changes across all viewers
   - ✅ **Calendar Integration** - Add events to Google Calendar or download for Apple Calendar
 - ✅ **RSVP System** - Attendees can RSVP with status (going, maybe, not going, pending)
@@ -58,10 +62,15 @@ Potluck App is a modern web application designed to simplify the organization of
 - **Styling**: Tailwind CSS v4
 - **Animations**: Motion (Framer Motion)
 - **Routing**: React Router v7
+- **Maps & Geocoding**:
+  - **Leaflet** - Interactive map library for displaying and interacting with maps
+  - **React Leaflet** - React bindings for Leaflet
+  - **Geoapify** - Geocoding and reverse geocoding API for address search and coordinate conversion
 - **Backend & Database**: Supabase
   - Authentication
   - PostgreSQL Database
   - Row Level Security (RLS)
+  - JSONB support for structured location data
 - **Build Tool**: Vite
 - **Language**: TypeScript
 
@@ -94,7 +103,10 @@ Potluck App is a modern web application designed to simplify the organization of
    ```env
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_GEOAPIFY_API_KEY=your_geoapify_api_key
    ```
+
+   **Note**: Get your Geoapify API key from [geoapify.com](https://www.geoapify.com/). The free tier includes geocoding and map tiles.
 
 4. Set up Supabase:
    - Create a Supabase project at [supabase.com](https://supabase.com)
@@ -115,7 +127,7 @@ Potluck App is a modern web application designed to simplify the organization of
 potluck-app/
 ├── src/
 │   ├── components/      # Reusable UI components
-│   │   ├── common/      # Common components (Button, Input, etc.)
+│   │   ├── common/      # Common components (Button, Input, Map, etc.)
 │   │   └── layout/     # Layout components (Header, Layout)
 │   ├── context/        # React contexts (Theme, etc.)
 │   ├── features/       # Feature-specific code
@@ -198,11 +210,28 @@ This project is currently in active development.
 - **Mobile Styling Fixes**: Resolved mobile-specific styling issues for better responsive experience across devices
 - **Improved Language**: Enhanced copy and messaging on MyEventsPage for clearer user communication
 
+### Location & Mapping Features
+
+- **Interactive Map Component**: Custom Map component built with Leaflet and React Leaflet for location selection
+  - **Address Search**: Integrated Geoapify autocomplete for searching and selecting addresses
+  - **Click-to-Place**: Click anywhere on the map to set a location with automatic reverse geocoding
+  - **Visual Feedback**: Map markers and zoom adjustments for selected locations
+  - **US-Only Filtering**: Address search filtered to US locations for better relevance
+
+- **Location Data Structure**: Unified JSONB location format across events and profiles
+  - **Structured Storage**: Locations stored as `{lat: number, lng: number, address: string}` in PostgreSQL JSONB columns
+  - **Event Locations**: Events use JSONB location field for complete location data (coordinates + address)
+  - **Profile Locations**: User profiles updated to use same JSONB structure for consistency
+  - **Type Safety**: TypeScript interfaces ensure type safety for location data throughout the application
+
+- **Geocoding Integration**:
+  - **Forward Geocoding**: Convert addresses to coordinates via Geoapify autocomplete
+  - **Reverse Geocoding**: Convert map clicks (coordinates) to formatted addresses
+  - **Fallback Handling**: Graceful fallback to coordinate display if geocoding fails
+
 ## Future Plans
 
 - Support for additional event types beyond potlucks
-- Mobile app (React Native)
-- Advanced event features (recurring events, event templates)
 - Social features (event discovery, public events)
 - Integration with calendar applications
 
