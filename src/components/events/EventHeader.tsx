@@ -308,7 +308,7 @@ export const EventHeader = ({
 						onClick={handleCancel}
 						disabled={updatingEvent}>
 						<FaTimes />
-						Cancel
+						Discard Changes
 					</Button>
 					<Button
 						className='flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]'

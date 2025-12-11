@@ -401,14 +401,51 @@ export const EventDetailPage = () => {
 			await handleUpdateEvent({
 				status: "completed",
 			});
+			setIsEditing(false);
 		} catch (error) {
 			console.error("Failed to update event:", error);
+		}
+	};
+
+	const handleCancelEvent = async () => {
+		try {
+			await handleUpdateEvent({
+				status: "cancelled",
+			});
+			setIsEditing(false);
+		} catch (error) {
+			console.error("Failed to cancel event:", error);
+		}
+	};
+
+	const handleRestoreEvent = async () => {
+		try {
+			await handleUpdateEvent({
+				status: "active",
+			});
+		} catch (error) {
+			console.error("Failed to restore event:", error);
 		}
 	};
 
 	const isEventCreator = event.created_by === user?.id;
 	const canEdit =
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
+
+	// Check if event has started or ended (for Mark as Complete visibility)
+	const canMarkComplete = (() => {
+		if (!event) return false;
+		if (event.status !== "active") return false;
+		if (!isEditing) return false;
+		if (!canEdit) return false; // Must be host or co-host
+
+		const now = new Date();
+		const eventStart = new Date(event.event_datetime);
+		const eventEnd = event.end_datetime ? new Date(event.end_datetime) : null;
+
+		// Event must have started OR have an end time that has passed
+		return eventStart < now || (eventEnd !== null && eventEnd < now);
+	})();
 
 	return (
 		<main
@@ -425,36 +462,44 @@ export const EventDetailPage = () => {
 					</button>
 					{canEdit && (
 						<div className='flex flex-wrap gap-2 w-full sm:w-auto'>
-							{isEditing && (
-								<Button
-									className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'
-									type='button'
-									variant='secondary'
-									onClick={() => setIsEditing(false)}
-									disabled={updatingEvent}>
-									<FaTimes className='w-4 h-4' />
-									<span className='hidden sm:inline'>Cancel</span>
-								</Button>
+							{/* Active Event - Editing Mode */}
+							{event.status === "active" && isEditing && (
+								<>
+									<Button
+										className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'
+										type='button'
+										variant='secondary'
+										onClick={() => setIsEditing(false)}
+										disabled={updatingEvent}>
+										<FaTimes className='w-4 h-4' />
+										<span className='hidden sm:inline'>Discard Changes</span>
+										<span className='sm:hidden'>Discard</span>
+									</Button>
+									{canMarkComplete && (
+										<Button
+											variant='secondary'
+											onClick={handleMarkComplete}
+											className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'>
+											<FaCheck className='w-4 h-4' />
+											<span className='hidden sm:inline'>Mark as Complete</span>
+											<span className='sm:hidden'>Complete</span>
+										</Button>
+									)}
+									{isEventCreator && (
+										<Button
+											variant='secondary'
+											onClick={handleCancelEvent}
+											className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'>
+											<FaTimes className='w-4 h-4' />
+											<span className='hidden sm:inline'>Cancel Event</span>
+											<span className='sm:hidden'>Cancel</span>
+										</Button>
+									)}
+								</>
 							)}
-							{isEditing && (
-								<Button
-									variant='secondary'
-									onClick={handleMarkComplete}
-									className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'>
-									<FaCheck className='w-4 h-4' />
-									<span className='hidden sm:inline'>Mark as Completed</span>
-								</Button>
-							)}
-							{isEventCreator && isEditing && (
-								<Button
-									variant='secondary'
-									onClick={() => handleDelete("deleteEvent")}
-									className='flex items-center justify-center gap-2 flex-1 sm:flex-none text-sm text-red-600 hover:text-red-700 min-h-[44px]'>
-									<FaTrash className='w-4 h-4' />
-									<span className='hidden sm:inline'>Delete</span>
-								</Button>
-							)}
-							{!isEditing && (
+
+							{/* Active Event - View Mode */}
+							{event.status === "active" && !isEditing && (
 								<Button
 									variant='secondary'
 									onClick={() => setIsEditing(true)}
@@ -463,6 +508,56 @@ export const EventDetailPage = () => {
 									<span className='hidden sm:inline'>Edit Event</span>
 									<span className='sm:hidden'>Edit</span>
 								</Button>
+							)}
+
+							{/* Cancelled Event - View Mode */}
+							{event.status === "cancelled" && !isEditing && (
+								<>
+									{isEventCreator && (
+										<Button
+											variant='secondary'
+											onClick={handleRestoreEvent}
+											className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'>
+											<FaCheck className='w-4 h-4' />
+											<span className='hidden sm:inline'>Restore Event</span>
+											<span className='sm:hidden'>Restore</span>
+										</Button>
+									)}
+									<Button
+										variant='secondary'
+										onClick={() => setIsEditing(true)}
+										className='flex items-center justify-center gap-2 flex-1 sm:flex-none text-sm min-h-[44px]'>
+										<FaEdit className='w-4 h-4' />
+										<span className='hidden sm:inline'>Edit</span>
+										<span className='sm:hidden'>Edit</span>
+									</Button>
+									{isEventCreator && (
+										<Button
+											variant='secondary'
+											onClick={() => handleDelete("deleteEvent")}
+											className='flex items-center justify-center gap-2 flex-1 sm:flex-none text-sm text-red-600 hover:text-red-700 min-h-[44px]'>
+											<FaTrash className='w-4 h-4' />
+											<span className='hidden sm:inline'>Delete</span>
+											<span className='sm:hidden'>Delete</span>
+										</Button>
+									)}
+								</>
+							)}
+
+							{/* Cancelled Event - Editing Mode */}
+							{event.status === "cancelled" && isEditing && (
+								<>
+									<Button
+										className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'
+										type='button'
+										variant='secondary'
+										onClick={() => setIsEditing(false)}
+										disabled={updatingEvent}>
+										<FaTimes className='w-4 h-4' />
+										<span className='hidden sm:inline'>Discard Changes</span>
+										<span className='sm:hidden'>Discard</span>
+									</Button>
+								</>
 							)}
 						</div>
 					)}
