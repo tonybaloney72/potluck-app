@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import type { EventParticipant, EventRole } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
 import { DeleteButton } from "../common/DeleteButton";
@@ -27,6 +28,7 @@ export const ParticipantCard = ({
 	onUpdateParticipantRole,
 	updatingRole,
 }: ParticipantCardProps) => {
+	const navigate = useNavigate();
 	const [isFriendOpen, setIsFriendOpen] = useState(false);
 	const [openAbove, setOpenAbove] = useState(false);
 	const friendCardRef = useRef<HTMLDivElement>(null);
@@ -90,12 +92,6 @@ export const ParticipantCard = ({
 		return () => clearTimeout(timeoutId);
 	}, [isFriendOpen]);
 
-	const handleToggleFriend = () => {
-		// Prevent opening friend card for current user's own card
-		if (!isNotCurrentUser) return;
-		setIsFriendOpen(!isFriendOpen);
-	};
-
 	return (
 		<article
 			className='p-3 bg-secondary rounded-lg relative'
@@ -123,21 +119,35 @@ export const ParticipantCard = ({
 
 				{/* Main content */}
 				<div className='flex gap-3 pr-8 sm:pr-0'>
-					<span
-						onClick={handleToggleFriend}
-						className={isNotCurrentUser ? "cursor-pointer" : "cursor-default"}>
+					<button
+						onClick={e => {
+							if (isNotCurrentUser && participant.user?.id) {
+								e.stopPropagation();
+								navigate(`/profile/${participant.user.id}`);
+							}
+						}}
+						className={
+							isNotCurrentUser ?
+								"cursor-pointer hover:opacity-80 transition-opacity"
+							:	"cursor-default"
+						}>
 						<Avatar user={participant.user} size='md' />
-					</span>
+					</button>
 					<div className='flex-1 min-w-0'>
-						<p
+						<button
+							onClick={e => {
+								if (isNotCurrentUser && participant.user?.id) {
+									e.stopPropagation();
+									navigate(`/profile/${participant.user.id}`);
+								}
+							}}
 							className={
 								isNotCurrentUser ?
-									"font-semibold text-primary mb-1 sm:mb-0 cursor-pointer"
-								:	"font-semibold text-primary mb-1 sm:mb-0"
-							}
-							onClick={handleToggleFriend}>
+									"font-semibold text-primary mb-1 sm:mb-0 cursor-pointer hover:opacity-80 transition-opacity text-left"
+								:	"font-semibold text-primary mb-1 sm:mb-0 text-left"
+							}>
 							{participant.user?.name || "Unknown"}
-						</p>
+						</button>
 						{/* Mobile: Stack role and RSVP vertically */}
 						<div className='flex flex-col gap-1 sm:gap-2'>
 							<div className='flex items-center gap-2'>

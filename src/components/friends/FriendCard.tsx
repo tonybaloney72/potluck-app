@@ -294,7 +294,13 @@ export const FriendCard = ({
 	return (
 		<>
 			<div className={containerClasses}>
-				<div className='flex items-center gap-3'>
+				<button
+					onClick={() => {
+						if (actualUserId) {
+							navigate(`/profile/${actualUserId}`);
+						}
+					}}
+					className='flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity hover:cursor-pointer'>
 					<Avatar user={profile} size='lg' />
 					<div>
 						<p className='font-medium text-primary'>
@@ -303,12 +309,14 @@ export const FriendCard = ({
 						{subtitle ?
 							<p className='text-sm text-secondary'>{subtitle}</p>
 						:	profile?.location && (
-								<p className='text-sm text-secondary'>{profile.location.address}</p>
+								<p className='text-sm text-secondary'>
+									{profile.location.address}
+								</p>
 							)
 						}
 					</div>
-				</div>
-				{renderActions()}
+				</button>
+				<div onClick={e => e.stopPropagation()}>{renderActions()}</div>
 			</div>
 
 			{/* Confirmation Modal */}

@@ -14,6 +14,7 @@ import { ForgotPassword } from "../pages/ForgotPassword";
 import { PasswordReset } from "../pages/PasswordReset";
 import { EmailVerificationPage } from "../pages/EmailVerificationPage";
 import { ReactivateAccountPage } from "../pages/ReactivateAccountPage";
+import { ViewProfilePage } from "../pages/ViewProfilePage";
 import { PageTransition } from "../components/common/PageTransition";
 
 export function AppRoutes() {
@@ -50,6 +51,18 @@ export function AppRoutes() {
 						<ProtectedRoute>
 							<PageTransition>
 								<ProfilePage />
+							</PageTransition>
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/profile/:userId'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<PageTransition>
+								<ViewProfilePage />
 							</PageTransition>
 						</ProtectedRoute>
 					</Layout>

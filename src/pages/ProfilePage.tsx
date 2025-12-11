@@ -35,6 +35,7 @@ const profileSchema = z.object({
 		})
 		.nullable()
 		.optional(),
+	private: z.boolean().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -56,6 +57,7 @@ export const ProfilePage = () => {
 		defaultValues: {
 			name: profile?.name || "",
 			location: profile?.location || null,
+			private: profile?.private || false,
 		},
 	});
 
@@ -83,6 +85,7 @@ export const ProfilePage = () => {
 			{
 				name: profile.name || "",
 				location,
+				private: profile.private || false,
 			},
 			{
 				keepDefaultValues: false, // Update default values so isDirty works correctly
@@ -110,6 +113,7 @@ export const ProfilePage = () => {
 				{
 					name: result.payload.name || "",
 					location,
+					private: result.payload.private || false,
 				},
 				{
 					keepDefaultValues: false, // This is key - update defaults so isDirty works
@@ -172,6 +176,28 @@ export const ProfilePage = () => {
 						}}
 						selectedLocation={selectedLocation}
 					/>
+
+					{/* Privacy Setting */}
+					<div className='flex items-center justify-between p-4 bg-tertiary rounded-lg border border-border'>
+						<div className='flex-1'>
+							<label
+								htmlFor='private-profile'
+								className='block text-sm font-medium text-primary mb-1'>
+								Private Profile
+							</label>
+							<p className='text-xs text-secondary'>
+								When enabled, only your friends can see your full profile.
+								Others will only see your name and avatar.
+							</p>
+						</div>
+						<input
+							id='private-profile'
+							type='checkbox'
+							{...register("private")}
+							className='w-4 h-4 rounded border-border text-accent focus:ring-accent focus:ring-2 cursor-pointer shrink-0'
+							style={{ minWidth: "auto", minHeight: "auto" }}
+						/>
+					</div>
 
 					<Button
 						variant='primary'

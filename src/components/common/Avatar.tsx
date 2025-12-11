@@ -1,6 +1,6 @@
 interface AvatarProps {
 	user: { avatar_url: string | null; name?: string | null } | null | undefined;
-	size?: "sm" | "md" | "lg";
+	size?: "sm" | "md" | "lg" | "xl";
 	className?: string;
 }
 

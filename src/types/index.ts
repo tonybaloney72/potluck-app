@@ -14,6 +14,7 @@ export interface Profile {
 	has_created_event: boolean;
 	has_rsvped_to_event: boolean;
 	active: boolean;
+	private: boolean;
 	created_at: string;
 	updated_at: string;
 }

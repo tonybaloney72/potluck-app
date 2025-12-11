@@ -327,7 +327,13 @@ export const MessagesPage = () => {
 								className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center'>
 								<FaArrowLeft className='w-5 h-5' />
 							</button>
-							<div className='flex items-center gap-3 flex-1 min-w-0'>
+							<button
+								onClick={() => {
+									if (otherUser?.id) {
+										navigate(`/profile/${otherUser.id}`);
+									}
+								}}
+								className='flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity'>
 								{otherUser?.avatar_url ?
 									<img
 										src={otherUser.avatar_url}
@@ -341,11 +347,17 @@ export const MessagesPage = () => {
 								<p className='font-semibold text-primary truncate'>
 									{otherUser?.name || "Unknown User"}
 								</p>
-							</div>
+							</button>
 						</div>
 
 						{/* Desktop Header */}
-						<div className='hidden md:flex items-center gap-3 pb-4 border-b border-border'>
+						<button
+							onClick={() => {
+								if (otherUser?.id) {
+									navigate(`/profile/${otherUser.id}`);
+								}
+							}}
+							className='hidden md:flex items-center gap-3 pb-4 border-b border-border hover:opacity-80 transition-opacity text-left hover:cursor-pointer'>
 							{otherUser?.avatar_url ?
 								<img
 									src={otherUser.avatar_url}
@@ -361,7 +373,7 @@ export const MessagesPage = () => {
 									{otherUser?.name || "Unknown User"}
 								</p>
 							</div>
-						</div>
+						</button>
 
 						{/* Messages Container - Only scrollable area */}
 						<div
