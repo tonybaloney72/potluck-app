@@ -9,6 +9,7 @@ import {
 	cancelFriendRequest,
 } from "../store/slices/friendsSlice";
 import { getOrCreateConversation } from "../store/slices/conversationsSlice";
+import { fetchUserProfileMetadata } from "../store/slices/usersSlice";
 import { useFriendshipStatus } from "../hooks/useFriendshipStatus";
 import type { Profile } from "../types";
 import { Avatar } from "../components/common/Avatar";
@@ -21,6 +22,7 @@ import {
 	FaEnvelope,
 	FaUserPlus,
 	FaUserMinus,
+	FaUsers,
 } from "react-icons/fa";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 
@@ -30,6 +32,13 @@ export const ViewProfilePage = () => {
 	const dispatch = useAppDispatch();
 	const { profile: _currentUserProfile, user: currentUser } = useAppSelector(
 		state => state.auth,
+	);
+	const friendshipIds = useAppSelector(state => state.friends.friendshipIds);
+	const profileMetadata = useAppSelector(
+		state => state.users.profileMetadata[userId || ""],
+	);
+	const metadataLoading = useAppSelector(
+		state => state.users.metadataLoading[userId || ""] || false,
 	);
 
 	const [profile, setProfile] = useState<Profile | null>(null);
@@ -43,8 +52,20 @@ export const ViewProfilePage = () => {
 
 	// Fetch friendships if not loaded
 	useEffect(() => {
-		dispatch(fetchFriendships());
-	}, [dispatch]);
+		if (friendshipIds.length === 0) {
+			dispatch(fetchFriendships());
+		}
+	}, [dispatch, friendshipIds.length]);
+
+	// Fetch profile metadata (friend count and mutual friends) if not already loaded
+	useEffect(() => {
+		if (!userId || userId === currentUser?.id) return;
+
+		// Only fetch if we don't already have the metadata
+		if (!profileMetadata && !metadataLoading) {
+			dispatch(fetchUserProfileMetadata(userId));
+		}
+	}, [userId, currentUser?.id, profileMetadata, metadataLoading, dispatch]);
 
 	// Fetch user profile
 	useEffect(() => {
@@ -82,7 +103,7 @@ export const ViewProfilePage = () => {
 		};
 
 		fetchProfile();
-	}, [userId, currentUser?.id, navigate]);
+	}, [userId, currentUser?.id]);
 
 	// Determine what content to show based on privacy and friendship
 	const isFriend = status === "accepted";
@@ -175,13 +196,13 @@ export const ViewProfilePage = () => {
 
 		if (status === "accepted") {
 			return (
-				<div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
+				<div className='flex flex-col sm:flex-row gap-2 justify-between w-full'>
 					<Button
 						variant='primary'
 						onClick={handleMessage}
 						loading={actionLoading === "message"}
 						disabled={actionLoading !== null}
-						className='flex items-center justify-center gap-2 w-full sm:w-auto'>
+						className='flex items-center justify-center gap-2 w-full'>
 						<FaEnvelope className='w-4 h-4 shrink-0' />
 						<span className='whitespace-nowrap'>Send Message</span>
 					</Button>
@@ -189,7 +210,7 @@ export const ViewProfilePage = () => {
 						variant='secondary'
 						onClick={handleRemove}
 						disabled={actionLoading !== null}
-						className='flex items-center justify-center gap-2 w-full sm:w-auto'>
+						className='flex items-center justify-center gap-2 w-full'>
 						<FaUserMinus className='w-4 h-4 shrink-0' />
 						<span className='whitespace-nowrap'>Remove Friend</span>
 					</Button>
@@ -235,19 +256,48 @@ export const ViewProfilePage = () => {
 				</div>
 
 				{/* Profile Content */}
-				<div className='bg-secondary border border-border rounded-lg p-6 space-y-6'>
+				<div className='flex flex-col gap-6 bg-secondary border border-border rounded-lg p-6'>
 					{/* Avatar and Name - Always visible */}
-					<div className='flex flex-col items-center gap-4'>
-						<Avatar user={profile} size='xl' />
-						<div className='text-center'>
-							<h2 className='text-2xl font-bold text-primary'>
-								{profile.name || "Unknown User"}
-							</h2>
+					<div className='flex flex-col items-center gap-4 w-full md:w-[60%] self-center h-full'>
+						<div className='flex gap-4 w-full'>
+							<Avatar user={profile} size='xl' />
+							<div className='flex-1 flex flex-col h-full w-full gap-2'>
+								<h2 className='text-2xl font-bold text-primary'>
+									{profile.name || "Unknown User"}
+								</h2>
+								{/* Friend count and mutual friends */}
+								{profileMetadata && (
+									<div className='flex gap-2'>
+										{profileMetadata.friendCount !== undefined && (
+											<p className='text-sm text-secondary flex items-center justify-center gap-1'>
+												<FaUsers className='w-3 h-3' />
+												<span>
+													{profileMetadata.friendCount}{" "}
+													{profileMetadata.friendCount === 1 ?
+														"friend"
+													:	"friends"}
+												</span>
+											</p>
+										)}
+										{profileMetadata.mutualFriends.length > 0 && (
+											<p className='text-sm text-accent-tertiary'>
+												{profileMetadata.mutualFriends.length}{" "}
+												{profileMetadata.mutualFriends.length === 1 ?
+													"mutual friend"
+												:	"mutual friends"}
+											</p>
+										)}
+									</div>
+								)}
+								{metadataLoading && (
+									<p className='text-sm text-secondary mt-2'>Loading...</p>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Actions */}
-					<div className='flex justify-center w-full'>{renderActions()}</div>
+						{/* Actions */}
+						{renderActions()}
+					</div>
 
 					{/* Full Profile Content - Only if canViewFullProfile */}
 					{canViewFullProfile ?

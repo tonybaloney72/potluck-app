@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { FaCheck, FaTimes, FaUserPlus, FaEnvelope } from "react-icons/fa";
+import {
+	FaCheck,
+	FaTimes,
+	FaUserPlus,
+	FaEnvelope,
+	FaUserMinus,
+} from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
 	sendFriendRequest,
@@ -272,9 +278,11 @@ export const FriendCard = ({
 							<FaEnvelope className='w-4 h-4 mr-2' /> Message
 						</Button>
 						<Button
+							className='flex items-center'
 							variant='secondary'
 							onClick={handleRemove}
 							disabled={loadingAction !== null}>
+							<FaUserMinus className='w-4 h-4 mr-2' />
 							Remove
 						</Button>
 					</div>

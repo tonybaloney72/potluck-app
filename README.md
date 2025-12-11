@@ -11,9 +11,15 @@ Potluck App is a modern web application designed to simplify the organization of
 ### Current Features (Phase 1, 2, 3, 4, 5, 6 & 7 Complete)
 
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
+  - ✅ **Account Deactivation** - Users can deactivate their accounts while preserving data
+  - ✅ **Account Reactivation** - Deactivated users can reactivate their accounts by logging in
+  - ✅ **Inactive User Handling** - Inactive users are hidden from searches and cannot send/receive messages
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and interactive location selection
   - ✅ **Interactive Location Map** - Select location using map interface with address search
   - ✅ **Location Storage** - Locations stored as JSONB with coordinates (lat, lng) and formatted address
+  - ✅ **Profile Privacy Settings** - Control profile visibility with private profile option
+  - ✅ **View User Profiles** - View other users' profiles with contextual actions (send message, add/remove friend)
+  - ✅ **Privacy Controls** - Private profiles hide details from non-friends (only name and avatar visible)
 - ✅ **Theme System** - Per-user theme preferences (light, dark, or system)
 - ✅ **Protected Routes** - Secure access to authenticated pages with deep linking support
 - ✅ **Responsive Design** - Modern UI built with Tailwind CSS
@@ -36,6 +42,8 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **Location Storage** - Event locations stored as JSONB with coordinates (lat, lng) and formatted address
   - ✅ **Real-time Event Updates** - Instant synchronization of event changes across all viewers
   - ✅ **Calendar Integration** - Add events to Google Calendar or download for Apple Calendar
+  - ✅ **Event Filtering** - Filter events by status (upcoming, past, all) and search by title
+  - ✅ **Event Pagination** - Paginated event lists for better performance with large event collections
 - ✅ **RSVP System** - Attendees can RSVP with status (going, maybe, not going, pending)
   - ✅ **Real-time RSVP Updates** - See RSVP status changes instantly across all viewers
   - ✅ **Contribution Tracking** - Coordinate who's bringing what to events
@@ -209,6 +217,45 @@ This project is currently in active development.
 
 - **Mobile Styling Fixes**: Resolved mobile-specific styling issues for better responsive experience across devices
 - **Improved Language**: Enhanced copy and messaging on MyEventsPage for clearer user communication
+
+### Event Management Enhancements
+
+- **Event Filtering**: Filter events by status (upcoming, past, all) to quickly find relevant events
+- **Event Search**: Search events by title to locate specific events quickly
+- **Event Pagination**: Paginated event lists improve performance and navigation with large event collections
+- **Improved Event Organization**: Better event list management with filtering, searching, and pagination controls
+
+### Account Management
+
+- **Account Deactivation**: Users can deactivate their accounts from the profile settings page
+  - **Data Preservation**: All user data (events, messages, friendships) is preserved for reactivation
+  - **Automatic Sign Out**: Users are automatically signed out after deactivation
+- **Account Reactivation**: Deactivated users can reactivate by logging in
+  - **Reactivation Flow**: Login redirects inactive users to a reactivation page
+  - **Full Access Restoration**: Reactivation restores all account functionality immediately
+- **Inactive User Restrictions**:
+  - **Hidden from Searches**: Inactive users don't appear in friend searches
+  - **Message Restrictions**: Cannot send or receive messages
+  - **Friend Request Restrictions**: Cannot send or receive friend requests
+  - **Conversation Handling**: Existing conversations with inactive users are visible but un-interactable
+
+### Profile & Social Features
+
+- **View User Profiles**: Navigate to any user's profile page (`/profile/:userId`)
+  - **Profile Links**: Click on user names/avatars throughout the app to view their profiles
+  - **Contextual Actions**: Actions change based on friendship status:
+    - **Not Friends**: "Add Friend" button
+    - **Request Sent**: "Cancel Request" button
+    - **Friends**: "Send Message" and "Remove Friend" buttons
+- **Profile Privacy Settings**:
+  - **Private Profiles**: Users can enable private profile mode from settings
+  - **Privacy Enforcement**: Private profiles hide location and email from non-friends
+  - **Friend Access**: Friends can always see full profile details regardless of privacy setting
+  - **Public Default**: Profiles are public by default, users can opt into privacy
+- **Enhanced Navigation**: Profile links added to:
+  - Friend cards in friends list
+  - Conversation lists and headers in messages
+  - Event participant cards
 
 ### Location & Mapping Features
 
