@@ -52,7 +52,7 @@ export const Tabs = ({
 			role='tablist'
 			aria-label='Event categories'>
 			<div className='overflow-x-auto scrollbar-hide'>
-				<div className='flex gap-1 md:gap-2 min-w-max px-4 md:px-8 py-2 md:py-3'>
+				<div className='flex gap-1 md:gap-2 min-w-max px-4 md:px-8'>
 					{tabs.map(tab => {
 						const isActive = activeTab === tab.id;
 						return (

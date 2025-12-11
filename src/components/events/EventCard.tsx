@@ -44,7 +44,7 @@ export const EventCard = ({
 	};
 
 	return (
-		<div className='mb-8 md:mb-12'>
+		<div className=''>
 			{title && (
 				<h2 className='text-xl md:text-2xl font-semibold text-primary mb-3 md:mb-4'>
 					{title}

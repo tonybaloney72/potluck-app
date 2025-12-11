@@ -124,9 +124,9 @@ export const ProfilePage = () => {
 
 	return (
 		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
-			<div className='max-w-2xl mx-auto'>
-				{/* Back Button */}
-				<div className='mb-4'>
+			<div className='max-w-2xl mx-auto flex flex-col'>
+				<div className='flex items-center justify-between mb-4 md:mb-8 relative'>
+					{/* Back Button */}
 					<button
 						onClick={() => navigate(-1)}
 						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'
@@ -134,11 +134,15 @@ export const ProfilePage = () => {
 						type='button'>
 						<FaArrowLeft className='w-5 h-5' />
 					</button>
-				</div>
 
-				<h1 className='text-center text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary'>
-					Profile Settings
-				</h1>
+					{/* Centered Title */}
+					<h1 className='absolute left-1/2 transform -translate-x-1/2 text-center text-2xl md:text-3xl font-bold text-primary'>
+						Profile Settings
+					</h1>
+
+					{/* Spacer for balance */}
+					<div className='min-w-[44px]' aria-hidden='true' />
+				</div>
 
 				{/* Avatar Upload Section */}
 				<AvatarUpload />

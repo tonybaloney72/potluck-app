@@ -25,7 +25,7 @@ export const PageTransition = ({ children }: PageTransitionProps) => {
 			animate={{ opacity: 1, y: 0 }}
 			exit={{ opacity: 0, y: -10 }}
 			transition={{ duration: 0.2, ease: "easeInOut" }}
-			className='w-full'>
+			className='w-full h-full'>
 			{children}
 		</motion.div>
 	);

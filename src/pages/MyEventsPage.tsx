@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { useDebounce } from "../hooks/useDebounce";
 import {
 	fetchUserEvents,
 	retryFetchEvents,
@@ -16,13 +17,16 @@ import {
 import { EventCard } from "../components/events/EventCard";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Tabs, type Tab } from "../components/common/Tabs";
+import { Input } from "../components/common/Input";
 import {
 	FaCalendarPlus,
 	FaCalendarCheck,
 	FaCalendarTimes,
 	FaHistory,
+	FaSearch,
 } from "react-icons/fa";
 import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
+import { Pagination } from "../components/common/Pagination";
 
 // Helper function to get a rotating message from an array
 // Uses a simple hash of user ID + category to keep it consistent per user
@@ -88,6 +92,10 @@ export const MyEventsPage = () => {
 	const { user, profile } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
 	const [activeTab, setActiveTab] = useState<EventTab>("hosting");
+	const [searchQuery, setSearchQuery] = useState("");
+	const debouncedSearchQuery = useDebounce(searchQuery, 300);
+	const [currentPage, setCurrentPage] = useState(1);
+	const eventsPerPage = 9;
 
 	// ✅ Use memoized selectors instead of filtering
 	const hostedEvents = useAppSelector(selectHostedEvents);
@@ -198,6 +206,29 @@ export const MyEventsPage = () => {
 		}
 	}, [activeTab]);
 
+	const filteredEvents = useMemo(() => {
+		if (!debouncedSearchQuery.trim()) {
+			return currentEvents;
+		}
+
+		const query = debouncedSearchQuery.toLowerCase().trim();
+		return currentEvents.filter(event => {
+			const titleMatch = event.title?.toLowerCase().includes(query);
+			const hostMatch = event?.creator?.name?.toLowerCase().includes(query);
+			const locationMatch = event.location?.address
+				?.toLowerCase()
+				.includes(query);
+			const themeMatch = event.theme?.toLowerCase().includes(query);
+
+			return titleMatch || hostMatch || locationMatch || themeMatch;
+		});
+	}, [currentEvents, debouncedSearchQuery]);
+
+	const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+	const startIndex = (currentPage - 1) * eventsPerPage;
+	const endIndex = startIndex + eventsPerPage;
+	const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
 	const handleRetry = () => {
 		dispatch(clearError());
 		dispatch(retryFetchEvents());
@@ -213,6 +244,10 @@ export const MyEventsPage = () => {
 			dispatch(fetchUserEvents());
 		}
 	}, [dispatch, user?.id, loading]);
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [debouncedSearchQuery, activeTab]);
 
 	const handleEventClick = (eventId: string) => {
 		navigate(`/events/${eventId}`);
@@ -256,21 +291,35 @@ export const MyEventsPage = () => {
 	}
 
 	return (
-		<main id='main-content' className='bg-secondary' role='main'>
-			<div className='max-w-7xl mx-auto'>
+		<main
+			id='main-content'
+			className='bg-secondary h-full flex flex-col overflow-x-hidden'
+			role='main'>
+			<div className='max-w-7xl mx-auto h-full flex flex-col w-full min-w-0'>
 				{/* Page Header */}
-				<div className='px-4 md:px-8 pt-4 md:pt-8 pb-2 md:pb-4'>
+				<div className='px-4 md:px-8 pt-4 md:pt-8 pb-2 md:pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0'>
 					<h1 className='text-2xl md:text-3xl font-bold text-primary'>
 						My Events
 					</h1>
+					<div className='relative flex-1 sm:max-w-md min-w-0'>
+						<FaSearch className='absolute left-3 top-1/2 transform -translate-y-1/2 text-tertiary w-4 h-4' />
+						<Input
+							type='text'
+							placeholder='Search by title, host, or location...'
+							value={searchQuery}
+							onChange={e => setSearchQuery(e.target.value)}
+							className='pl-10'
+							aria-label='Search events'
+						/>
+					</div>
 				</div>
 
 				{/* Tabs */}
 				<Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
-				{/* Content Area */}
+				{/* Content Area - Scrollable */}
 				<div
-					className='px-4 md:px-8 py-4 md:py-8'
+					className='px-4 md:px-8 py-4 md:py-8 flex-1 overflow-y-auto overflow-x-hidden min-w-0'
 					role='tabpanel'
 					id={`tabpanel-${activeTab}`}
 					aria-labelledby={`tab-${activeTab}`}>
@@ -299,7 +348,7 @@ export const MyEventsPage = () => {
 							</div>
 						</div>
 					:	<EventCard
-							events={currentEvents}
+							events={paginatedEvents}
 							title=''
 							emptyStateProps={{
 								icon: emptyStateIcon,
@@ -317,6 +366,13 @@ export const MyEventsPage = () => {
 						/>
 					}
 				</div>
+				{/* Pagination - Fixed at bottom */}
+				<Pagination
+					currentPage={currentPage}
+					totalPages={totalPages}
+					onPageChange={setCurrentPage}
+					totalItems={filteredEvents.length}
+				/>
 			</div>
 		</main>
 	);
