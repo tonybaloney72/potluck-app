@@ -15,8 +15,11 @@ import {
 	cancelFriendRequest,
 } from "../../store/slices/friendsSlice";
 import { getOrCreateConversation } from "../../store/slices/conversationsSlice";
+import {
+	fetchUserProfileMetadata,
+	fetchUserProfile,
+} from "../../store/slices/usersSlice";
 import { useFriendshipStatus } from "../../hooks/useFriendshipStatus";
-import { supabase } from "../../services/supabase";
 import type { Profile } from "../../types";
 import { Button } from "../common/Button";
 import { ConfirmModal } from "../common/ConfirmModal";
@@ -46,17 +49,30 @@ export const FriendCard = ({
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { sendingRequest } = useAppSelector(state => state.friends);
+	const { profile: currentUserProfile } = useAppSelector(state => state.auth);
 
 	// Get the actual userId (from prop or profile)
 	const actualUserId = userId || providedProfile?.id;
 
+	// Get profile from Redux cache or use provided profile
+	const cachedProfile = useAppSelector(
+		state => state.users.profilesById[actualUserId || ""],
+	);
+	const profileLoading = useAppSelector(
+		state => state.users.profileLoading[actualUserId || ""] || false,
+	);
+	const profile = providedProfile || cachedProfile || null;
+
+	// Get profile metadata for mutual friends
+	const profileMetadata = useAppSelector(
+		state => state.users.profileMetadata[actualUserId || ""],
+	);
+	const metadataLoading = useAppSelector(
+		state => state.users.metadataLoading[actualUserId || ""] || false,
+	);
+
 	// Use the hook to get friendship status
 	const { status, friendshipId } = useFriendshipStatus(actualUserId);
-
-	// State for profile (fetched or provided)
-	const [profile, setProfile] = useState<Profile | null | undefined>(
-		providedProfile,
-	);
 
 	// Loading states
 	const [loadingMessage, setLoadingMessage] = useState(false);
@@ -69,21 +85,31 @@ export const FriendCard = ({
 		userName: string;
 	} | null>(null);
 
-	// Fetch profile if userId provided but no profile
+	// Fetch profile if userId provided but no profile (neither provided nor cached)
 	useEffect(() => {
-		if (userId && !providedProfile && !profile) {
-			supabase
-				.from("profiles")
-				.select("*")
-				.eq("id", userId)
-				.single()
-				.then(({ data, error }) => {
-					if (!error && data) {
-						setProfile(data);
-					}
-				});
+		if (userId && !providedProfile && !cachedProfile && !profileLoading) {
+			dispatch(fetchUserProfile(userId));
 		}
-	}, [userId, providedProfile, profile]);
+	}, [userId, providedProfile, cachedProfile, profileLoading, dispatch]);
+
+	// Fetch profile metadata (mutual friends) if not already loaded
+	useEffect(() => {
+		if (
+			actualUserId &&
+			currentUserProfile?.id &&
+			actualUserId !== currentUserProfile.id &&
+			!profileMetadata &&
+			!metadataLoading
+		) {
+			dispatch(fetchUserProfileMetadata(actualUserId));
+		}
+	}, [
+		actualUserId,
+		currentUserProfile?.id,
+		profileMetadata,
+		metadataLoading,
+		dispatch,
+	]);
 
 	// Map status to action type
 	const getActionType = () => {
@@ -322,6 +348,15 @@ export const FriendCard = ({
 								</p>
 							)
 						}
+						{/* Mutual friends count */}
+						{profileMetadata?.mutualFriends.length > 0 && (
+							<p className='text-xs text-accent-tertiary mt-1'>
+								{profileMetadata.mutualFriends.length}{" "}
+								{profileMetadata.mutualFriends.length === 1 ?
+									"mutual friend"
+								:	"mutual friends"}
+							</p>
+						)}
 					</div>
 				</button>
 				<div onClick={e => e.stopPropagation()}>{renderActions()}</div>

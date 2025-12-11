@@ -22,6 +22,13 @@ interface UsersState {
 	metadataLoading: {
 		[userId: string]: boolean;
 	};
+	// Cached user profiles keyed by userId
+	profilesById: {
+		[userId: string]: Profile;
+	};
+	profileLoading: {
+		[userId: string]: boolean;
+	};
 }
 
 const initialState: UsersState = {
@@ -32,6 +39,8 @@ const initialState: UsersState = {
 	searchLoading: false,
 	profileMetadata: {},
 	metadataLoading: {},
+	profilesById: {},
+	profileLoading: {},
 };
 
 export const searchUsers = createAsyncThunk(
@@ -53,6 +62,21 @@ export const searchUsers = createAsyncThunk(
 
 		if (error) throw error;
 		return data as Profile[];
+	},
+);
+
+export const fetchUserProfile = createAsyncThunk(
+	"users/fetchUserProfile",
+	async (userId: string) => {
+		const { data, error } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", userId)
+			.single();
+
+		if (error) throw error;
+		if (!data) throw new Error("Profile not found");
+		return { userId, profile: data as Profile };
 	},
 );
 
@@ -174,6 +198,20 @@ const usersSlice = createSlice({
 				state.metadataLoading[action.meta.arg] = false;
 				state.error =
 					action.error.message || "Failed to fetch profile metadata";
+			});
+
+		// Fetch user profile
+		builder
+			.addCase(fetchUserProfile.pending, (state, action) => {
+				state.profileLoading[action.meta.arg] = true;
+			})
+			.addCase(fetchUserProfile.fulfilled, (state, action) => {
+				state.profileLoading[action.payload.userId] = false;
+				state.profilesById[action.payload.userId] = action.payload.profile;
+			})
+			.addCase(fetchUserProfile.rejected, (state, action) => {
+				state.profileLoading[action.meta.arg] = false;
+				state.error = action.error.message || "Failed to fetch profile";
 			});
 	},
 });

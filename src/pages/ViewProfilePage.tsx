@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { supabase } from "../services/supabase";
 import { fetchFriendships } from "../store/slices/friendsSlice";
 import {
 	sendFriendRequest,
@@ -9,9 +8,11 @@ import {
 	cancelFriendRequest,
 } from "../store/slices/friendsSlice";
 import { getOrCreateConversation } from "../store/slices/conversationsSlice";
-import { fetchUserProfileMetadata } from "../store/slices/usersSlice";
+import {
+	fetchUserProfileMetadata,
+	fetchUserProfile,
+} from "../store/slices/usersSlice";
 import { useFriendshipStatus } from "../hooks/useFriendshipStatus";
-import type { Profile } from "../types";
 import { Avatar } from "../components/common/Avatar";
 import { Button } from "../components/common/Button";
 import { ConfirmModal } from "../components/common/ConfirmModal";
@@ -23,8 +24,11 @@ import {
 	FaUserPlus,
 	FaUserMinus,
 	FaUsers,
+	FaChevronDown,
+	FaChevronUp,
 } from "react-icons/fa";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
+import { motion, AnimatePresence } from "motion/react";
 
 export const ViewProfilePage = () => {
 	const { userId } = useParams<{ userId: string }>();
@@ -40,12 +44,17 @@ export const ViewProfilePage = () => {
 	const metadataLoading = useAppSelector(
 		state => state.users.metadataLoading[userId || ""] || false,
 	);
+	const cachedProfile = useAppSelector(
+		state => state.users.profilesById[userId || ""],
+	);
+	const profileLoading = useAppSelector(
+		state => state.users.profileLoading[userId || ""] || false,
+	);
 
-	const [profile, setProfile] = useState<Profile | null>(null);
-	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [actionLoading, setActionLoading] = useState<string | null>(null);
 	const [showRemoveModal, setShowRemoveModal] = useState(false);
+	const [showMutualFriends, setShowMutualFriends] = useState(false);
 
 	// Get friendship status
 	const { status, friendshipId } = useFriendshipStatus(userId);
@@ -67,11 +76,10 @@ export const ViewProfilePage = () => {
 		}
 	}, [userId, currentUser?.id, profileMetadata, metadataLoading, dispatch]);
 
-	// Fetch user profile
+	// Fetch user profile if not already cached
 	useEffect(() => {
 		if (!userId) {
 			setError("User ID is required");
-			setLoading(false);
 			return;
 		}
 
@@ -81,34 +89,35 @@ export const ViewProfilePage = () => {
 			return;
 		}
 
-		const fetchProfile = async () => {
-			setLoading(true);
-			setError(null);
-			try {
-				const { data, error: fetchError } = await supabase
-					.from("profiles")
-					.select("*")
-					.eq("id", userId)
-					.single();
+		// Only fetch if we don't already have the profile cached
+		if (!cachedProfile && !profileLoading) {
+			dispatch(fetchUserProfile(userId))
+				.unwrap()
+				.catch(err => {
+					setError(
+						err instanceof Error ? err.message : "Failed to load profile",
+					);
+				});
+		}
+	}, [
+		userId,
+		currentUser?.id,
+		cachedProfile,
+		profileLoading,
+		dispatch,
+		navigate,
+	]);
 
-				if (fetchError) throw fetchError;
-				if (!data) throw new Error("Profile not found");
-
-				setProfile(data as Profile);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to load profile");
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchProfile();
-	}, [userId, currentUser?.id]);
+	// Use cached profile or null
+	const profile = cachedProfile || null;
 
 	// Determine what content to show based on privacy and friendship
 	const isFriend = status === "accepted";
 	const isPrivate = profile?.private === true;
 	const canViewFullProfile = !isPrivate || isFriend;
+
+	// Loading state
+	const loading = profileLoading && !cachedProfile;
 
 	// Handler functions
 	const handleSendRequest = async () => {
@@ -267,26 +276,76 @@ export const ViewProfilePage = () => {
 								</h2>
 								{/* Friend count and mutual friends */}
 								{profileMetadata && (
-									<div className='flex gap-2'>
-										{profileMetadata.friendCount !== undefined && (
-											<p className='text-sm text-secondary flex items-center justify-center gap-1'>
-												<FaUsers className='w-3 h-3' />
-												<span>
-													{profileMetadata.friendCount}{" "}
-													{profileMetadata.friendCount === 1 ?
-														"friend"
-													:	"friends"}
-												</span>
-											</p>
-										)}
-										{profileMetadata.mutualFriends.length > 0 && (
-											<p className='text-sm text-accent-tertiary'>
-												{profileMetadata.mutualFriends.length}{" "}
-												{profileMetadata.mutualFriends.length === 1 ?
-													"mutual friend"
-												:	"mutual friends"}
-											</p>
-										)}
+									<div className='flex flex-col gap-2'>
+										<div className='flex gap-2 items-center'>
+											{profileMetadata.friendCount !== undefined && (
+												<p className='text-sm text-secondary flex items-center gap-1'>
+													<FaUsers className='w-3 h-3' />
+													<span>
+														{profileMetadata.friendCount}{" "}
+														{profileMetadata.friendCount === 1 ?
+															"friend"
+														:	"friends"}
+													</span>
+												</p>
+											)}
+											{profileMetadata.mutualFriends.length > 0 && (
+												<button
+													onClick={() =>
+														setShowMutualFriends(!showMutualFriends)
+													}
+													className='text-sm text-accent-tertiary hover:text-accent flex items-center gap-1 transition-colors hover:cursor-pointer'
+													aria-expanded={showMutualFriends}
+													aria-label={
+														showMutualFriends ?
+															"Hide mutual friends"
+														:	`Show ${profileMetadata.mutualFriends.length} mutual friends`
+													}>
+													<span>
+														{profileMetadata.mutualFriends.length}{" "}
+														{profileMetadata.mutualFriends.length === 1 ?
+															"mutual friend"
+														:	"mutual friends"}
+													</span>
+													{showMutualFriends ?
+														<FaChevronUp className='w-3 h-3' />
+													:	<FaChevronDown className='w-3 h-3' />}
+												</button>
+											)}
+										</div>
+										{/* Expandable mutual friends list */}
+										<AnimatePresence>
+											{showMutualFriends &&
+												profileMetadata.mutualFriends.length > 0 && (
+													<motion.div
+														initial={{ height: 0, opacity: 0 }}
+														animate={{ height: "auto", opacity: 1 }}
+														exit={{ height: 0, opacity: 0 }}
+														transition={{ duration: 0.2 }}
+														className='overflow-hidden'>
+														<div className='pt-2 border-t border-border'>
+															<div className='grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto scrollbar-thin'>
+																{profileMetadata.mutualFriends.map(
+																	mutualFriend => (
+																		<button
+																			key={mutualFriend.id}
+																			onClick={() =>
+																				navigate(`/profile/${mutualFriend.id}`)
+																			}
+																			className='flex flex-col items-center gap-1 p-2 rounded-md hover:bg-tertiary transition-colors hover:cursor-pointer group'
+																			aria-label={`View ${mutualFriend.name || "mutual friend"}'s profile`}>
+																			<Avatar user={mutualFriend} size='md' />
+																			<p className='text-xs text-secondary text-center truncate w-full group-hover:text-primary transition-colors'>
+																				{mutualFriend.name || "Unknown"}
+																			</p>
+																		</button>
+																	),
+																)}
+															</div>
+														</div>
+													</motion.div>
+												)}
+										</AnimatePresence>
 									</div>
 								)}
 								{metadataLoading && (
