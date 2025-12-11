@@ -13,6 +13,7 @@ export interface Profile {
 	theme_preference: ThemePreference;
 	has_created_event: boolean;
 	has_rsvped_to_event: boolean;
+	active: boolean;
 	created_at: string;
 	updated_at: string;
 }

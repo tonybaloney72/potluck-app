@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-	const { user, initializing } = useAppSelector(state => state.auth);
+	const { user, initializing, profile } = useAppSelector(state => state.auth);
 	const location = useLocation();
 
 	// If we have a user, show content even if still initializing (profile loading)
@@ -21,9 +21,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 		// Save the attempted URL so we can redirect back after login
 		// Only save if we're not already on the login page
 		const returnUrl =
-			location.pathname !== "/login"
-				? location.pathname + location.search
-				: "/";
+			location.pathname !== "/login" ?
+				location.pathname + location.search
+			:	"/";
 		return (
 			<Navigate
 				to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
@@ -32,6 +32,17 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 		);
 	}
 
-	// User exists, show content
+	// If user exists but profile is loaded and inactive, redirect to reactivate
+	// Allow access to reactivate page itself
+	if (
+		user &&
+		profile &&
+		!profile.active &&
+		location.pathname !== "/reactivate"
+	) {
+		return <Navigate to='/reactivate' replace />;
+	}
+
+	// User exists and is active, show content
 	return <>{children}</>;
 };

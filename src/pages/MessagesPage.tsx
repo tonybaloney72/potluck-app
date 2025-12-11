@@ -73,6 +73,7 @@ export const MessagesPage = () => {
 				selectedConversation.user2
 			:	selectedConversation.user1
 		:	null;
+	const isOtherUserInactive = otherUser?.active === false;
 
 	// Validate conversation exists - redirect if invalid
 	useEffect(() => {
@@ -128,7 +129,7 @@ export const MessagesPage = () => {
 	}, [messages, conversationId]);
 
 	const onSubmit = async (data: MessageFormData) => {
-		if (!conversationId || !selectedConversation) return;
+		if (!conversationId || !selectedConversation || isOtherUserInactive) return;
 
 		const receiverId =
 			selectedConversation.user1_id === profile?.id ?
@@ -388,26 +389,34 @@ export const MessagesPage = () => {
 						</div>
 
 						{/* Input Form */}
-						<form
-							onSubmit={handleSubmit(onSubmit)}
-							className='flex items-center gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
-							<Input
-								placeholder='Type a message...'
-								autoComplete='off'
-								{...register("content", {
-									required: "Message cannot be empty",
-								})}
-								error={errors.content?.message}
-								className='flex-1'
-							/>
-							<Button
-								type='submit'
-								loading={sending}
-								loadingText='Sending...'
-								className='min-w-[44px] min-h-[44px] flex items-center justify-center'>
-								<FaPaperPlane className='w-4 h-4' />
-							</Button>
-						</form>
+						{isOtherUserInactive ?
+							<div className='flex items-center justify-center gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
+								<p className='text-sm text-secondary text-center'>
+									This user's account has been deactivated. You cannot send
+									messages.
+								</p>
+							</div>
+						:	<form
+								onSubmit={handleSubmit(onSubmit)}
+								className='flex items-center gap-2 shrink-0 bg-secondary border-t md:border-t-0 border-border p-2 md:p-0'>
+								<Input
+									placeholder='Type a message...'
+									autoComplete='off'
+									{...register("content", {
+										required: "Message cannot be empty",
+									})}
+									error={errors.content?.message}
+									className='flex-1'
+								/>
+								<Button
+									type='submit'
+									loading={sending}
+									loadingText='Sending...'
+									className='min-w-[44px] min-h-[44px] flex items-center justify-center'>
+									<FaPaperPlane className='w-4 h-4' />
+								</Button>
+							</form>
+						}
 					</>
 				:	<EmptyState
 						icon={<FaComment className='w-16 h-16' />}

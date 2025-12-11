@@ -55,6 +55,7 @@ CREATE TABLE public.events (
   created_by uuid NOT NULL,
   title text NOT NULL,
   description text,
+  active boolean NOT NULL DEFAULT true,
   theme text,
   location jsonb,
   is_public boolean NOT NULL DEFAULT false,

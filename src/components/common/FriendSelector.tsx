@@ -101,6 +101,7 @@ export const FriendSelector = ({
 					f !== undefined &&
 					f !== null &&
 					f.id !== profile.id &&
+					f.active !== false &&
 					!excludeIds.includes(f.id) &&
 					!selectedIds.has(f.id),
 			);

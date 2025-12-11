@@ -33,6 +33,7 @@ export const searchUsers = createAsyncThunk(
 			.select("*")
 			.or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
 			.neq("id", user.id)
+			.eq("active", true)
 			.limit(10);
 
 		if (error) throw error;

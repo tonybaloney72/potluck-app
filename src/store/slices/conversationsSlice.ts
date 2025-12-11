@@ -171,6 +171,18 @@ export const getOrCreateConversation = createAsyncThunk(
 			throw new Error("You can only message your friends");
 		}
 
+		// Check if the other user is active
+		const { data: otherUserProfile, error: profileError } = await supabase
+			.from("profiles")
+			.select("active")
+			.eq("id", otherUserId)
+			.single();
+
+		if (profileError) throw profileError;
+		if (!otherUserProfile?.active) {
+			throw new Error("Cannot create conversation with inactive user");
+		}
+
 		const { data, error } = await supabase.rpc("get_or_create_conversation", {
 			p_user1_id: user.id < otherUserId ? user.id : otherUserId,
 			p_user2_id: user.id < otherUserId ? otherUserId : user.id,

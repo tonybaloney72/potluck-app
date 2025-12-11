@@ -68,18 +68,36 @@ export const signUp = createAsyncThunk(
 	},
 );
 
-export const signIn = createAsyncThunk(
-	"auth/signIn",
-	async ({ email, password }: { email: string; password: string }) => {
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
+export const signIn = createAsyncThunk<
+	{ user: any; isActive: boolean } | null,
+	{ email: string; password: string }
+>("auth/signIn", async ({ email, password }) => {
+	const { data, error } = await supabase.auth.signInWithPassword({
+		email,
+		password,
+	});
 
-		if (error) throw error;
-		return data.user;
-	},
-);
+	if (error) throw error;
+
+	// Check if user's profile is active
+	if (data.user) {
+		const { data: profile, error: profileError } = await supabase
+			.from("profiles")
+			.select("active")
+			.eq("id", data.user.id)
+			.single();
+
+		if (profileError) throw profileError;
+
+		// Return user with active status
+		return {
+			user: data.user,
+			isActive: profile?.active ?? true,
+		};
+	}
+
+	return { user: null, isActive: true };
+});
 
 export const signOut = createAsyncThunk("auth/signOut", async () => {
 	const { error } = await supabase.auth.signOut();
@@ -141,6 +159,40 @@ export const updatePassword = createAsyncThunk(
 
 		if (error) throw error;
 		return data.user;
+	},
+);
+
+export const deactivateAccount = createAsyncThunk(
+	"auth/deactivateAccount",
+	async () => {
+		const user = await requireAuth();
+
+		const { data, error } = await supabase
+			.from("profiles")
+			.update({ active: false })
+			.eq("id", user.id)
+			.select()
+			.single();
+
+		if (error) throw error;
+		return data as Profile;
+	},
+);
+
+export const reactivateAccount = createAsyncThunk(
+	"auth/reactivateAccount",
+	async () => {
+		const user = await requireAuth();
+
+		const { data, error } = await supabase
+			.from("profiles")
+			.update({ active: true })
+			.eq("id", user.id)
+			.select()
+			.single();
+
+		if (error) throw error;
+		return data as Profile;
 	},
 );
 
@@ -282,11 +334,18 @@ const authSlice = createSlice({
 			.addCase(signIn.fulfilled, (state, action) => {
 				state.loading = false;
 				state.user =
-					action.payload ?
-						{ id: action.payload.id, email: action.payload.email }
+					action.payload?.user ?
+						{
+							id: action.payload.user.id,
+							email: action.payload.user.email,
+						}
 					:	null;
 				// User is authenticated, no longer initializing
 				state.initializing = false;
+				// Store active status in state for login page to check
+				if (action.payload?.user && !action.payload.isActive) {
+					state.error = "ACCOUNT_DEACTIVATED";
+				}
 			})
 			.addCase(signIn.rejected, (state, action) => {
 				state.loading = false;
@@ -356,6 +415,36 @@ const authSlice = createSlice({
 			.addCase(updatePassword.rejected, (state, action) => {
 				state.loading = false;
 				state.error = action.error.message || "Failed to update password";
+			});
+
+		// Deactivate account
+		builder
+			.addCase(deactivateAccount.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(deactivateAccount.fulfilled, (state, action) => {
+				state.loading = false;
+				state.profile = action.payload;
+			})
+			.addCase(deactivateAccount.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to deactivate account";
+			});
+
+		// Reactivate account
+		builder
+			.addCase(reactivateAccount.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(reactivateAccount.fulfilled, (state, action) => {
+				state.loading = false;
+				state.profile = action.payload;
+			})
+			.addCase(reactivateAccount.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to reactivate account";
 			});
 	},
 });

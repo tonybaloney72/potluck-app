@@ -45,9 +45,9 @@ export const fetchFriendships = createAsyncThunk(
 		const friendshipsWithProfiles = await Promise.all(
 			(data || []).map(async friendship => {
 				const otherUserId =
-					friendship.user_id === user.id
-						? friendship.friend_id
-						: friendship.user_id;
+					friendship.user_id === user.id ?
+						friendship.friend_id
+					:	friendship.user_id;
 
 				const { data: friendProfile } = await supabase
 					.from("profiles")
@@ -62,12 +62,19 @@ export const fetchFriendships = createAsyncThunk(
 				};
 			}),
 		);
-		
+
+		// Filter out friendships where the other user is inactive
+		const activeFriendships = friendshipsWithProfiles.filter(friendship => {
+			const otherUser =
+				friendship.user_id === user.id ? friendship.friend : friendship.user;
+			return otherUser?.active !== false;
+		});
+
 		// Return normalized structure: { friendshipsById, friendshipIds }
 		const friendshipsById: { [id: string]: Friendship } = {};
 		const friendshipIds: string[] = [];
 
-		friendshipsWithProfiles.forEach(friendship => {
+		activeFriendships.forEach(friendship => {
 			friendshipsById[friendship.id] = friendship;
 			friendshipIds.push(friendship.id);
 		});
@@ -84,6 +91,18 @@ export const sendFriendRequest = createAsyncThunk(
 	async (friendId: string) => {
 		const user = await requireAuth();
 
+		// Check if the target user is active
+		const { data: friendProfile, error: profileError } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", friendId)
+			.single();
+
+		if (profileError) throw profileError;
+		if (!friendProfile?.active) {
+			throw new Error("Cannot send friend request to inactive user");
+		}
+
 		const { data, error } = await supabase
 			.from("friendships")
 			.insert({
@@ -95,15 +114,6 @@ export const sendFriendRequest = createAsyncThunk(
 			.single();
 
 		if (error) throw error;
-
-		// Fetch the friend's profile (receiver) - we only need this for the Sent Requests UI
-		const { data: friendProfile, error: profileError } = await supabase
-			.from("profiles")
-			.select("*")
-			.eq("id", data.friend_id)
-			.single();
-
-		if (profileError) throw profileError;
 
 		return {
 			...data,

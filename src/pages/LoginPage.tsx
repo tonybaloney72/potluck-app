@@ -56,10 +56,16 @@ export const LoginPage = () => {
 	const onSubmit = async (data: LoginFormData) => {
 		const result = await dispatch(signIn(data));
 		if (signIn.fulfilled.match(result)) {
-			// Get the return URL from query params, default to home
-			const returnUrl = searchParams.get("returnUrl") || "/";
-			// Decode and navigate to the original destination
-			navigate(decodeURIComponent(returnUrl), { replace: true });
+			// Check if account is deactivated
+			if (result.payload && !result.payload.isActive) {
+				// Redirect to reactivate page
+				navigate("/reactivate", { replace: true });
+			} else {
+				// Get the return URL from query params, default to home
+				const returnUrl = searchParams.get("returnUrl") || "/";
+				// Decode and navigate to the original destination
+				navigate(decodeURIComponent(returnUrl), { replace: true });
+			}
 		}
 	};
 

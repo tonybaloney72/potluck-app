@@ -51,6 +51,18 @@ export const sendMessage = createAsyncThunk(
 	) => {
 		const user = await requireAuth();
 
+		// Check if the receiver is active
+		const { data: receiverProfile, error: profileError } = await supabase
+			.from("profiles")
+			.select("active")
+			.eq("id", receiverId)
+			.single();
+
+		if (profileError) throw profileError;
+		if (!receiverProfile?.active) {
+			throw new Error("Cannot send message to inactive user");
+		}
+
 		// Get or create conversation
 		const conversationResult = await dispatch(
 			getOrCreateConversation(receiverId),

@@ -4,12 +4,18 @@ import { useNavigate } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { updateProfile, clearError } from "../store/slices/authSlice";
+import {
+	updateProfile,
+	clearError,
+	deactivateAccount,
+	signOut,
+} from "../store/slices/authSlice";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { SkeletonProfilePage } from "../components/common/Skeleton";
 import { AvatarUpload } from "../components/common/AvatarUpload";
 import { Map } from "../components/common/Map";
+import { ConfirmModal } from "../components/common/ConfirmModal";
 import { FaArrowLeft } from "react-icons/fa";
 
 // Zod schema: no numbers allowed in name; location is optional object
@@ -34,9 +40,10 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const ProfilePage = () => {
-	const { profile } = useAppSelector(state => state.auth);
+	const { profile, loading } = useAppSelector(state => state.auth);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+	const [showDeactivateModal, setShowDeactivateModal] = useState(false);
 
 	const {
 		register,
@@ -124,7 +131,7 @@ export const ProfilePage = () => {
 
 	return (
 		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
-			<div className='max-w-2xl mx-auto flex flex-col'>
+			<div className='max-w-2xl mx-auto flex flex-col mb-4 md:mb-8'>
 				<div className='flex items-center justify-between mb-4 md:mb-8 relative'>
 					{/* Back Button */}
 					<button
@@ -176,6 +183,48 @@ export const ProfilePage = () => {
 					</Button>
 				</form>
 			</div>
+			<div className='max-w-2xl mx-auto flex flex-col'>
+				<div className='flex items-center justify-center mb-4 md:mb-8 relative'>
+					<h1 className='text-center text-2xl md:text-3xl font-bold text-primary'>
+						Deactivate Account
+					</h1>
+				</div>
+				<div className='bg-secondary border border-border rounded-lg p-6 space-y-4'>
+					<p className='text-secondary'>
+						Deactivating your account will hide your profile from other users.
+						You won't be able to send or receive messages, or be added as a
+						friend. You can reactivate your account at any time by logging back
+						in.
+					</p>
+					<Button
+						type='button'
+						variant='secondary'
+						onClick={() => setShowDeactivateModal(true)}
+						disabled={loading}
+						className='w-full md:w-auto'>
+						Deactivate Account
+					</Button>
+				</div>
+			</div>
+
+			<ConfirmModal
+				isOpen={showDeactivateModal}
+				onClose={() => setShowDeactivateModal(false)}
+				onConfirm={async () => {
+					const result = await dispatch(deactivateAccount());
+					if (deactivateAccount.fulfilled.match(result)) {
+						// Sign out the user after deactivation
+						await dispatch(signOut());
+						// Navigate to login page
+						navigate("/login", { replace: true });
+					}
+				}}
+				title='Deactivate Account'
+				message='Are you sure you want to deactivate your account? You can reactivate it at any time by logging back in.'
+				confirmText='Deactivate'
+				cancelText='Cancel'
+				confirmVariant='primary'
+			/>
 		</main>
 	);
 };

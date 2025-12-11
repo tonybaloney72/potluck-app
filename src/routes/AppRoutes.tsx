@@ -13,6 +13,7 @@ import { CreateEventPage } from "../pages/CreateEventPage";
 import { ForgotPassword } from "../pages/ForgotPassword";
 import { PasswordReset } from "../pages/PasswordReset";
 import { EmailVerificationPage } from "../pages/EmailVerificationPage";
+import { ReactivateAccountPage } from "../pages/ReactivateAccountPage";
 import { PageTransition } from "../components/common/PageTransition";
 
 export function AppRoutes() {
@@ -151,6 +152,14 @@ export function AppRoutes() {
 				element={
 					<PageTransition>
 						<EmailVerificationPage />
+					</PageTransition>
+				}
+			/>
+			<Route
+				path='/reactivate'
+				element={
+					<PageTransition>
+						<ReactivateAccountPage />
 					</PageTransition>
 				}
 			/>
