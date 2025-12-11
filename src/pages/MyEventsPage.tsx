@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -10,14 +10,17 @@ import {
 	selectHostedEvents,
 	selectAttendingEvents,
 	selectInvitedEvents,
+	selectPastEvents,
 	selectEventsById,
 } from "../store/selectors/eventsSelectors";
 import { EventCard } from "../components/events/EventCard";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
+import { Tabs, type Tab } from "../components/common/Tabs";
 import {
 	FaCalendarPlus,
 	FaCalendarCheck,
 	FaCalendarTimes,
+	FaHistory,
 } from "react-icons/fa";
 import { Skeleton, SkeletonEventCard } from "../components/common/Skeleton";
 
@@ -75,6 +78,8 @@ const PENDING_RSVP_MESSAGES_EXPERIENCED = [
 	"All clear! No RSVPs waiting for you.",
 ];
 
+type EventTab = "hosting" | "attending" | "pending" | "previous";
+
 export const MyEventsPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
@@ -82,51 +87,116 @@ export const MyEventsPage = () => {
 	const eventsById = useAppSelector(selectEventsById);
 	const { user, profile } = useAppSelector(state => state.auth);
 	const lastFetchedUserId = useRef<string | null>(null);
+	const [activeTab, setActiveTab] = useState<EventTab>("hosting");
 
 	// ✅ Use memoized selectors instead of filtering
 	const hostedEvents = useAppSelector(selectHostedEvents);
 	const attendingEvents = useAppSelector(selectAttendingEvents);
 	const invitedEvents = useAppSelector(selectInvitedEvents);
+	const pastEvents = useAppSelector(selectPastEvents);
 
-	// Get rotating messages based on user activity
-	const hostingMessage = useMemo(() => {
+	// Get current events based on active tab
+	const currentEvents = useMemo(() => {
+		switch (activeTab) {
+			case "hosting":
+				return hostedEvents;
+			case "attending":
+				return attendingEvents;
+			case "pending":
+				return invitedEvents;
+			case "previous":
+				return pastEvents;
+			default:
+				return [];
+		}
+	}, [activeTab, hostedEvents, attendingEvents, invitedEvents, pastEvents]);
+
+	// Get tabs with counts
+	const tabs: Tab[] = useMemo(
+		() => [
+			{
+				id: "hosting",
+				label: "Hosting",
+				count: hostedEvents.length,
+			},
+			{
+				id: "attending",
+				label: "Attending",
+				count: attendingEvents.length,
+			},
+			{
+				id: "pending",
+				label: "Pending",
+				count: invitedEvents.length,
+			},
+			{
+				id: "previous",
+				label: "Previous",
+				count: pastEvents.length,
+			},
+		],
+		[
+			hostedEvents.length,
+			attendingEvents.length,
+			invitedEvents.length,
+			pastEvents.length,
+		],
+	);
+
+	// Get rotating messages based on user activity and active tab
+	const emptyStateMessage = useMemo(() => {
 		const messages =
-			profile?.has_created_event ?
-				HOSTING_MESSAGES_EXPERIENCED
-			:	HOSTING_MESSAGES_NEW;
+			activeTab === "hosting" ?
+				profile?.has_created_event ?
+					HOSTING_MESSAGES_EXPERIENCED
+				:	HOSTING_MESSAGES_NEW
+			: activeTab === "attending" ?
+				profile?.has_rsvped_to_event ?
+					ATTENDING_MESSAGES_EXPERIENCED
+				:	ATTENDING_MESSAGES_NEW
+			: activeTab === "pending" ?
+				profile?.has_rsvped_to_event ?
+					PENDING_RSVP_MESSAGES_EXPERIENCED
+				:	PENDING_RSVP_MESSAGES_NEW
+			:	[
+					"No past events to show.",
+					"Your event history is empty.",
+					"No previous events found.",
+				];
 		return getRotatingMessage(messages);
-	}, [profile?.has_created_event]);
+	}, [activeTab, profile?.has_created_event, profile?.has_rsvped_to_event]);
 
-	const attendingMessage = useMemo(() => {
-		const messages =
-			profile?.has_rsvped_to_event ?
-				ATTENDING_MESSAGES_EXPERIENCED
-			:	ATTENDING_MESSAGES_NEW;
-		return getRotatingMessage(messages);
-	}, [profile?.has_rsvped_to_event]);
+	// Get dynamic titles based on user activity and active tab
+	const emptyStateTitle = useMemo(() => {
+		if (activeTab === "hosting") {
+			return profile?.has_created_event ? "No events" : "No events yet";
+		}
+		if (activeTab === "attending") {
+			return profile?.has_rsvped_to_event ? "No events" : "No events yet";
+		}
+		if (activeTab === "pending") {
+			return profile?.has_rsvped_to_event ? "No invitations" : (
+					"No invitations yet"
+				);
+		}
+		return "No past events";
+	}, [activeTab, profile?.has_created_event, profile?.has_rsvped_to_event]);
 
-	const pendingRsvpMessage = useMemo(() => {
-		const messages =
-			profile?.has_rsvped_to_event ?
-				PENDING_RSVP_MESSAGES_EXPERIENCED
-			:	PENDING_RSVP_MESSAGES_NEW;
-		return getRotatingMessage(messages);
-	}, [profile?.has_rsvped_to_event]);
-
-	// Get dynamic titles based on user activity
-	const hostingTitle = useMemo(() => {
-		return profile?.has_created_event ? "No events" : "No events yet";
-	}, [profile?.has_created_event]);
-
-	const attendingTitle = useMemo(() => {
-		return profile?.has_rsvped_to_event ? "No events" : "No events yet";
-	}, [profile?.has_rsvped_to_event]);
-
-	const pendingRsvpTitle = useMemo(() => {
-		return profile?.has_rsvped_to_event ? "No invitations" : (
-				"No invitations yet"
-			);
-	}, [profile?.has_rsvped_to_event]);
+	// Get empty state icon based on active tab
+	const emptyStateIcon = useMemo(() => {
+		switch (activeTab) {
+			case "hosting":
+				return <FaCalendarPlus className='w-16 h-16' />;
+			case "attending":
+				return <FaCalendarCheck className='w-16 h-16' />;
+			case "pending":
+				return <FaCalendarTimes className='w-16 h-16' />;
+			case "previous":
+				return <FaHistory className='w-16 h-16' />;
+			default:
+				return <FaCalendarPlus className='w-16 h-16' />;
+		}
+	}, [activeTab]);
 
 	const handleRetry = () => {
 		dispatch(clearError());
@@ -146,6 +216,18 @@ export const MyEventsPage = () => {
 
 	const handleEventClick = (eventId: string) => {
 		navigate(`/events/${eventId}`);
+	};
+
+	const handleTabChange = (tabId: string) => {
+		// Type guard to ensure tabId is a valid EventTab
+		if (
+			tabId === "hosting" ||
+			tabId === "attending" ||
+			tabId === "pending" ||
+			tabId === "previous"
+		) {
+			setActiveTab(tabId);
+		}
 	};
 
 	// Check if we have any events (check both old and new structures for backward compatibility)
@@ -174,112 +256,67 @@ export const MyEventsPage = () => {
 	}
 
 	return (
-		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
+		<main id='main-content' className='bg-secondary' role='main'>
 			<div className='max-w-7xl mx-auto'>
-				<div className='flex items-start sm:items-center mb-6 md:mb-8'>
+				{/* Page Header */}
+				<div className='px-4 md:px-8 pt-4 md:pt-8 pb-2 md:pb-4'>
 					<h1 className='text-2xl md:text-3xl font-bold text-primary'>
 						My Events
 					</h1>
 				</div>
 
-				{error && hasEvents && (
-					<ErrorDisplay
-						message={error}
-						onRetry={handleRetry}
-						variant='inline'
-						className='mb-4'
-					/>
-				)}
+				{/* Tabs */}
+				<Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
-				{
-					isInitialLoading ?
-						// Show skeleton loaders for all three sections during initial load
-						<div className='space-y-8 md:space-y-12'>
-							<div>
-								<Skeleton
-									variant='text'
-									width='30%'
-									height={28}
-									className='mb-3 md:mb-4'
-								/>
-								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-									{Array.from({ length: 3 }).map((_, i) => (
-										<SkeletonEventCard key={i} />
-									))}
-								</div>
-							</div>
-							<div>
-								<Skeleton
-									variant='text'
-									width='30%'
-									height={28}
-									className='mb-3 md:mb-4'
-								/>
-								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-									{Array.from({ length: 2 }).map((_, i) => (
-										<SkeletonEventCard key={i} />
-									))}
-								</div>
-							</div>
-							<div>
-								<Skeleton
-									variant='text'
-									width='30%'
-									height={28}
-									className='mb-3 md:mb-4'
-								/>
-								<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
-									{Array.from({ length: 2 }).map((_, i) => (
-										<SkeletonEventCard key={i} />
-									))}
-								</div>
+				{/* Content Area */}
+				<div
+					className='px-4 md:px-8 py-4 md:py-8'
+					role='tabpanel'
+					id={`tabpanel-${activeTab}`}
+					aria-labelledby={`tab-${activeTab}`}>
+					{error && hasEvents && (
+						<ErrorDisplay
+							message={error}
+							onRetry={handleRetry}
+							variant='inline'
+							className='mb-4'
+						/>
+					)}
+
+					{isInitialLoading ?
+						// Show skeleton loader during initial load
+						<div>
+							<Skeleton
+								variant='text'
+								width='30%'
+								height={28}
+								className='mb-3 md:mb-4'
+							/>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+								{Array.from({ length: 6 }).map((_, i) => (
+									<SkeletonEventCard key={i} />
+								))}
 							</div>
 						</div>
-						// Show actual content after loading
-					:	<>
-							{/* Hosted Events Section */}
-							<EventCard
-								events={hostedEvents}
-								title='Hosting'
-								emptyStateProps={{
-									icon: <FaCalendarPlus className='w-16 h-16' />,
-									title: hostingTitle,
-									message: hostingMessage,
-									actionLabel: "Create Event",
-									onAction: () => navigate("/create-event"),
-								}}
-								onEventClick={handleEventClick}
-								loading={loading}
-							/>
-
-							{/* Attending Events Section */}
-							<EventCard
-								events={attendingEvents}
-								title='Attending'
-								emptyStateProps={{
-									icon: <FaCalendarCheck className='w-16 h-16' />,
-									title: attendingTitle,
-									message: attendingMessage,
-								}}
-								onEventClick={handleEventClick}
-								loading={loading}
-							/>
-
-							{/* Invited Events Section */}
-							<EventCard
-								events={invitedEvents}
-								title='Pending'
-								emptyStateProps={{
-									icon: <FaCalendarTimes className='w-16 h-16' />,
-									title: pendingRsvpTitle,
-									message: pendingRsvpMessage,
-								}}
-								onEventClick={handleEventClick}
-								loading={loading}
-							/>
-						</>
-
-				}
+					:	<EventCard
+							events={currentEvents}
+							title=''
+							emptyStateProps={{
+								icon: emptyStateIcon,
+								title: emptyStateTitle,
+								message: emptyStateMessage,
+								actionLabel:
+									activeTab === "hosting" ? "Create Event" : undefined,
+								onAction:
+									activeTab === "hosting" ?
+										() => navigate("/create-event")
+									:	undefined,
+							}}
+							onEventClick={handleEventClick}
+							loading={loading}
+						/>
+					}
+				</div>
 			</div>
 		</main>
 	);

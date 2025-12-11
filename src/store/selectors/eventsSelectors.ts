@@ -39,7 +39,14 @@ export const selectAllEvents = createSelector(
 	},
 );
 
-// ✅ Compute hosted events from eventsById (single source of truth)
+// Helper function to check if event is in the past
+const isPastEvent = (event: Event): boolean => {
+	const now = new Date();
+	const eventDate = new Date(event.event_datetime);
+	return eventDate < now;
+};
+
+// ✅ Compute hosted events from eventsById (upcoming only)
 export const selectHostedEvents = createSelector(
 	[selectEventsById, selectCurrentUserId],
 	(eventsById, userId) => {
@@ -47,7 +54,9 @@ export const selectHostedEvents = createSelector(
 
 		return Object.values(eventsById)
 			.filter(event => {
-				return categorizeEvent(event, userId) === "hosted";
+				return (
+					categorizeEvent(event, userId) === "hosted" && !isPastEvent(event)
+				);
 			})
 			.sort(
 				(a, b) =>
@@ -57,7 +66,7 @@ export const selectHostedEvents = createSelector(
 	},
 );
 
-// ✅ Compute attending events from eventsById
+// ✅ Compute attending events from eventsById (upcoming only)
 export const selectAttendingEvents = createSelector(
 	[selectEventsById, selectCurrentUserId],
 	(eventsById, userId) => {
@@ -65,7 +74,9 @@ export const selectAttendingEvents = createSelector(
 
 		return Object.values(eventsById)
 			.filter(event => {
-				return categorizeEvent(event, userId) === "attending";
+				return (
+					categorizeEvent(event, userId) === "attending" && !isPastEvent(event)
+				);
 			})
 			.sort(
 				(a, b) =>
@@ -75,7 +86,7 @@ export const selectAttendingEvents = createSelector(
 	},
 );
 
-// ✅ Compute invited events from eventsById
+// ✅ Compute invited events from eventsById (upcoming only)
 export const selectInvitedEvents = createSelector(
 	[selectEventsById, selectCurrentUserId],
 	(eventsById, userId) => {
@@ -83,12 +94,98 @@ export const selectInvitedEvents = createSelector(
 
 		return Object.values(eventsById)
 			.filter(event => {
-				return categorizeEvent(event, userId) === "invited";
+				return (
+					categorizeEvent(event, userId) === "invited" && !isPastEvent(event)
+				);
 			})
 			.sort(
 				(a, b) =>
 					new Date(a.event_datetime).getTime() -
 					new Date(b.event_datetime).getTime(),
+			);
+	},
+);
+
+// ✅ Compute past hosted events
+export const selectPastHostedEvents = createSelector(
+	[selectEventsById, selectCurrentUserId],
+	(eventsById, userId) => {
+		if (!userId) return [];
+
+		return Object.values(eventsById)
+			.filter(event => {
+				return (
+					categorizeEvent(event, userId) === "hosted" && isPastEvent(event)
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(b.event_datetime).getTime() -
+					new Date(a.event_datetime).getTime(), // Most recent first
+			);
+	},
+);
+
+// ✅ Compute past attending events
+export const selectPastAttendingEvents = createSelector(
+	[selectEventsById, selectCurrentUserId],
+	(eventsById, userId) => {
+		if (!userId) return [];
+
+		return Object.values(eventsById)
+			.filter(event => {
+				return (
+					categorizeEvent(event, userId) === "attending" && isPastEvent(event)
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(b.event_datetime).getTime() -
+					new Date(a.event_datetime).getTime(), // Most recent first
+			);
+	},
+);
+
+// ✅ Compute past invited events (events user was invited to but didn't RSVP)
+export const selectPastInvitedEvents = createSelector(
+	[selectEventsById, selectCurrentUserId],
+	(eventsById, userId) => {
+		if (!userId) return [];
+
+		return Object.values(eventsById)
+			.filter(event => {
+				return (
+					categorizeEvent(event, userId) === "invited" && isPastEvent(event)
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(b.event_datetime).getTime() -
+					new Date(a.event_datetime).getTime(), // Most recent first
+			);
+	},
+);
+
+// ✅ Compute all past events (hosted, attending, or invited)
+export const selectPastEvents = createSelector(
+	[selectEventsById, selectCurrentUserId],
+	(eventsById, userId) => {
+		if (!userId) return [];
+
+		return Object.values(eventsById)
+			.filter(event => {
+				const category = categorizeEvent(event, userId);
+				return (
+					(category === "hosted" ||
+						category === "attending" ||
+						category === "invited") &&
+					isPastEvent(event)
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(b.event_datetime).getTime() -
+					new Date(a.event_datetime).getTime(), // Most recent first
 			);
 	},
 );
