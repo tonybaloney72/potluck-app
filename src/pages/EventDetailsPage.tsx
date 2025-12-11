@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { FaArrowLeft, FaEdit, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaEdit, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
 import {
 	fetchEventById,
 	checkEventUpdated,
@@ -359,6 +359,8 @@ export const EventDetailPage = () => {
 		theme?: string | null;
 		description?: string | null;
 		event_datetime?: string;
+		end_datetime?: string | null;
+		status?: "active" | "completed" | "cancelled";
 		location?: {
 			lat: number;
 			lng: number;
@@ -394,6 +396,16 @@ export const EventDetailPage = () => {
 		);
 	};
 
+	const handleMarkComplete = async () => {
+		try {
+			await handleUpdateEvent({
+				status: "completed",
+			});
+		} catch (error) {
+			console.error("Failed to update event:", error);
+		}
+	};
+
 	const isEventCreator = event.created_by === user?.id;
 	const canEdit =
 		isEventCreator || hasManagePermission(currentUserParticipant?.role);
@@ -405,40 +417,51 @@ export const EventDetailPage = () => {
 			role='main'>
 			<div className='max-w-4xl mx-auto'>
 				{/* Back Button, Edit, and Delete */}
-				<div className='flex justify-between items-center gap-3 mb-4'>
+				<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4'>
 					<button
 						onClick={() => navigate("/")}
 						className='text-primary hover:text-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hover:cursor-pointer hover:bg-tertiary rounded-md'>
 						<FaArrowLeft className='w-5 h-5' />
 					</button>
 					{canEdit && (
-						<div className='flex gap-2'>
-							{isEventCreator && isEditing && (
-								<Button
-									variant='secondary'
-									onClick={() => handleDelete("deleteEvent")}
-									className='text-sm text-red-600 hover:text-red-700 min-h-[44px]'>
-									Delete Event
-								</Button>
-							)}
+						<div className='flex flex-wrap gap-2 w-full sm:w-auto'>
 							{isEditing && (
 								<Button
-									className='flex items-center justify-center gap-2  sm:w-auto min-h-[44px]'
+									className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'
 									type='button'
 									variant='secondary'
 									onClick={() => setIsEditing(false)}
 									disabled={updatingEvent}>
-									<FaTimes />
-									Cancel
+									<FaTimes className='w-4 h-4' />
+									<span className='hidden sm:inline'>Cancel</span>
+								</Button>
+							)}
+							{isEditing && (
+								<Button
+									variant='secondary'
+									onClick={handleMarkComplete}
+									className='flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px]'>
+									<FaCheck className='w-4 h-4' />
+									<span className='hidden sm:inline'>Mark as Completed</span>
+								</Button>
+							)}
+							{isEventCreator && isEditing && (
+								<Button
+									variant='secondary'
+									onClick={() => handleDelete("deleteEvent")}
+									className='flex items-center justify-center gap-2 flex-1 sm:flex-none text-sm text-red-600 hover:text-red-700 min-h-[44px]'>
+									<FaTrash className='w-4 h-4' />
+									<span className='hidden sm:inline'>Delete</span>
 								</Button>
 							)}
 							{!isEditing && (
 								<Button
 									variant='secondary'
 									onClick={() => setIsEditing(true)}
-									className='text-sm flex items-center gap-2 min-h-[44px]'>
+									className='flex items-center justify-center gap-2 flex-1 sm:flex-none text-sm min-h-[44px]'>
 									<FaEdit className='w-4 h-4' />
-									Edit Event
+									<span className='hidden sm:inline'>Edit Event</span>
+									<span className='sm:hidden'>Edit</span>
 								</Button>
 							)}
 						</div>

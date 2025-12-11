@@ -20,6 +20,7 @@ interface CreateEventFormData {
 	description: string;
 	theme: string;
 	event_datetime: string;
+	end_datetime: string | null;
 	location: {
 		lat: number;
 		lng: number;
@@ -50,13 +51,18 @@ export const CreateEventPage = () => {
 		handleSubmit,
 		control,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm<CreateEventFormData>({
 		defaultValues: {
 			is_public: false,
 			event_datetime: getDefaultDateTime(),
+			end_datetime: null,
 		},
 	});
+
+	// Watch event_datetime for validation
+	const eventDateTime = watch("event_datetime");
 
 	const [selectedLocation, setSelectedLocation] = useState<{
 		lat: number;
@@ -78,12 +84,24 @@ export const CreateEventPage = () => {
 					}))
 				:	undefined;
 
+			// Validate end_datetime is after event_datetime
+			if (data.end_datetime && data.event_datetime) {
+				const startDate = new Date(data.event_datetime);
+				const endDate = new Date(data.end_datetime);
+				if (endDate <= startDate) {
+					setError("End time must be after start time");
+					setLoading(false);
+					return;
+				}
+			}
+
 			const result = await dispatch(
 				createEvent({
 					title: data.title,
 					description: data.description || undefined,
 					theme: data.theme || undefined,
 					event_datetime: data.event_datetime,
+					end_datetime: data.end_datetime || undefined,
 					location: data.location || undefined,
 					is_public: data.is_public,
 					invitedParticipants,
@@ -160,10 +178,20 @@ export const CreateEventPage = () => {
 						<DateTime
 							control={control}
 							name='event_datetime'
-							label='Event Date & Time'
+							label='Event Start Date & Time'
 							error={errors.event_datetime}
 							required
 							helperText='Select a future date and time for your event'
+						/>
+
+						<DateTime
+							control={control}
+							name='end_datetime'
+							label='Event End Date & Time (optional)'
+							error={errors.end_datetime}
+							helperText='Optional end time. Must be after start time.'
+							minDate={eventDateTime ? new Date(eventDateTime) : undefined}
+							optional={true}
 						/>
 
 						<FriendSelector

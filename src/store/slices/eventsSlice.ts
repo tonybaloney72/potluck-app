@@ -255,6 +255,7 @@ export const createEvent = createAsyncThunk(
 		description?: string;
 		theme?: string;
 		event_datetime: string;
+		end_datetime?: string;
 		location?: {
 			lat: number;
 			lng: number;
@@ -274,8 +275,10 @@ export const createEvent = createAsyncThunk(
 				description: eventData.description || null,
 				theme: eventData.theme || null,
 				event_datetime: eventData.event_datetime,
+				end_datetime: eventData.end_datetime || null,
 				location: eventData.location || null,
 				is_public: eventData.is_public || false,
+				status: "active", // Default status for new events
 			})
 			.select(
 				`

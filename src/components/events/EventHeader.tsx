@@ -30,13 +30,28 @@ const locationSchema = z
 	})
 	.nullable();
 
-const eventUpdateSchema = z.object({
-	title: z.string().min(1, "Title is required"),
-	theme: z.string().optional(),
-	description: z.string().optional(),
-	event_datetime: z.string().min(1, "Date and time is required"),
-	location: locationSchema,
-});
+const eventUpdateSchema = z
+	.object({
+		title: z.string().min(1, "Title is required"),
+		theme: z.string().optional(),
+		description: z.string().optional(),
+		event_datetime: z.string().min(1, "Date and time is required"),
+		end_datetime: z.string().nullable().optional(),
+		location: locationSchema,
+	})
+	.refine(
+		data => {
+			// If end_datetime is provided, it must be after event_datetime
+			if (data.end_datetime && data.event_datetime) {
+				return new Date(data.end_datetime) > new Date(data.event_datetime);
+			}
+			return true;
+		},
+		{
+			message: "End time must be after start time",
+			path: ["end_datetime"],
+		},
+	);
 
 type EventUpdateFormData = z.infer<typeof eventUpdateSchema>;
 
@@ -52,6 +67,8 @@ interface EventHeaderProps {
 		theme?: string | null;
 		description?: string | null;
 		event_datetime?: string;
+		end_datetime?: string | null;
+		status?: "active" | "completed" | "cancelled";
 		location?: {
 			lat: number;
 			lng: number;
@@ -83,9 +100,12 @@ export const EventHeader = ({
 			theme: event.theme || "",
 			description: event.description || "",
 			event_datetime: event.event_datetime,
+			end_datetime: event.end_datetime || null,
 			location: event.location || null,
 		},
 	});
+
+	const eventStartDateTime = eventUpdateForm.watch("event_datetime");
 
 	useEffect(() => {
 		if (!isEditing) {
@@ -94,6 +114,7 @@ export const EventHeader = ({
 				theme: event.theme || "",
 				description: event.description || "",
 				event_datetime: event.event_datetime,
+				end_datetime: event.end_datetime || null,
 				location: event.location || null,
 			});
 		}
@@ -104,6 +125,7 @@ export const EventHeader = ({
 		event.theme,
 		event.description,
 		event.event_datetime,
+		event.end_datetime,
 		event.location,
 	]);
 
@@ -119,6 +141,7 @@ export const EventHeader = ({
 				theme: data.theme || null,
 				description: data.description || null,
 				event_datetime: data.event_datetime,
+				end_datetime: data.end_datetime || null,
 				location: data.location || null,
 			});
 		} catch (error) {
@@ -162,9 +185,19 @@ export const EventHeader = ({
 						<DateTime
 							control={eventUpdateForm.control}
 							name='event_datetime'
-							label='Event Date & Time *'
+							label='Event Start Date & Time'
 							error={eventUpdateForm.formState.errors.event_datetime}
 							required
+						/>
+						<DateTime
+							control={eventUpdateForm.control}
+							name='end_datetime'
+							label='Event End Date & Time (optional)'
+							error={eventUpdateForm.formState.errors.end_datetime}
+							minDate={
+								eventStartDateTime ? new Date(eventStartDateTime) : undefined
+							}
+							optional={true}
 						/>
 					</div>
 				:	<>
@@ -192,8 +225,21 @@ export const EventHeader = ({
 								<p className='text-sm text-tertiary'>Date & Time</p>
 								<p className='text-primary'>
 									{eventDateTime.date} at {eventDateTime.time}
+									{event.end_datetime && (
+										<>
+											{" - "}
+											{formatDateTime(event.end_datetime).date} at{" "}
+											{formatDateTime(event.end_datetime).time}
+										</>
+									)}
 								</p>
 							</div>
+							{event.status && event.status !== "active" && (
+								<div className='mt-2'>
+									<p className='text-sm text-tertiary'>Status</p>
+									<p className='text-primary capitalize'>{event.status}</p>
+								</div>
+							)}
 						</div>
 					</>
 				}
@@ -251,6 +297,7 @@ export const EventHeader = ({
 				)
 			}
 
+			{/* Mark as Complete Button (for hosts, when event is active) */}
 			{/* Save/Cancel Buttons */}
 			{isEditing && (
 				<div className='flex flex-col sm:flex-row justify-end gap-2 mt-4 pt-4 border-t border-border'>

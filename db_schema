@@ -61,8 +61,11 @@ CREATE TABLE public.events (
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   event_datetime timestamp with time zone,
+  end_datetime timestamp with time zone,
+  status text NOT NULL DEFAULT 'active' CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text])),
   CONSTRAINT events_pkey PRIMARY KEY (id),
-  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT events_end_after_start_check CHECK (end_datetime IS NULL OR event_datetime IS NULL OR end_datetime >= event_datetime)
 );
 CREATE TABLE public.friendships (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

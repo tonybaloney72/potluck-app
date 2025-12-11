@@ -40,10 +40,25 @@ export const selectAllEvents = createSelector(
 );
 
 // Helper function to check if event is in the past
+// An event is considered "past" if:
+// 1. Status is 'completed' or 'cancelled', OR
+// 2. Has end_datetime and it's in the past, OR
+// 3. No end_datetime but event_datetime is in the past
 const isPastEvent = (event: Event): boolean => {
+	// If status is completed or cancelled, it's always past
+	if (event.status === "completed" || event.status === "cancelled") {
+		return true;
+	}
+
 	const now = new Date();
-	const eventDate = new Date(event.event_datetime);
-	return eventDate < now;
+
+	// If end_datetime exists, use it; otherwise use event_datetime
+	const endDate =
+		event.end_datetime ?
+			new Date(event.end_datetime)
+		:	new Date(event.event_datetime);
+
+	return endDate < now;
 };
 
 // ✅ Compute hosted events from eventsById (upcoming only)

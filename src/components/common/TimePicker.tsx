@@ -5,6 +5,7 @@ interface TimePickerProps {
 	value: { hour: number; minute: number; ampm: "AM" | "PM" } | null;
 	onChange: (time: { hour: number; minute: number; ampm: "AM" | "PM" }) => void;
 	disabled?: boolean;
+	optional?: boolean; // If true, show placeholder when value is null instead of defaulting
 	id?: string;
 	"aria-label"?: string;
 	"aria-describedby"?: string;
@@ -19,6 +20,7 @@ export const TimePicker = ({
 	value,
 	onChange,
 	disabled = false,
+	optional = false,
 	id,
 	"aria-label": ariaLabel,
 	"aria-describedby": ariaDescribedBy,
@@ -30,8 +32,10 @@ export const TimePicker = ({
 	>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	// Default to 12:00 PM if no value
-	const currentValue = value || { hour: 12, minute: 0, ampm: "PM" as const };
+	// For optional fields, don't default to 12:00 PM - show placeholder instead
+	// For required fields, default to 12:00 PM if no value
+	const currentValue =
+		value || (optional ? null : { hour: 12, minute: 0, ampm: "PM" as const });
 
 	// Close dropdown when clicking outside
 	useEffect(() => {
@@ -54,22 +58,43 @@ export const TimePicker = ({
 	}, [isOpen]);
 
 	const handleHourChange = (hour: number) => {
-		onChange({ ...currentValue, hour });
+		// If no current value, start with default values
+		const baseValue = currentValue || {
+			hour: 12,
+			minute: 0,
+			ampm: "PM" as const,
+		};
+		onChange({ ...baseValue, hour });
 		setFocusedField("minute");
 	};
 
 	const handleMinuteChange = (minute: number) => {
-		onChange({ ...currentValue, minute });
+		// If no current value, start with default values
+		const baseValue = currentValue || {
+			hour: 12,
+			minute: 0,
+			ampm: "PM" as const,
+		};
+		onChange({ ...baseValue, minute });
 		setFocusedField("ampm");
 	};
 
 	const handleAmpmChange = (ampm: "AM" | "PM") => {
-		onChange({ ...currentValue, ampm });
+		// If no current value, start with default values
+		const baseValue = currentValue || {
+			hour: 12,
+			minute: 0,
+			ampm: "PM" as const,
+		};
+		onChange({ ...baseValue, ampm });
 		setIsOpen(false);
 		setFocusedField(null);
 	};
 
 	const formatTime = () => {
+		if (!currentValue) {
+			return "Select time";
+		}
 		const hourStr = currentValue.hour.toString().padStart(2, "0");
 		const minuteStr = currentValue.minute.toString().padStart(2, "0");
 		return `${hourStr}:${minuteStr} ${currentValue.ampm}`;
@@ -125,7 +150,10 @@ export const TimePicker = ({
 					focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2
 					focus:ring-offset-secondary
 				`}>
-				<span className='text-sm font-medium'>{formatTime()}</span>
+				<span
+					className={`text-sm font-medium ${!currentValue ? "text-tertiary" : ""}`}>
+					{formatTime()}
+				</span>
 				{isOpen ?
 					<FaChevronUp className='w-4 h-4 text-secondary' />
 				:	<FaChevronDown className='w-4 h-4 text-secondary' />}
@@ -153,12 +181,12 @@ export const TimePicker = ({
 									onClick={() => handleHourChange(hour)}
 									onFocus={() => setFocusedField("hour")}
 									role='option'
-									aria-selected={currentValue.hour === hour}
+									aria-selected={currentValue?.hour === hour}
 									className={`
 										w-full px-3 py-2 text-sm rounded
 										transition-colors
 										${
-											currentValue.hour === hour ?
+											currentValue?.hour === hour ?
 												"bg-accent text-white font-medium"
 											:	"text-primary hover:bg-tertiary"
 										}
@@ -183,12 +211,12 @@ export const TimePicker = ({
 									onClick={() => handleMinuteChange(minute)}
 									onFocus={() => setFocusedField("minute")}
 									role='option'
-									aria-selected={currentValue.minute === minute}
+									aria-selected={currentValue?.minute === minute}
 									className={`
 										w-full px-3 py-2 text-sm rounded
 										transition-colors
 										${
-											currentValue.minute === minute ?
+											currentValue?.minute === minute ?
 												"bg-accent text-white font-medium"
 											:	"text-primary hover:bg-tertiary"
 										}
@@ -213,12 +241,12 @@ export const TimePicker = ({
 									onClick={() => handleAmpmChange(ampm)}
 									onFocus={() => setFocusedField("ampm")}
 									role='option'
-									aria-selected={currentValue.ampm === ampm}
+									aria-selected={currentValue?.ampm === ampm}
 									className={`
 										w-full px-3 py-2 text-sm rounded font-medium
 										transition-colors
 										${
-											currentValue.ampm === ampm ?
+											currentValue?.ampm === ampm ?
 												"bg-accent text-white"
 											:	"text-primary hover:bg-tertiary border border-border"
 										}

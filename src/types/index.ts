@@ -86,6 +86,8 @@ export interface Notification {
 export type EventRole = "host" | "co-host" | "contributor" | "guest";
 export type RSVPStatus = "pending" | "going" | "not_going" | "maybe";
 
+export type EventStatus = "active" | "completed" | "cancelled";
+
 export interface Event {
 	id: string;
 	created_by: string;
@@ -93,6 +95,8 @@ export interface Event {
 	description: string | null;
 	theme: string | null;
 	event_datetime: string; // ISO datetime string
+	end_datetime: string | null; // ISO datetime string (optional end time)
+	status: EventStatus; // Event status: active, completed, or cancelled
 	location: {
 		lat: number;
 		lng: number;

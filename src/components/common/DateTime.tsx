@@ -10,6 +10,8 @@ interface DateTimeProps {
 	error?: FieldError;
 	required?: boolean;
 	helperText?: string;
+	minDate?: Date; // Minimum date for the date picker
+	optional?: boolean; // If true, don't auto-set default time when date is selected
 }
 
 export const DateTime = ({
@@ -19,6 +21,8 @@ export const DateTime = ({
 	error,
 	required = false,
 	helperText,
+	minDate,
+	optional = false,
 }: DateTimeProps) => {
 	const dateTimeId = `datetime-${name}`;
 	const errorId = error ? `${dateTimeId}-error` : undefined;
@@ -66,7 +70,7 @@ export const DateTime = ({
 
 					const handleDateChange = (date: Date | null) => {
 						if (!date) {
-							field.onChange("");
+							field.onChange(optional ? null : "");
 							return;
 						}
 
@@ -85,7 +89,12 @@ export const DateTime = ({
 								.toISOString();
 							field.onChange(combined);
 						} else {
-							// Default to 12:00 PM if no time selected
+							// For optional fields, don't auto-set time - user must explicitly select it
+							// For required fields, default to 12:00 PM if no time selected
+							if (optional) {
+								// Don't set a value yet - wait for user to select time
+								return;
+							}
 							const combined = dayjs(date)
 								.hour(12)
 								.minute(0)
@@ -114,8 +123,12 @@ export const DateTime = ({
 								.millisecond(0)
 								.toISOString();
 							field.onChange(combined);
+						} else if (optional) {
+							// For optional fields without a date, don't set anything yet
+							// User needs to select date first
+							return;
 						} else {
-							// If no date, use today's date
+							// If no date and not optional, use today's date (required fields)
 							const today = dayjs();
 							const combined = today
 								.hour(
@@ -150,7 +163,7 @@ export const DateTime = ({
 									<DatePicker
 										selected={dateValue}
 										onChange={handleDateChange}
-										minDate={new Date()}
+										minDate={minDate || new Date()}
 										dateFormat='MMM dd, yyyy'
 										placeholderText='Select date'
 										className={`
@@ -178,6 +191,7 @@ export const DateTime = ({
 										aria-label='Select time'
 										aria-describedby={describedBy}
 										aria-invalid={error ? true : false}
+										optional={optional}
 									/>
 								</div>
 							</div>
