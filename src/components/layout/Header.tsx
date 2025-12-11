@@ -16,10 +16,124 @@ import {
 	FaPlus,
 } from "react-icons/fa";
 import { LuCookingPot } from "react-icons/lu";
+import type { IconType } from "react-icons";
 import { useTheme } from "../../context/ThemeContext";
 import type { ThemePreference } from "../../types";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { Button } from "../common/Button";
+import { Avatar } from "../common/Avatar";
+
+// Navigation items configuration
+const navItems = [
+	{
+		to: "/events",
+		icon: LuCookingPot,
+		label: "My Events",
+		ariaLabel: "My Events",
+	},
+	{
+		to: "/friends",
+		icon: FaUsers,
+		label: "Friends",
+		ariaLabel: "Friends",
+	},
+	{
+		to: "/messages",
+		icon: FaEnvelope,
+		label: "Messages",
+		ariaLabel: "Messages",
+	},
+] as const;
+
+// Desktop navigation link styles
+const desktopNavLinkClass =
+	"text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center";
+
+// Mobile navigation link styles
+const mobileNavLinkClass =
+	"flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]";
+
+// Mobile menu button styles
+const mobileMenuButtonClass =
+	"w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]";
+
+// Icon button styles (for close/toggle buttons)
+const iconButtonClass =
+	"flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]";
+
+// Dropdown menu item styles
+const dropdownMenuItemClass =
+	"w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]";
+
+// New Event button component
+const NewEventButton = ({
+	onClick,
+	className = "",
+}: {
+	onClick: () => void;
+	className?: string;
+}) => (
+	<Button
+		onClick={onClick}
+		variant='primary'
+		className={`flex items-center gap-3 justify-center min-h-[44px] ${className}`}>
+		<FaPlus className='w-5 h-5' aria-hidden='true' />
+		<span>New Event</span>
+	</Button>
+);
+
+// Desktop dropdown menu item component
+interface DropdownMenuItemProps {
+	icon: IconType;
+	label: string;
+	onClick: () => void;
+	ariaLabel?: string;
+}
+
+const DropdownMenuItem = ({
+	icon: Icon,
+	label,
+	onClick,
+	ariaLabel,
+}: DropdownMenuItemProps) => (
+	<motion.button
+		whileHover={{
+			backgroundColor: "var(--bg-tertiary)",
+		}}
+		whileTap={{ scale: 0.98 }}
+		onClick={onClick}
+		className={dropdownMenuItemClass}
+		role='menuitem'
+		aria-label={ariaLabel}
+		type='button'>
+		<Icon className='w-4 h-4' aria-hidden='true' />
+		{label}
+	</motion.button>
+);
+
+// Mobile menu button component
+interface MobileMenuButtonProps {
+	icon: IconType;
+	label: string;
+	onClick: () => void;
+	ariaLabel?: string;
+}
+
+const MobileMenuButton = ({
+	icon: Icon,
+	label,
+	onClick,
+	ariaLabel,
+}: MobileMenuButtonProps) => (
+	<button
+		onClick={onClick}
+		className={mobileMenuButtonClass}
+		aria-label={ariaLabel}
+		type='button'>
+		<Icon className='w-5 h-5' aria-hidden='true' />
+		<span>{label}</span>
+	</button>
+);
 
 export const Header = () => {
 	const { profile } = useAppSelector(state => state.auth);
@@ -129,41 +243,34 @@ export const Header = () => {
 
 								{/* Desktop Navigation */}
 								<div className='hidden md:flex items-center gap-4'>
-									<Button
-										onClick={handleCreateEvent}
-										variant='primary'
-										className='w-full flex items-center gap-3 justify-center min-h-[44px]'>
-										<FaPlus className='w-5 h-5' aria-hidden='true' />
-										<span>New Event</span>
-									</Button>
-									<Link
-										to='/friends'
-										className='text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
-										aria-label='Friends'>
-										<FaUsers className='w-6 h-6' aria-hidden='true' />
-									</Link>
-
-									<Link
-										to='/messages'
-										className='text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center'
-										aria-label='Messages'>
-										<FaEnvelope className='w-6 h-6' aria-hidden='true' />
-									</Link>
+									<NewEventButton onClick={handleCreateEvent} />
+									{navItems.map(item => {
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.to}
+												to={item.to}
+												className={desktopNavLinkClass}
+												aria-label={item.ariaLabel}>
+												<Icon className='w-6 h-6' aria-hidden='true' />
+											</Link>
+										);
+									})}
 									<NotificationDropdown />
 									<div className='flex items-center gap-4'>
 										<div className='relative' ref={dropdownRef}>
 											<button
 												onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-												className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border active:scale-95 cursor-pointer transition-all duration-200 min-w-[44px] min-h-[44px]'
+												className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border active:scale-95 cursor-pointer transition-all duration-200 min-w-[44px] min-h-[44px] overflow-hidden'
 												aria-label={`User menu for ${profile?.name || "user"}`}
 												aria-expanded={isDropdownOpen}
 												aria-haspopup='menu'
 												type='button'>
-												{profile?.avatar_url ?
-													<img
-														src={profile.avatar_url}
-														alt={`${profile?.name || "User"} avatar`}
-														className='w-full h-full rounded-full object-cover'
+												{profile ?
+													<Avatar
+														user={profile}
+														size='sm'
+														className='w-full h-full object-cover'
 													/>
 												:	<FaUser className='w-5 h-5' aria-hidden='true' />}
 											</button>
@@ -186,19 +293,7 @@ export const Header = () => {
 																transition={{ delay: 0.1 }}
 																className='px-4 py-3 border-b border-border'>
 																<div className='flex items-center gap-3'>
-																	{profile.avatar_url ?
-																		<img
-																			src={profile.avatar_url}
-																			alt={`${profile.name} avatar`}
-																			className='w-8 h-8 rounded-full object-cover'
-																		/>
-																	:	<div className='w-8 h-8 rounded-full bg-tertiary flex items-center justify-center'>
-																			<FaUser
-																				className='w-4 h-4 text-primary'
-																				aria-hidden='true'
-																			/>
-																		</div>
-																	}
+																	<Avatar user={profile} size='sm' />
 																	<span className='text-sm font-medium text-primary truncate'>
 																		{profile.name.split(" ")[0]}
 																	</span>
@@ -207,61 +302,30 @@ export const Header = () => {
 														)}
 														{/* Menu items */}
 														<div className='py-1' role='group'>
-															<motion.button
-																whileHover={{
-																	backgroundColor: "var(--bg-tertiary)",
-																}}
-																whileTap={{ scale: 0.98 }}
+															<DropdownMenuItem
+																icon={FaCog}
+																label='Settings'
 																onClick={handleSettings}
-																className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
-																role='menuitem'
-																type='button'>
-																<FaCog className='w-4 h-4' aria-hidden='true' />
-																Settings
-															</motion.button>
-															<motion.button
-																whileHover={{
-																	backgroundColor: "var(--bg-tertiary)",
-																}}
-																whileTap={{ scale: 0.98 }}
+															/>
+															<DropdownMenuItem
+																icon={theme === "dark" ? FaSun : FaMoon}
+																label={
+																	theme === "dark" ? "Light Mode" : "Dark Mode"
+																}
 																onClick={() =>
 																	handleThemeChange(
 																		theme === "dark" ? "light" : "dark",
 																	)
 																}
-																className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
-																role='menuitem'
-																aria-label={`Switch to ${
+																ariaLabel={`Switch to ${
 																	theme === "dark" ? "light" : "dark"
 																} mode`}
-																type='button'>
-																{theme === "dark" ?
-																	<FaSun
-																		className='w-4 h-4'
-																		aria-hidden='true'
-																	/>
-																:	<FaMoon
-																		className='w-4 h-4'
-																		aria-hidden='true'
-																	/>
-																}
-																{theme === "dark" ? "Light Mode" : "Dark Mode"}
-															</motion.button>
-															<motion.button
-																whileHover={{
-																	backgroundColor: "var(--bg-tertiary)",
-																}}
-																whileTap={{ scale: 0.98 }}
+															/>
+															<DropdownMenuItem
+																icon={FaSignOutAlt}
+																label='Log Out'
 																onClick={handleSignOut}
-																className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary transition-colors duration-50 hover:cursor-pointer min-h-[44px]'
-																role='menuitem'
-																type='button'>
-																<FaSignOutAlt
-																	className='w-4 h-4'
-																	aria-hidden='true'
-																/>
-																Log Out
-															</motion.button>
+															/>
 														</div>
 													</motion.div>
 												)}
@@ -275,7 +339,7 @@ export const Header = () => {
 									<NotificationDropdown />
 									<button
 										onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-										className='flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]'
+										className={iconButtonClass}
 										aria-label='Toggle mobile menu'
 										aria-expanded={isMobileMenuOpen}
 										aria-controls='mobile-menu'
@@ -323,7 +387,7 @@ export const Header = () => {
 									<h2 className='text-lg font-semibold text-primary'>Menu</h2>
 									<button
 										onClick={() => setIsMobileMenuOpen(false)}
-										className='flex items-center justify-center w-11 h-11 text-primary hover:bg-tertiary rounded-md transition-colors min-w-[44px] min-h-[44px]'
+										className={iconButtonClass}
 										aria-label='Close menu'
 										type='button'>
 										<FaTimes className='w-5 h-5' aria-hidden='true' />
@@ -332,92 +396,61 @@ export const Header = () => {
 
 								{/* Navigation Links */}
 								<nav className='p-4 space-y-2' aria-label='Mobile navigation'>
-									<Button
+									<NewEventButton
 										onClick={handleCreateEvent}
-										variant='primary'
-										className='w-full flex items-center gap-3 justify-center min-h-[44px]'>
-										<FaPlus className='w-5 h-5' aria-hidden='true' />
-										<span>New Event</span>
-									</Button>
-									<Link
-										to='/'
-										onClick={handleMobileNavClick}
-										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<LuCookingPot className='w-5 h-5' aria-hidden='true' />
-										<span>My Events</span>
-									</Link>
-									<Link
-										to='/friends'
-										onClick={handleMobileNavClick}
-										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaUsers className='w-5 h-5' aria-hidden='true' />
-										<span>Friends</span>
-									</Link>
-									<Link
-										to='/messages'
-										onClick={handleMobileNavClick}
-										className='flex items-center gap-3 px-4 py-3 text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'>
-										<FaEnvelope className='w-5 h-5' aria-hidden='true' />
-										<span>Messages</span>
-									</Link>
+										className='w-full'
+									/>
+									{navItems.map(item => {
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.to}
+												to={item.to}
+												onClick={handleMobileNavClick}
+												className={mobileNavLinkClass}>
+												<Icon className='w-5 h-5' aria-hidden='true' />
+												<span>{item.label}</span>
+											</Link>
+										);
+									})}
 								</nav>
 
 								{/* User Section */}
 								<div className='p-4 border-t border-border space-y-2'>
 									{profile?.name && (
 										<div className='flex items-center gap-3 px-4 py-3 mb-2'>
-											{profile.avatar_url ?
-												<img
-													src={profile.avatar_url}
-													alt={`${profile.name} avatar`}
-													className='w-10 h-10 rounded-full object-cover'
-												/>
-											:	<div className='w-10 h-10 rounded-full bg-tertiary flex items-center justify-center'>
-													<FaUser
-														className='w-5 h-5 text-primary'
-														aria-hidden='true'
-													/>
-												</div>
-											}
+											<Avatar user={profile} size='md' />
 											<span className='text-sm font-medium text-primary truncate'>
 												{profile.name}
 											</span>
 										</div>
 									)}
-									<button
+									<MobileMenuButton
+										icon={FaCog}
+										label='Settings'
 										onClick={() => {
 											handleSettings();
 											setIsMobileMenuOpen(false);
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
-										type='button'>
-										<FaCog className='w-5 h-5' aria-hidden='true' />
-										<span>Settings</span>
-									</button>
-									<button
+									/>
+									<MobileMenuButton
+										icon={theme === "dark" ? FaSun : FaMoon}
+										label={theme === "dark" ? "Light Mode" : "Dark Mode"}
 										onClick={() => {
 											handleThemeChange(theme === "dark" ? "light" : "dark");
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
-										aria-label={`Switch to ${
+										ariaLabel={`Switch to ${
 											theme === "dark" ? "light" : "dark"
 										} mode`}
-										type='button'>
-										{theme === "dark" ?
-											<FaSun className='w-5 h-5' aria-hidden='true' />
-										:	<FaMoon className='w-5 h-5' aria-hidden='true' />}
-										<span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-									</button>
-									<button
+									/>
+									<MobileMenuButton
+										icon={FaSignOutAlt}
+										label='Log Out'
 										onClick={() => {
 											handleSignOut();
 											setIsMobileMenuOpen(false);
 										}}
-										className='w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-tertiary rounded-md transition-colors min-h-[44px]'
-										type='button'>
-										<FaSignOutAlt className='w-5 h-5' aria-hidden='true' />
-										<span>Log Out</span>
-									</button>
+									/>
 								</div>
 							</div>
 						</motion.div>
