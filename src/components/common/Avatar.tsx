@@ -2,6 +2,7 @@ interface AvatarProps {
 	user: { avatar_url: string | null; name?: string | null } | null | undefined;
 	size?: "sm" | "md" | "lg" | "xl";
 	className?: string;
+	onClick?: () => void;
 }
 
 const sizeClasses = {
@@ -11,7 +12,12 @@ const sizeClasses = {
 	xl: "w-18 h-18 md:w-24 md:h-24",
 };
 
-export const Avatar = ({ user, size = "md", className = "" }: AvatarProps) => {
+export const Avatar = ({
+	user,
+	size = "md",
+	className = "",
+	onClick,
+}: AvatarProps) => {
 	const sizeClass = sizeClasses[size];
 
 	if (user?.avatar_url) {
@@ -20,6 +26,8 @@ export const Avatar = ({ user, size = "md", className = "" }: AvatarProps) => {
 				src={user.avatar_url}
 				alt={user.name || "User"}
 				className={`${sizeClass} rounded-full ${className}`}
+				onClick={onClick}
+				style={{ cursor: onClick ? "pointer" : "default" }}
 			/>
 		);
 	}

@@ -41,10 +41,12 @@ export const ErrorDisplay = ({
 			animate={{ opacity: 1, y: 0 }}
 			className={`${variants[variant]} ${className}`}>
 			<div className='flex items-start gap-3'>
-				{displayIcon}
-				<div className='flex-1'>
+				<div className='flex-1 flex flex-col items-center'>
 					{title && variant !== "inline" && (
-						<h3 className='font-semibold mb-1'>{title}</h3>
+						<div className='flex items-center gap-2'>
+							{displayIcon}
+							<h3 className='font-semibold mb-1'>{title}</h3>
+						</div>
 					)}
 					<p className='text-sm'>{message}</p>
 					{onRetry && variant !== "inline" && (

@@ -201,12 +201,12 @@ export const EventHeader = ({
 						/>
 					</div>
 				:	<>
-						<div className='flex justify-between items-center w-full'>
+						<div className='flex flex-col md:flex-row justify-between items-start md:items-center w-full'>
 							<h1 className='text-2xl md:text-3xl font-bold text-primary'>
 								{event.title}
 							</h1>
 							{event.creator && (
-								<div className='text-right'>
+								<div className='md:text-right text-left'>
 									<p className='text-sm text-tertiary'>Hosted by</p>
 									<p className='font-semibold text-primary'>
 										{event.creator.name}

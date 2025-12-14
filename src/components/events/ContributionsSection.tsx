@@ -53,13 +53,15 @@ export const ContributionsSection = ({
 
 	const canAdd = canAddContributions(currentUserParticipant?.role);
 
-	const actionButton = canAdd ? (
-		<Button
-			onClick={() => setShowForm(!showForm)}
-			className='text-sm min-h-[44px]'>
-			{showForm ? "Cancel" : "Add"}
-		</Button>
-	) : undefined;
+	const actionButton =
+		canAdd ?
+			<motion.button
+				layout
+				onClick={() => setShowForm(!showForm)}
+				className='text-sm min-h-[44px] cursor-pointer bg-accent hover:bg-accent-secondary px-4 py-2 rounded-md text-bg-secondary'>
+				{showForm ? "Cancel" : "Add"}
+			</motion.button>
+		:	undefined;
 
 	const handleSubmit = (data: ContributionFormData) => {
 		onAddContribution(data);
@@ -105,9 +107,9 @@ export const ContributionsSection = ({
 									contributionForm.formState.errors.itemName ? "true" : "false"
 								}
 								aria-describedby={
-									contributionForm.formState.errors.itemName
-										? "item-name-error"
-										: undefined
+									contributionForm.formState.errors.itemName ?
+										"item-name-error"
+									:	undefined
 								}
 							/>
 							{contributionForm.formState.errors.itemName && (
@@ -150,32 +152,28 @@ export const ContributionsSection = ({
 				)}
 			</AnimatePresence>
 
-			{event.contributions === undefined ? (
+			{event.contributions === undefined ?
 				// Loading state: contributions are being fetched
-				<div className='space-y-3'>
-					{Array.from({ length: 2 }).map((_, i) => (
-						<div
-							key={i}
-							className='p-4 bg-secondary rounded-lg flex justify-between items-start'>
-							<div className='flex-1'>
-								<div className='flex items-center gap-2 mb-2'>
-									<Skeleton variant='text' width='40%' height={20} />
-									<Skeleton variant='text' width='20%' height={16} />
-								</div>
-								<Skeleton
-									variant='text'
-									width='80%'
-									height={16}
-									className='mb-2'
-								/>
-								<Skeleton variant='text' width='30%' height={14} />
+				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className='p-4 bg-secondary rounded-lg'>
+							<div className='flex items-center gap-2 mb-2'>
+								<Skeleton variant='text' width='60%' height={20} />
+								<Skeleton variant='text' width='30%' height={16} />
 							</div>
+							<Skeleton
+								variant='text'
+								width='90%'
+								height={16}
+								className='mb-2'
+							/>
+							<Skeleton variant='text' width='50%' height={14} />
 						</div>
 					))}
 				</div>
-			) : event.contributions && event.contributions.length > 0 ? (
-				// Has contributions: show list
-				<div className='space-y-3'>
+			: event.contributions && event.contributions.length > 0 ?
+				// Has contributions: show grid
+				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
 					{event.contributions.map(contribution => {
 						const canDelete = canDeleteItem(
 							contribution.user_id,
@@ -186,8 +184,18 @@ export const ContributionsSection = ({
 						return (
 							<article
 								key={contribution.id}
-								className='p-4 bg-secondary rounded-lg flex justify-between items-start'>
-								<div className='flex-1'>
+								className='p-4 bg-secondary rounded-lg relative'>
+								{canDelete && (
+									<div className='absolute top-2 right-2'>
+										<DeleteButton
+											variant='text'
+											onDelete={() => onDeleteContribution(contribution.id)}
+											isDeleting={deletingContribution === contribution.id}
+											label={`Delete contribution: ${contribution.item_name}`}
+										/>
+									</div>
+								)}
+								<div className={canDelete ? "pr-8" : ""}>
 									<div className='flex items-center gap-2 mb-1'>
 										<p className='font-semibold text-primary'>
 											{contribution.item_name}
@@ -199,7 +207,7 @@ export const ContributionsSection = ({
 										)}
 									</div>
 									{contribution.description && (
-										<p className='text-sm text-secondary'>
+										<p className='text-sm text-secondary mb-1'>
 											{contribution.description}
 										</p>
 									)}
@@ -209,26 +217,17 @@ export const ContributionsSection = ({
 										</p>
 									)}
 								</div>
-								{canDelete && (
-									<DeleteButton
-										variant='text'
-										onDelete={() => onDeleteContribution(contribution.id)}
-										isDeleting={deletingContribution === contribution.id}
-										label={`Delete contribution: ${contribution.item_name}`}
-									/>
-								)}
 							</article>
 						);
 					})}
 				</div>
-			) : (
 				// Empty state: contributions were fetched but there are none
-				<EmptyState
+			:	<EmptyState
 					icon={<FaGift className='w-16 h-16' />}
 					title='No contributions yet'
 					message='Be the first to add a contribution to this event!'
 				/>
-			)}
+			}
 		</AnimatedSection>
 	);
 };

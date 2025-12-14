@@ -134,7 +134,7 @@ export const ParticipantCard = ({
 						<Avatar user={participant.user} size='md' />
 					</button>
 					<div className='flex-1 min-w-0'>
-						<button
+						<div
 							onClick={e => {
 								if (isNotCurrentUser && participant.user?.id) {
 									e.stopPropagation();
@@ -147,7 +147,7 @@ export const ParticipantCard = ({
 								:	"font-semibold text-primary mb-1 sm:mb-0 text-left"
 							}>
 							{participant.user?.name || "Unknown"}
-						</button>
+						</div>
 						{/* Mobile: Stack role and RSVP vertically */}
 						<div className='flex flex-col gap-1 sm:gap-2'>
 							<div className='flex items-center gap-2'>

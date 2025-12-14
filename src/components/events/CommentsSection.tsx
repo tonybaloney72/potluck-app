@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatedSection } from "../common/AnimatedSection";
@@ -9,6 +10,7 @@ import { Skeleton } from "../common/Skeleton";
 import type { Event, EventParticipant } from "../../types";
 import { canDeleteItem } from "../../utils/events";
 import { FaComment } from "react-icons/fa";
+import { Avatar } from "../common/Avatar";
 
 const commentSchema = z.object({
 	content: z.string().min(1, "Comment cannot be empty"),
@@ -35,6 +37,7 @@ export const CommentsSection = ({
 	addingComment,
 	deletingComment,
 }: CommentsSectionProps) => {
+	const navigate = useNavigate();
 	const commentForm = useForm<CommentFormData>({
 		resolver: zodResolver(commentSchema),
 		defaultValues: {
@@ -96,7 +99,7 @@ export const CommentsSection = ({
 				</form>
 			)}
 
-			{event.comments === undefined ? (
+			{event.comments === undefined ?
 				// Loading state: comments are being fetched
 				<div className='space-y-4'>
 					{Array.from({ length: 2 }).map((_, i) => (
@@ -122,7 +125,7 @@ export const CommentsSection = ({
 						</div>
 					))}
 				</div>
-			) : event.comments && event.comments.length > 0 ? (
+			: event.comments && event.comments.length > 0 ?
 				// Has comments: show list
 				<div className='space-y-4'>
 					{event.comments.map(comment => {
@@ -135,17 +138,32 @@ export const CommentsSection = ({
 						return (
 							<article key={comment.id} className='p-4 bg-secondary rounded-lg'>
 								<div className='flex justify-between items-start mb-2'>
-									<div>
+									<div className='flex gap-2'>
 										{comment.user && (
-											<p className='font-semibold text-primary'>
-												{comment.user.name}
-											</p>
+											<>
+												<Avatar
+													user={comment.user}
+													size='md'
+													onClick={() =>
+														navigate(`/profile/${comment?.user?.id}`)
+													}
+												/>
+												<div className='flex flex-col'>
+													<div
+														className='font-semibold text-primary hover:text-secondary cursor-pointer'
+														onClick={() =>
+															navigate(`/profile/${comment?.user?.id}`)
+														}>
+														{comment.user.name}
+													</div>
+													<time
+														dateTime={comment.created_at}
+														className='text-xs text-tertiary'>
+														{new Date(comment.created_at).toLocaleString()}
+													</time>
+												</div>
+											</>
 										)}
-										<time
-											dateTime={comment.created_at}
-											className='text-xs text-tertiary'>
-											{new Date(comment.created_at).toLocaleString()}
-										</time>
 									</div>
 									{canDelete && (
 										<DeleteButton
@@ -163,14 +181,13 @@ export const CommentsSection = ({
 						);
 					})}
 				</div>
-			) : (
 				// Empty state: comments were fetched but there are none
-				<EmptyState
+			:	<EmptyState
 					icon={<FaComment className='w-16 h-16' />}
 					title='No comments yet'
 					message='Be the first to comment on this event!'
 				/>
-			)}
+			}
 		</AnimatedSection>
 	);
 };

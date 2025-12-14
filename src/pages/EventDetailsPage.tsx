@@ -84,7 +84,7 @@ export const EventDetailPage = () => {
 
 	// Single effect: Fetch event if we don't have it or are missing data
 	useEffect(() => {
-		if (!eventId) return;
+		if (!eventId || !user?.id) return;
 
 		// Check if we have the event with all required data
 		// The slice ensures participants, contributions, and comments are always arrays
@@ -97,6 +97,7 @@ export const EventDetailPage = () => {
 		if (hasFullData) {
 			// Only check if we haven't already checked this eventId
 			// This prevents re-checking when event updates via realtime
+
 			if (lastCheckedEventIdRef.current !== eventId && event.updated_at) {
 				lastCheckedEventIdRef.current = eventId;
 
@@ -130,7 +131,7 @@ export const EventDetailPage = () => {
 		// Otherwise, fetch the event to get full details
 		dispatch(fetchEventById(eventId));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dispatch, eventId, isFetching]);
+	}, [dispatch, eventId, event]);
 
 	// Filter out friends that have been added as participants
 	// This ensures they don't appear in the selected chips after being added
@@ -156,7 +157,7 @@ export const EventDetailPage = () => {
 		return (
 			<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
 				<div className='max-w-4xl mx-auto'>
-					{error ?
+					{error && (
 						<ErrorDisplay
 							title='Failed to load event'
 							message={error}
@@ -168,12 +169,7 @@ export const EventDetailPage = () => {
 							}}
 							variant='fullscreen'
 						/>
-					:	<ErrorDisplay
-							title='Event not found'
-							message='The event you are looking for does not exist or has been deleted.'
-							variant='fullscreen'
-						/>
-					}
+					)}
 				</div>
 			</main>
 		);

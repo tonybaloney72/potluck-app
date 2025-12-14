@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchUserEvents } from "../store/slices/eventsSlice";
@@ -16,6 +16,7 @@ export const HomePage = () => {
 	const { loading } = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 	const eventsById = useAppSelector(selectEventsById);
+	const hasAttemptedFetch = useRef(false);
 
 	// Get upcoming events (limited to 3) - business logic is in the selector
 	const upcomingEvents = useAppSelector(state =>
@@ -23,11 +24,26 @@ export const HomePage = () => {
 	);
 
 	// Fetch events on mount if needed
+	const eventsCount = Object.keys(eventsById).length;
 	useEffect(() => {
-		if (user?.id && Object.keys(eventsById).length === 0 && !loading) {
+		// Reset the ref if user logs out or events are successfully loaded
+		if (!user?.id || eventsCount > 0) {
+			hasAttemptedFetch.current = false;
+			return;
+		}
+
+		// Only fetch if we have a user, no events, not currently loading, and haven't already attempted to fetch
+		if (
+			user?.id &&
+			eventsCount === 0 &&
+			!loading &&
+			!hasAttemptedFetch.current
+		) {
+			hasAttemptedFetch.current = true;
 			dispatch(fetchUserEvents());
 		}
-	}, [dispatch, user?.id, eventsById, loading]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dispatch, user?.id, eventsCount]);
 
 	const formatDateTime = (datetimeString: string) => {
 		const date = new Date(datetimeString);
