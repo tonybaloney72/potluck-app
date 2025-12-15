@@ -74,7 +74,9 @@ export const RegisterPage = () => {
 		const { confirmPassword, ...signUpData } = data;
 		const result = await dispatch(signUp(signUpData));
 		if (signUp.fulfilled.match(result)) {
-			navigate("/email-verification");
+			// Always redirect to email verification page after signup
+			// Even if email is confirmed (unlikely), it's good UX to show the message
+			navigate("/email-verification", { replace: true });
 		}
 	};
 

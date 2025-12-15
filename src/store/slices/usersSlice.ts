@@ -168,6 +168,7 @@ const usersSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		resetState: () => initialState,
 	},
 	extraReducers: builder => {
 		// Search users
@@ -216,5 +217,5 @@ const usersSlice = createSlice({
 	},
 });
 
-export const { clearError } = usersSlice.actions;
+export const { clearError, resetState } = usersSlice.actions;
 export default usersSlice.reducer;

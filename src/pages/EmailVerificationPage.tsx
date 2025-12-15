@@ -29,7 +29,7 @@ export const EmailVerificationPage = () => {
 					Email Verification
 				</h1>
 				<p className='text-center text-sm text-gray-600'>
-					Please check your email for a verification link.
+					Please check your email for a verification link from Supabase.
 				</p>
 			</div>
 		</div>

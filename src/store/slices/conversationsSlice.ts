@@ -230,6 +230,7 @@ const conversationsSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		resetState: () => initialState,
 		setCurrentConversationId: (state, action: PayloadAction<string | null>) => {
 			state.currentConversationId = action.payload;
 		},
@@ -352,5 +353,6 @@ export const {
 	resetUnreadCount,
 	addConversation,
 	updateConversation,
+	resetState,
 } = conversationsSlice.actions;
 export default conversationsSlice.reducer;

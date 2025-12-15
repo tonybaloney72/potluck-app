@@ -709,6 +709,7 @@ const eventsSlice = createSlice({
 	name: "events",
 	initialState,
 	reducers: {
+		resetState: () => initialState,
 		removeEvent: (state, action: PayloadAction<string>) => {
 			const eventId = action.payload;
 
@@ -1285,6 +1286,7 @@ export const retryFetchEvent = createAsyncThunk(
 );
 
 export const {
+	resetState,
 	removeEvent,
 	clearError,
 	updateParticipantRSVP,

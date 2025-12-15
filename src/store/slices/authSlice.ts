@@ -64,7 +64,12 @@ export const signUp = createAsyncThunk(
 		});
 
 		if (error) throw error;
-		return data.user;
+		// Return user and session info
+		// If email confirmation is required, session will be null until email is verified
+		return {
+			user: data.user,
+			session: data.session, // Will be null if email confirmation is required
+		};
 	},
 );
 
@@ -316,10 +321,17 @@ const authSlice = createSlice({
 			})
 			.addCase(signUp.fulfilled, (state, action) => {
 				state.loading = false;
-				state.user =
-					action.payload ?
-						{ id: action.payload.id, email: action.payload.email }
-					:	null;
+				// Only set user if a session exists (email is confirmed)
+				// If email confirmation is required, session will be null until verified
+				if (action.payload?.session && action.payload.user) {
+					state.user = {
+						id: action.payload.user.id,
+						email: action.payload.user.email,
+					};
+				} else {
+					// No session = email not confirmed - don't set user, they need to verify first
+					state.user = null;
+				}
 			})
 			.addCase(signUp.rejected, (state, action) => {
 				state.loading = false;
@@ -352,9 +364,13 @@ const authSlice = createSlice({
 				state.error = action.error.message || "Sign in failed";
 			});
 
-		builder.addCase(signOut.fulfilled, state => {
-			state.user = null;
-			state.profile = null;
+		builder.addCase(signOut.fulfilled, () => {
+			// Reset to initial state but ensure initializing is false
+			// so login form can be shown immediately after logout
+			return {
+				...initialState,
+				initializing: false,
+			};
 		});
 
 		builder

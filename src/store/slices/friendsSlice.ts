@@ -185,6 +185,7 @@ const friendsSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		resetState: () => initialState,
 		// Add friendship from realtime subscription
 		addFriendship: (state, action: PayloadAction<Friendship>) => {
 			// Prevent duplicates
@@ -282,6 +283,11 @@ const friendsSlice = createSlice({
 	},
 });
 
-export const { clearError, addFriendship, updateFriendship, removeFriendship } =
-	friendsSlice.actions;
+export const {
+	clearError,
+	addFriendship,
+	updateFriendship,
+	removeFriendship,
+	resetState,
+} = friendsSlice.actions;
 export default friendsSlice.reducer;

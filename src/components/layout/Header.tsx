@@ -257,80 +257,71 @@ export const Header = () => {
 										);
 									})}
 									<NotificationDropdown />
-									<div className='flex items-center gap-4'>
-										<div className='relative' ref={dropdownRef}>
-											<button
+									<div className='relative'>
+										{profile ?
+											<Avatar
+												user={profile}
+												size='sm'
+												className='w-full h-full object-cover'
 												onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-												className='flex items-center justify-center w-11 h-11 rounded-full bg-tertiary text-primary hover:bg-border active:scale-95 cursor-pointer transition-all duration-200 min-w-[44px] min-h-[44px] overflow-hidden'
-												aria-label={`User menu for ${profile?.name || "user"}`}
-												aria-expanded={isDropdownOpen}
-												aria-haspopup='menu'
-												type='button'>
-												{profile ?
-													<Avatar
-														user={profile}
-														size='sm'
-														className='w-full h-full object-cover'
-													/>
-												:	<FaUser className='w-5 h-5' aria-hidden='true' />}
-											</button>
+											/>
+										:	<FaUser className='w-5 h-5' aria-hidden='true' />}
 
-											<AnimatePresence>
-												{isDropdownOpen && (
-													<motion.div
-														initial={{ opacity: 0, y: -10, scale: 0.95 }}
-														animate={{ opacity: 1, y: 0, scale: 1 }}
-														exit={{ opacity: 0, y: -10, scale: 0.95 }}
-														transition={{ duration: 0.2, ease: "easeOut" }}
-														role='menu'
-														aria-label='User menu'
-														className='absolute right-0 mt-2 w-48 bg-secondary border border-border rounded-md shadow-lg z-50'>
-														{/* User info header */}
-														{profile?.name && (
-															<motion.div
-																initial={{ opacity: 0 }}
-																animate={{ opacity: 1 }}
-																transition={{ delay: 0.1 }}
-																className='px-4 py-3 border-b border-border'>
-																<div className='flex items-center gap-3'>
-																	<Avatar user={profile} size='sm' />
-																	<span className='text-sm font-medium text-primary truncate'>
-																		{profile.name.split(" ")[0]}
-																	</span>
-																</div>
-															</motion.div>
-														)}
-														{/* Menu items */}
-														<div className='py-1' role='group'>
-															<DropdownMenuItem
-																icon={FaCog}
-																label='Settings'
-																onClick={handleSettings}
-															/>
-															<DropdownMenuItem
-																icon={theme === "dark" ? FaSun : FaMoon}
-																label={
-																	theme === "dark" ? "Light Mode" : "Dark Mode"
-																}
-																onClick={() =>
-																	handleThemeChange(
-																		theme === "dark" ? "light" : "dark",
-																	)
-																}
-																ariaLabel={`Switch to ${
-																	theme === "dark" ? "light" : "dark"
-																} mode`}
-															/>
-															<DropdownMenuItem
-																icon={FaSignOutAlt}
-																label='Log Out'
-																onClick={handleSignOut}
-															/>
-														</div>
-													</motion.div>
-												)}
-											</AnimatePresence>
-										</div>
+										<AnimatePresence>
+											{isDropdownOpen && (
+												<motion.div
+													initial={{ opacity: 0, y: -10, scale: 0.95 }}
+													animate={{ opacity: 1, y: 0, scale: 1 }}
+													exit={{ opacity: 0, y: -10, scale: 0.95 }}
+													transition={{ duration: 0.2, ease: "easeOut" }}
+													role='menu'
+													aria-label='User menu'
+													className='absolute right-0 mt-2 w-48 bg-secondary border border-border rounded-md shadow-lg z-50'>
+													{/* User info header */}
+													{profile?.name && (
+														<motion.div
+															initial={{ opacity: 0 }}
+															animate={{ opacity: 1 }}
+															transition={{ delay: 0.1 }}
+															className='px-4 py-3 border-b border-border'>
+															<div className='flex items-center gap-3'>
+																<Avatar user={profile} size='sm' />
+																<span className='text-sm font-medium text-primary truncate'>
+																	{profile.name.split(" ")[0]}
+																</span>
+															</div>
+														</motion.div>
+													)}
+													{/* Menu items */}
+													<div className='py-1' role='group'>
+														<DropdownMenuItem
+															icon={FaCog}
+															label='Settings'
+															onClick={handleSettings}
+														/>
+														<DropdownMenuItem
+															icon={theme === "dark" ? FaSun : FaMoon}
+															label={
+																theme === "dark" ? "Light Mode" : "Dark Mode"
+															}
+															onClick={() =>
+																handleThemeChange(
+																	theme === "dark" ? "light" : "dark",
+																)
+															}
+															ariaLabel={`Switch to ${
+																theme === "dark" ? "light" : "dark"
+															} mode`}
+														/>
+														<DropdownMenuItem
+															icon={FaSignOutAlt}
+															label='Log Out'
+															onClick={handleSignOut}
+														/>
+													</div>
+												</motion.div>
+											)}
+										</AnimatePresence>
 									</div>
 								</div>
 

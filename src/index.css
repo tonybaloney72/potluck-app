@@ -585,6 +585,10 @@ select {
 	min-width: 44px;
 }
 
+button:hover {
+	cursor: pointer;
+}
+
 /* Improve focus for form elements */
 input:focus-visible,
 textarea:focus-visible,

@@ -19,17 +19,21 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 	// If initialization is complete and no user, redirect to login with return URL
 	if (!initializing && !user) {
 		// Save the attempted URL so we can redirect back after login
-		// Only save if we're not already on the login page
-		const returnUrl =
-			location.pathname !== "/login" ?
-				location.pathname + location.search
-			:	"/";
-		return (
-			<Navigate
-				to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
-				replace
-			/>
-		);
+		// Only add returnUrl if we're not already on the login page and not on home
+		if (location.pathname !== "/login") {
+			const returnUrl = location.pathname + location.search;
+			// Only add returnUrl if it's not just "/"
+			if (returnUrl !== "/") {
+				return (
+					<Navigate
+						to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
+						replace
+					/>
+				);
+			}
+		}
+		// If already on login or trying to access home, just go to login without returnUrl
+		return <Navigate to='/login' replace />;
 	}
 
 	// If user exists but profile is loaded and inactive, redirect to reactivate

@@ -37,11 +37,11 @@ export const fetchNotifications = createAsyncThunk(
 			.from("notifications")
 			.select("*")
 			.eq("user_id", user.id)
-		.order("created_at", { ascending: false })
-		.limit(50); // Limit to 50 most recent notifications
+			.order("created_at", { ascending: false })
+			.limit(50); // Limit to 50 most recent notifications
 
 		if (error) throw error;
-		
+
 		// Return normalized structure: { notificationsById, notificationIds }
 		const notificationsById: { [id: string]: Notification } = {};
 		const notificationIds: string[] = [];
@@ -109,8 +109,8 @@ export const markConversationNotificationsAsRead = createAsyncThunk(
 			.eq("user_id", user.id)
 			.eq("type", "message")
 			.eq("related_id", conversationId)
-		.eq("read", false)
-		.select();
+			.eq("read", false)
+			.select();
 
 		if (error) throw error;
 		// Return array of notification IDs that were marked as read
@@ -185,6 +185,7 @@ const notificationsSlice = createSlice({
 	name: "notifications",
 	initialState,
 	reducers: {
+		resetState: () => initialState,
 		// Add notification from realtime subscription
 		addNotification: (state, action: PayloadAction<Notification>) => {
 			// Prevent duplicates
@@ -199,11 +200,11 @@ const notificationsSlice = createSlice({
 					state.notificationsById,
 					state.notificationIds,
 				);
-				
+
 				if (!action.payload.read) {
 					state.unreadCount += 1;
 				}
-				
+
 				// Keep only the most recent 50 notifications in state
 				if (state.notificationIds.length > 50) {
 					// Remove oldest notifications
@@ -260,9 +261,9 @@ const notificationsSlice = createSlice({
 				state.notificationsById = action.payload.notificationsById;
 				state.notificationIds = action.payload.notificationIds;
 				// Calculate unread count
-				state.unreadCount = Object.values(action.payload.notificationsById).filter(
-					n => !n.read,
-				).length;
+				state.unreadCount = Object.values(
+					action.payload.notificationsById,
+				).filter(n => !n.read).length;
 			})
 			.addCase(fetchNotifications.rejected, (state, action) => {
 				state.loading = false;
@@ -369,6 +370,7 @@ const notificationsSlice = createSlice({
 });
 
 export const {
+	resetState,
 	addNotification,
 	updateNotification,
 	removeNotification,

@@ -118,6 +118,7 @@ const messagesSlice = createSlice({
 		clearError: state => {
 			state.error = null;
 		},
+		resetState: () => initialState,
 		// Add message from realtime subscription
 		addMessage: (state, action: PayloadAction<Message>) => {
 			const conversationId = action.payload.conversation_id;
@@ -219,5 +220,6 @@ export const {
 	updateMessage,
 	removeMessage,
 	clearMessages,
+	resetState,
 } = messagesSlice.actions;
 export default messagesSlice.reducer;
