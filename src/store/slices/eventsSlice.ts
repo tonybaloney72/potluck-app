@@ -512,7 +512,7 @@ export const updateRSVP = createAsyncThunk(
 			const rsvpStatusLabel =
 				rsvpStatus === "going" ? "going"
 				: rsvpStatus === "maybe" ? "maybe"
-				: rsvpStatus === "not_going" ? "not going"
+				: rsvpStatus === "not going" ? "not going"
 				: "pending";
 
 			// Create notification for the host

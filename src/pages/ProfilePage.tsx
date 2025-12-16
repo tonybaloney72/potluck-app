@@ -17,6 +17,7 @@ import { AvatarUpload } from "../components/common/AvatarUpload";
 import { Map } from "../components/common/Map";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { FaArrowLeft } from "react-icons/fa";
+import { isGuestUser } from "../utils/auth";
 
 // Zod schema: no numbers allowed in name; location is optional object
 const profileSchema = z.object({
@@ -45,6 +46,7 @@ export const ProfilePage = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+	const isGuest = isGuestUser(profile);
 
 	const {
 		register,
@@ -215,19 +217,30 @@ export const ProfilePage = () => {
 						Deactivate Account
 					</h1>
 				</div>
-				<div className='bg-secondary border border-border rounded-lg p-6 space-y-4'>
+				<div
+					className={`bg-secondary border border-border rounded-lg p-6 space-y-4 ${
+						isGuest ? "opacity-50 cursor-not-allowed" : ""
+					}`}>
 					<p className='text-secondary'>
 						Deactivating your account will hide your profile from other users.
 						You won't be able to send or receive messages, or be added as a
 						friend. You can reactivate your account at any time by logging back
 						in.
 					</p>
+					{isGuest && (
+						<div className='bg-tertiary border border-border rounded-md p-3 mb-2'>
+							<p className='text-sm text-secondary'>
+								Account deactivation is not available for guest accounts. If you
+								had a regular account, you would be able to deactivate it here.
+							</p>
+						</div>
+					)}
 					<Button
 						type='button'
 						variant='secondary'
 						onClick={() => setShowDeactivateModal(true)}
-						disabled={loading}
-						className='w-full md:w-auto'>
+						disabled={loading || isGuest}
+						className='w-full md:w-auto ${isGuest ? "cursor-not-allowed" : ""'>
 						Deactivate Account
 					</Button>
 				</div>

@@ -36,7 +36,9 @@ export const Avatar = ({
 
 	return (
 		<div
-			className={`${sizeClass} rounded-full bg-tertiary flex items-center justify-center ${className}`}>
+			onClick={onClick}
+			className={`${sizeClass} rounded-full bg-tertiary flex items-center justify-center ${className}`}
+			style={{ cursor: onClick ? "pointer" : "default" }}>
 			<span className='text-primary'>{initial}</span>
 		</div>
 	);

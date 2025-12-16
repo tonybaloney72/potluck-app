@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppSelector, useAppDispatch } from "../../store/hooks";
-import { signOut } from "../../store/slices/authSlice";
+import { signOut, resetGuestData } from "../../store/slices/authSlice";
 import {
 	FaUser,
 	FaCog,
@@ -14,6 +14,8 @@ import {
 	FaBars,
 	FaTimes,
 	FaPlus,
+	FaExternalLinkAlt,
+	FaSync,
 } from "react-icons/fa";
 import { LuCookingPot } from "react-icons/lu";
 import type { IconType } from "react-icons";
@@ -22,6 +24,7 @@ import type { ThemePreference } from "../../types";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { Button } from "../common/Button";
 import { Avatar } from "../common/Avatar";
+import { isGuestUser } from "../../utils/auth";
 
 // Navigation items configuration
 const navItems = [
@@ -141,9 +144,11 @@ export const Header = () => {
 	const navigate = useNavigate();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [resettingData, setResettingData] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const mobileMenuRef = useRef<HTMLDivElement>(null);
 	const { theme, setTheme } = useTheme();
+	const isGuest = isGuestUser(profile);
 
 	const handleThemeChange = (newTheme: ThemePreference) => {
 		setTheme(newTheme);
@@ -168,6 +173,22 @@ export const Header = () => {
 	const handleCreateEvent = () => {
 		setIsMobileMenuOpen(false);
 		navigate("/create-event");
+	};
+
+	const handleResetGuestData = async () => {
+		if (!isGuest || resettingData) return;
+
+		setResettingData(true);
+		try {
+			await dispatch(resetGuestData()).unwrap();
+			// Reload the page to show fresh data
+			window.location.reload();
+		} catch (error) {
+			console.error("Failed to reset guest data:", error);
+			setResettingData(false);
+			setIsDropdownOpen(false);
+			setIsMobileMenuOpen(false);
+		}
 	};
 
 	// Close dropdown when clicking outside
@@ -299,6 +320,18 @@ export const Header = () => {
 															label='Settings'
 															onClick={handleSettings}
 														/>
+														{isGuest && (
+															<DropdownMenuItem
+																icon={FaSync}
+																label={
+																	resettingData ? "Resetting..." : (
+																		"Reset Guest Data"
+																	)
+																}
+																onClick={handleResetGuestData}
+																ariaLabel='Reset guest demo data'
+															/>
+														)}
 														<DropdownMenuItem
 															icon={theme === "dark" ? FaSun : FaMoon}
 															label={
@@ -317,6 +350,20 @@ export const Header = () => {
 															icon={FaSignOutAlt}
 															label='Log Out'
 															onClick={handleSignOut}
+														/>
+													</div>
+													<div className='py-1 border-t border-border'>
+														<DropdownMenuItem
+															icon={FaExternalLinkAlt}
+															label='About the Dev'
+															onClick={() => {
+																window.open(
+																	"https://tonybaloney72.github.io/website/#/",
+																	"_blank",
+																);
+																setIsDropdownOpen(false);
+															}}
+															ariaLabel='About the Dev'
 														/>
 													</div>
 												</motion.div>
@@ -424,6 +471,19 @@ export const Header = () => {
 											setIsMobileMenuOpen(false);
 										}}
 									/>
+									{isGuest && (
+										<MobileMenuButton
+											icon={FaSync}
+											label={
+												resettingData ? "Resetting..." : "Reset Guest Data"
+											}
+											onClick={() => {
+												handleResetGuestData();
+												setIsMobileMenuOpen(false);
+											}}
+											ariaLabel='Reset guest demo data'
+										/>
+									)}
 									<MobileMenuButton
 										icon={theme === "dark" ? FaSun : FaMoon}
 										label={theme === "dark" ? "Light Mode" : "Dark Mode"}

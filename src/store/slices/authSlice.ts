@@ -5,7 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { supabase } from "../../services/supabase";
 import type { Profile } from "../../types";
-import { requireAuth } from "../../utils/auth";
+import { requireAuth, GUEST_EMAIL } from "../../utils/auth";
 import {
 	compressImage,
 	isValidImageFile,
@@ -198,6 +198,26 @@ export const reactivateAccount = createAsyncThunk(
 
 		if (error) throw error;
 		return data as Profile;
+	},
+);
+
+export const resetGuestData = createAsyncThunk(
+	"auth/resetGuestData",
+	async () => {
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
+		if (!user || user.email !== GUEST_EMAIL) {
+			throw new Error("Only guest users can reset demo data");
+		}
+
+		const { error } = await supabase.rpc("reset_guest_data");
+
+		if (error) {
+			console.error("Error resetting guest data:", error);
+			throw error;
+		}
 	},
 );
 
@@ -461,6 +481,20 @@ const authSlice = createSlice({
 			.addCase(reactivateAccount.rejected, (state, action) => {
 				state.loading = false;
 				state.error = action.error.message || "Failed to reactivate account";
+			});
+
+		// Reset guest data
+		builder
+			.addCase(resetGuestData.pending, state => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(resetGuestData.fulfilled, state => {
+				state.loading = false;
+			})
+			.addCase(resetGuestData.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message || "Failed to reset guest data";
 			});
 	},
 });

@@ -48,7 +48,6 @@ export const FriendCard = ({
 }: FriendCardProps) => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
-	const { sendingRequest } = useAppSelector(state => state.friends);
 	const { profile: currentUserProfile } = useAppSelector(state => state.auth);
 
 	// Get the actual userId (from prop or profile)
@@ -218,9 +217,9 @@ export const FriendCard = ({
 						className='flex items-center'
 						variant='primary'
 						onClick={handleSendRequest}
-						loading={loadingAction === "send" || sendingRequest}
+						loading={loadingAction === "send"}
 						loadingText='Sending...'
-						disabled={loadingAction === "send" || sendingRequest}>
+						disabled={loadingAction === "send"}>
 						<FaUserPlus className='w-4 h-4 mr-2' />
 						Send Request
 					</Button>
@@ -251,9 +250,9 @@ export const FriendCard = ({
 						className='flex items-center'
 						variant='primary'
 						onClick={handleSendRequest}
-						loading={loadingAction === "send" || sendingRequest}
+						loading={loadingAction === "send"}
 						loadingText='Sending...'
-						disabled={loadingAction === "send" || sendingRequest}>
+						disabled={loadingAction === "send"}>
 						<FaUserPlus className='w-4 h-4 mr-2' />
 						Send Request
 					</Button>

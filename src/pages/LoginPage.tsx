@@ -7,6 +7,7 @@ import { Button } from "../components/common/Button";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect } from "react";
+import { GUEST_EMAIL } from "../utils/auth";
 
 interface LoginFormData {
 	email: string;
@@ -20,7 +21,7 @@ export const LoginPage = () => {
 	const { loading, error, user, initializing } = useAppSelector(
 		state => state.auth,
 	);
-
+	const guestPassword = import.meta.env.VITE_GUEST_PASSWORD;
 	// Clear any previous errors when component mounts
 	useEffect(() => {
 		dispatch(clearError());
@@ -69,6 +70,15 @@ export const LoginPage = () => {
 		}
 	};
 
+	const handleGuestLogin = () => {
+		dispatch(
+			signIn({
+				email: GUEST_EMAIL,
+				password: guestPassword,
+			}),
+		);
+	};
+
 	return (
 		<div className='h-screen flex items-center justify-center bg-primary'>
 			<AnimatePresence>
@@ -113,7 +123,15 @@ export const LoginPage = () => {
 							Sign In
 						</Button>
 					</form>
-					<div className='text-right'>
+					<div className='text-center'>
+						<button
+							type='button'
+							onClick={handleGuestLogin}
+							className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer'>
+							Sign in as Guest
+						</button>
+					</div>
+					<div className='text-center'>
 						<button
 							type='button'
 							onClick={() => navigate("/forgot-password")}

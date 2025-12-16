@@ -196,7 +196,7 @@ export const ContributionsSection = ({
 									</div>
 								)}
 								<div className={canDelete ? "pr-8" : ""}>
-									<div className='flex items-center gap-2 mb-1'>
+									<div className='flex flex-col mb-1'>
 										<p className='font-semibold text-primary'>
 											{contribution.item_name}
 										</p>

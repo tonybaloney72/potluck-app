@@ -1,4 +1,7 @@
 import { supabase } from "../services/supabase";
+import type { Profile } from "../types";
+
+export const GUEST_EMAIL = "guest@potluck-app.com";
 
 export const requireAuth = async () => {
 	const {
@@ -18,4 +21,11 @@ export const requireSession = async () => {
 		throw new Error("Unauthorized");
 	}
 	return session;
+};
+
+/**
+ * Check if a user is a guest account based on their email
+ */
+export const isGuestUser = (profile: Profile | null | undefined): boolean => {
+	return profile?.email === GUEST_EMAIL;
 };

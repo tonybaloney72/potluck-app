@@ -41,7 +41,7 @@ CREATE TABLE public.event_participants (
   event_id uuid NOT NULL,
   user_id uuid NOT NULL,
   role text NOT NULL DEFAULT 'guest'::text CHECK (role = ANY (ARRAY['host'::text, 'co-host'::text, 'contributor'::text, 'guest'::text])),
-  rsvp_status text DEFAULT 'pending'::text CHECK (rsvp_status = ANY (ARRAY['pending'::text, 'going'::text, 'not_going'::text, 'maybe'::text])),
+  rsvp_status text DEFAULT 'pending'::text CHECK (rsvp_status = ANY (ARRAY['pending'::text, 'going'::text, 'not going'::text, 'maybe'::text])),
   invited_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
   joined_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -55,7 +55,6 @@ CREATE TABLE public.events (
   created_by uuid NOT NULL,
   title text NOT NULL,
   description text,
-  active boolean NOT NULL DEFAULT true,
   theme text,
   location jsonb,
   is_public boolean NOT NULL DEFAULT false,
@@ -63,10 +62,9 @@ CREATE TABLE public.events (
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   event_datetime timestamp with time zone,
   end_datetime timestamp with time zone,
-  status text NOT NULL DEFAULT 'active' CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text])),
+  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text])),
   CONSTRAINT events_pkey PRIMARY KEY (id),
-  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
-  CONSTRAINT events_end_after_start_check CHECK (end_datetime IS NULL OR event_datetime IS NULL OR end_datetime >= event_datetime)
+  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.friendships (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -111,6 +109,10 @@ CREATE TABLE public.profiles (
   theme_preference text DEFAULT 'system'::text CHECK (theme_preference = ANY (ARRAY['light'::text, 'dark'::text, 'system'::text])),
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  has_created_event boolean NOT NULL DEFAULT false,
+  has_rsvped_to_event boolean NOT NULL DEFAULT false,
+  active boolean NOT NULL DEFAULT true,
+  private boolean NOT NULL DEFAULT false,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
