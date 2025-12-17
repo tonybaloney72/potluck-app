@@ -225,7 +225,11 @@ export const ProfilePage = () => {
 						Deactivating your account will hide your profile from other users.
 						You won't be able to send or receive messages, or be added as a
 						friend. You can reactivate your account at any time by logging back
-						in.
+						in within 30 days.
+					</p>
+					<p className='text-sm text-warning mt-2'>
+						⚠️ Your account and all associated data will be permanently deleted
+						after 30 days of deactivation. This action cannot be undone.
 					</p>
 					{isGuest && (
 						<div className='bg-tertiary border border-border rounded-md p-3 mb-2'>
@@ -259,7 +263,7 @@ export const ProfilePage = () => {
 					}
 				}}
 				title='Deactivate Account'
-				message='Are you sure you want to deactivate your account? You can reactivate it at any time by logging back in.'
+				message='Are you sure you want to deactivate your account? You can reactivate it at any time by logging back in within 30 days. After 30 days, your account and all data will be permanently deleted and cannot be recovered.'
 				confirmText='Deactivate'
 				cancelText='Cancel'
 				confirmVariant='primary'

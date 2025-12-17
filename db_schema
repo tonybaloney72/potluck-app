@@ -113,6 +113,7 @@ CREATE TABLE public.profiles (
   has_rsvped_to_event boolean NOT NULL DEFAULT false,
   active boolean NOT NULL DEFAULT true,
   private boolean NOT NULL DEFAULT false,
+  deactivated_at timestamp with time zone,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );

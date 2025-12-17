@@ -174,7 +174,10 @@ export const deactivateAccount = createAsyncThunk(
 
 		const { data, error } = await supabase
 			.from("profiles")
-			.update({ active: false })
+			.update({
+				active: false,
+				deactivated_at: new Date().toISOString(),
+			})
 			.eq("id", user.id)
 			.select()
 			.single();
@@ -191,7 +194,10 @@ export const reactivateAccount = createAsyncThunk(
 
 		const { data, error } = await supabase
 			.from("profiles")
-			.update({ active: true })
+			.update({
+				active: true,
+				deactivated_at: null,
+			})
 			.eq("id", user.id)
 			.select()
 			.single();
