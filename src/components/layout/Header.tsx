@@ -264,7 +264,9 @@ export const Header = () => {
 											aria-hidden='true'
 										/>
 									</Link>
-									<NewEventButton onClick={handleCreateEvent} />
+									<div className='hidden md:block'>
+										<NewEventButton onClick={handleCreateEvent} />
+									</div>
 								</div>
 
 								{/* Desktop Navigation */}

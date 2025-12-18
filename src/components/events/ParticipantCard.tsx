@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useNavigate } from "react-router";
 import type { EventParticipant, EventRole } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
@@ -6,6 +6,8 @@ import { DeleteButton } from "../common/DeleteButton";
 import { Avatar } from "../common/Avatar";
 import { RoleSelector } from "./RoleSelector";
 import { FriendCard } from "../friends/FriendCard";
+import { Button } from "../common/Button";
+import { FaCheck, FaTimes } from "react-icons/fa";
 
 interface ParticipantCardProps {
 	participant: EventParticipant;
@@ -18,15 +20,23 @@ interface ParticipantCardProps {
 		role: EventRole,
 	) => void;
 	updatingRole?: string | null;
+	onApproveContributor?: (participantId: string) => Promise<void>;
+	onDenyContributor?: (participantId: string) => Promise<void>;
+	approvingContributor?: string | null;
+	denyingContributor?: string | null;
 }
 
-export const ParticipantCard = ({
+const ParticipantCardComponent = ({
 	participant,
 	currentUserId,
 	canManage,
 	onRemoveParticipant,
 	onUpdateParticipantRole,
 	updatingRole,
+	onApproveContributor,
+	onDenyContributor,
+	approvingContributor,
+	denyingContributor,
 }: ParticipantCardProps) => {
 	const navigate = useNavigate();
 	const [isFriendOpen, setIsFriendOpen] = useState(false);
@@ -35,10 +45,21 @@ export const ParticipantCard = ({
 	const friendCardContentRef = useRef<HTMLDivElement>(null);
 	const isNotCurrentUser = participant.user_id !== currentUserId;
 	const isHost = participant.role === "host";
+	const isPendingContributor =
+		participant.role === "contributor" &&
+		participant.approval_status === "pending";
+
 	// Can only modify roles if user has manage permission, it's not the current user, and the participant is not a host
-	const canModifyRole = canManage && isNotCurrentUser && !isHost;
+	const canModifyRole =
+		canManage && isNotCurrentUser && !isHost && !isPendingContributor;
 	// Can only remove participants if user has manage permission, it's not the current user, and the participant is not a host
 	const canRemoveParticipant = canManage && isNotCurrentUser && !isHost;
+	// Can approve/deny if user has manage permission and participant is pending contributor
+	const canApproveDeny =
+		canManage &&
+		isPendingContributor &&
+		onApproveContributor &&
+		onDenyContributor;
 
 	useEffect(() => {
 		if (!isFriendOpen) return;
@@ -156,7 +177,16 @@ export const ParticipantCard = ({
 						{/* Mobile: Stack role and RSVP vertically */}
 						<div className='flex flex-col gap-1 sm:gap-2'>
 							<div className='flex items-center gap-2'>
-								{canModifyRole ?
+								{isPendingContributor ?
+									<div className='flex items-center gap-2'>
+										<span className='text-xs text-orange-500 font-medium'>
+											Pending Approval
+										</span>
+										<span className='text-xs text-tertiary capitalize'>
+											{participant.role}
+										</span>
+									</div>
+								: canModifyRole ?
 									<RoleSelector
 										value={participant.role}
 										onChange={role => {
@@ -174,6 +204,35 @@ export const ParticipantCard = ({
 									</p>
 								}
 							</div>
+							{/* Approve/Deny buttons for pending contributors */}
+							{canApproveDeny && (
+								<div className='flex gap-2 mt-2'>
+									<Button
+										variant='primary'
+										onClick={() => onApproveContributor(participant.id)}
+										loading={approvingContributor === participant.id}
+										disabled={
+											approvingContributor === participant.id ||
+											denyingContributor === participant.id
+										}
+										className='flex items-center gap-1 text-xs px-2 py-1 min-h-[32px]'>
+										<FaCheck className='w-3 h-3' />
+										Approve
+									</Button>
+									<Button
+										variant='secondary'
+										onClick={() => onDenyContributor(participant.id)}
+										loading={denyingContributor === participant.id}
+										disabled={
+											approvingContributor === participant.id ||
+											denyingContributor === participant.id
+										}
+										className='flex items-center gap-1 text-xs px-2 py-1 min-h-[32px]'>
+										<FaTimes className='w-3 h-3' />
+										Deny
+									</Button>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
@@ -200,3 +259,23 @@ export const ParticipantCard = ({
 		</article>
 	);
 };
+
+// Memoize to prevent unnecessary re-renders when props haven't changed
+export const ParticipantCard = memo(
+	ParticipantCardComponent,
+	(prevProps, nextProps) => {
+		// Custom comparison function - only re-render if these props change
+		return (
+			prevProps.participant.id === nextProps.participant.id &&
+			prevProps.participant.role === nextProps.participant.role &&
+			prevProps.participant.approval_status ===
+				nextProps.participant.approval_status &&
+			prevProps.participant.rsvp_status === nextProps.participant.rsvp_status &&
+			prevProps.currentUserId === nextProps.currentUserId &&
+			prevProps.canManage === nextProps.canManage &&
+			prevProps.updatingRole === nextProps.updatingRole &&
+			prevProps.approvingContributor === nextProps.approvingContributor &&
+			prevProps.denyingContributor === nextProps.denyingContributor
+		);
+	},
+);

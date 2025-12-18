@@ -11,6 +11,7 @@ import type {
 	EventComment,
 	RSVPStatus,
 	EventRole,
+	PublicRoleRestriction,
 } from "../../types";
 import { requireAuth } from "../../utils/auth";
 import { getEventHostId } from "../../utils/events";
@@ -37,6 +38,9 @@ interface EventsState {
 	updatingEvent: boolean;
 	error: string | null;
 	updatingRole: string | null;
+	joiningPublicEvent: boolean;
+	approvingContributor: string | null; // Participant ID being approved
+	denyingContributor: string | null; // Participant ID being denied
 }
 
 const initialState: EventsState = {
@@ -55,6 +59,9 @@ const initialState: EventsState = {
 	updatingEvent: false,
 	error: null,
 	updatingRole: null,
+	joiningPublicEvent: false,
+	approvingContributor: null,
+	denyingContributor: null,
 };
 
 // Fetch all events for the current user (hosted and invited)
@@ -91,6 +98,7 @@ export const fetchUserEvents = createAsyncThunk(
 					joined_at,
 					created_at,
 					updated_at,
+					approval_status,
 					user:profiles!event_participants_user_id_fkey(id, name, avatar_url, location)
 				)
 			`,
@@ -321,6 +329,7 @@ export const createEvent = createAsyncThunk(
 			address: string;
 		};
 		is_public?: boolean;
+		public_role_restriction?: PublicRoleRestriction;
 		invitedUserIds?: string[];
 		invitedParticipants?: Array<{ userId: string; role: EventRole }>;
 	}) => {
@@ -337,6 +346,7 @@ export const createEvent = createAsyncThunk(
 				end_datetime: eventData.end_datetime || null,
 				location: eventData.location || null,
 				is_public: eventData.is_public || false,
+				public_role_restriction: eventData.public_role_restriction || null,
 				status: "active", // Default status for new events
 			})
 			.select(
@@ -413,6 +423,7 @@ export const createEvent = createAsyncThunk(
 					joined_at,
 					created_at,
 					updated_at,
+					approval_status,
 					user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
 				)
 			`,
@@ -607,6 +618,134 @@ export const removeParticipant = createAsyncThunk(
 	},
 );
 
+// Join a public event (for non-invited users)
+export const joinPublicEvent = createAsyncThunk(
+	"events/joinPublicEvent",
+	async ({
+		eventId,
+		role,
+	}: {
+		eventId: string;
+		role: "guest" | "contributor";
+	}) => {
+		const user = await requireAuth();
+
+		// Get event to check restrictions
+		const { data: event, error: eventError } = await supabase
+			.from("events")
+			.select("public_role_restriction, title, created_by")
+			.eq("id", eventId)
+			.single();
+
+		if (eventError) throw eventError;
+		if (!event) throw new Error("Event not found");
+
+		// Check if user can join with this role
+		if (event.public_role_restriction === "guests_only" && role !== "guest") {
+			throw new Error("Only guests can join this event");
+		}
+
+		// Determine if approval is needed
+		const needsApproval =
+			role === "contributor" &&
+			event.public_role_restriction === "guests_and_contributors_with_approval";
+
+		const participantData: any = {
+			event_id: eventId,
+			user_id: user.id,
+			role: role,
+			rsvp_status: "going", // User is actively joining, so they're going
+			invited_at: null, // Manual join, not invited
+			approval_status: needsApproval ? "pending" : null,
+		};
+
+		// If no approval needed, set joined_at immediately
+		if (!needsApproval) {
+			participantData.joined_at = new Date().toISOString();
+		}
+
+		const { data: participant, error } = await supabase
+			.from("event_participants")
+			.insert(participantData)
+			.select(
+				`
+				*,
+				user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+			`,
+			)
+			.single();
+
+		if (error) throw error;
+
+		// Notifications are handled by database triggers/functions
+		// The notify_host_on_public_join() function creates:
+		// - RSVP notification for host when someone joins
+		// - Contributor approval request notification if approval is needed
+
+		return { eventId, participant: participant as EventParticipant };
+	},
+);
+
+// Approve a contributor request
+export const approveContributorRequest = createAsyncThunk(
+	"events/approveContributorRequest",
+	async ({
+		eventId,
+		participantId,
+	}: {
+		eventId: string;
+		participantId: string;
+	}) => {
+		await requireAuth();
+
+		const { data: participant, error } = await supabase
+			.from("event_participants")
+			.update({
+				approval_status: "approved",
+				joined_at: new Date().toISOString(),
+			})
+			.eq("id", participantId)
+			.eq("event_id", eventId)
+			.select(
+				`
+				*,
+				user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
+			`,
+			)
+			.single();
+
+		if (error) throw error;
+
+		return { eventId, participant: participant as EventParticipant };
+	},
+);
+
+// Deny a contributor request
+export const denyContributorRequest = createAsyncThunk(
+	"events/denyContributorRequest",
+	async ({
+		eventId,
+		participantId,
+	}: {
+		eventId: string;
+		participantId: string;
+	}) => {
+		await requireAuth();
+
+		// Delete the participant record (denied requests are removed)
+		// Notification is handled by database trigger (notify_user_on_contributor_denial)
+		const { error } = await supabase
+			.from("event_participants")
+			.delete()
+			.eq("id", participantId)
+			.eq("event_id", eventId);
+
+		if (error) throw error;
+
+		return { eventId, participantId };
+	},
+);
+
 // Add a contribution
 export const addContribution = createAsyncThunk(
 	"events/addContribution",
@@ -793,7 +932,17 @@ const eventsSlice = createSlice({
 					p => p.user_id === participant.user_id,
 				);
 				if (index !== -1) {
-					state.eventsById[eventId].participants![index] = participant;
+					// Preserve existing fields that might not be in the update (like approval_status)
+					const existingParticipant =
+						state.eventsById[eventId].participants![index];
+					state.eventsById[eventId].participants![index] = {
+						...existingParticipant,
+						...participant,
+						// Explicitly preserve approval_status if it's not in the update
+						approval_status:
+							participant.approval_status ??
+							existingParticipant.approval_status,
+					};
 				}
 			}
 		},
@@ -946,10 +1095,14 @@ const eventsSlice = createSlice({
 
 			// ✅ Add to eventsById (single source of truth)
 			if (state.eventsById[eventId]?.participants) {
-				const exists = state.eventsById[eventId].participants?.some(
+				const index = state.eventsById[eventId].participants!.findIndex(
 					p => p.id === participant.id || p.user_id === participant.user_id,
 				);
-				if (!exists) {
+				if (index !== -1) {
+					// Update existing participant - preserve all fields from the real-time update
+					state.eventsById[eventId].participants![index] = participant;
+				} else {
+					// Add new participant
 					state.eventsById[eventId].participants!.push(participant);
 				}
 			}
@@ -997,6 +1150,42 @@ const eventsSlice = createSlice({
 						// Preserve contributions and comments if they already exist
 						// Only use empty array if we explicitly know there are none (array exists)
 						// If undefined, it means we haven't fetched that data yet
+
+						// Merge participants intelligently - preserve all fields from both sources
+						const mergedParticipants = (() => {
+							const newParticipants = event.participants || [];
+							const existingParticipants = existingEvent.participants || [];
+
+							// If we have new participants, use them (they're from the latest fetch)
+							// But merge with existing ones to preserve any fields that might be missing
+							if (newParticipants.length > 0) {
+								// Create a map of existing participants by id for quick lookup
+								const existingMap = new Map(
+									existingParticipants.map(p => [p.id, p]),
+								);
+
+								// Merge: use new participant data, but preserve any missing fields from existing
+								return newParticipants.map(newParticipant => {
+									const existing = existingMap.get(newParticipant.id);
+									if (existing) {
+										// Merge, with new data taking precedence but preserving all fields
+										return {
+											...existing,
+											...newParticipant,
+											// Explicitly preserve approval_status if it exists in either
+											approval_status:
+												newParticipant.approval_status ??
+												existing.approval_status,
+										};
+									}
+									return newParticipant;
+								});
+							}
+
+							// If no new participants, keep existing ones
+							return existingParticipants;
+						})();
+
 						state.eventsById[event.id] = {
 							...event,
 							contributions:
@@ -1007,9 +1196,7 @@ const eventsSlice = createSlice({
 								existingEvent.comments !== undefined ?
 									existingEvent.comments
 								:	event.comments,
-							// Ensure participants are updated (they come from fetchUserEvents)
-							participants:
-								event.participants || existingEvent.participants || [],
+							participants: mergedParticipants,
 						};
 					} else {
 						// New event, store as-is
@@ -1150,11 +1337,96 @@ const eventsSlice = createSlice({
 
 				// ✅ Update in eventsById only
 				if (state.eventsById[eventId]?.participants) {
-					state.eventsById[eventId].participants!.push(participant);
+					const index = state.eventsById[eventId].participants!.findIndex(
+						p => p.id === participant.id || p.user_id === participant.user_id,
+					);
+					if (index !== -1) {
+						// Update existing participant
+						state.eventsById[eventId].participants![index] = participant;
+					} else {
+						// Add new participant
+						state.eventsById[eventId].participants!.push(participant);
+					}
 				}
 			})
 			.addCase(addParticipant.rejected, state => {
 				state.addingParticipant = false;
+			});
+
+		// Join public event
+		builder
+			.addCase(joinPublicEvent.pending, state => {
+				state.joiningPublicEvent = true;
+				state.error = null;
+			})
+			.addCase(joinPublicEvent.fulfilled, (state, action) => {
+				state.joiningPublicEvent = false;
+				const { eventId, participant } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]?.participants) {
+					const index = state.eventsById[eventId].participants!.findIndex(
+						p => p.id === participant.id || p.user_id === participant.user_id,
+					);
+					if (index !== -1) {
+						// Update existing participant - preserve all fields including approval_status
+						state.eventsById[eventId].participants![index] = participant;
+					} else {
+						// Add new participant
+						state.eventsById[eventId].participants!.push(participant);
+					}
+				}
+			})
+			.addCase(joinPublicEvent.rejected, (state, action) => {
+				state.joiningPublicEvent = false;
+				state.error = action.error.message || "Failed to join event";
+			});
+
+		// Approve contributor request
+		builder
+			.addCase(approveContributorRequest.pending, (state, action) => {
+				state.approvingContributor = action.meta.arg.participantId;
+				state.error = null;
+			})
+			.addCase(approveContributorRequest.fulfilled, (state, action) => {
+				state.approvingContributor = null;
+				const { eventId, participant } = action.payload;
+
+				// ✅ Update in eventsById only
+				if (state.eventsById[eventId]?.participants) {
+					const index = state.eventsById[eventId].participants!.findIndex(
+						p => p.id === participant.id,
+					);
+					if (index !== -1) {
+						state.eventsById[eventId].participants![index] = participant;
+					}
+				}
+			})
+			.addCase(approveContributorRequest.rejected, (state, action) => {
+				state.approvingContributor = null;
+				state.error = action.error.message || "Failed to approve request";
+			});
+
+		// Deny contributor request
+		builder
+			.addCase(denyContributorRequest.pending, (state, action) => {
+				state.denyingContributor = action.meta.arg.participantId;
+				state.error = null;
+			})
+			.addCase(denyContributorRequest.fulfilled, (state, action) => {
+				state.denyingContributor = null;
+				const { eventId, participantId } = action.payload;
+
+				// ✅ Remove from eventsById
+				if (state.eventsById[eventId]?.participants) {
+					state.eventsById[eventId].participants = state.eventsById[
+						eventId
+					].participants!.filter(p => p.id !== participantId);
+				}
+			})
+			.addCase(denyContributorRequest.rejected, (state, action) => {
+				state.denyingContributor = null;
+				state.error = action.error.message || "Failed to deny request";
 			});
 
 		// Update RSVP

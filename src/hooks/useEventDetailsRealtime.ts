@@ -32,7 +32,7 @@ export function useEventDetailsRealtime(eventId: string | null) {
 		eventIdRef.current = eventId;
 	}, [eventId]);
 
-	// Subscription 1: Listen for RSVP status updates on event_participants
+	// Subscription 1: Listen for RSVP status and approval_status updates on event_participants
 	// Note: Filters may not work reliably for UPDATE events in Supabase,
 	// so we filter manually in the callback as well
 	useRealtimeSubscription({
@@ -43,12 +43,19 @@ export function useEventDetailsRealtime(eventId: string | null) {
 			if (
 				payload.eventType === "UPDATE" &&
 				payload.new &&
+				payload.old &&
 				eventIdRef.current === payload.new.event_id
 			) {
 				const updatedParticipant = payload.new;
+				const oldParticipant = payload.old;
 
-				// Ignore updates from current user (they're handled optimistically)
-				if (updatedParticipant.user_id === user?.id) {
+				// Check if approval_status changed (host approving/denying contributor)
+				const approvalStatusChanged =
+					oldParticipant.approval_status !== updatedParticipant.approval_status;
+
+				// If approval_status changed, always process it (host made the change, user needs to see it)
+				// Otherwise, ignore RSVP updates from current user (they're handled optimistically)
+				if (!approvalStatusChanged && updatedParticipant.user_id === user?.id) {
 					return;
 				}
 
@@ -266,9 +273,18 @@ export function useEventDetailsRealtime(eventId: string | null) {
 			) {
 				const newParticipant = payload.new;
 
-				// Ignore participants added by current user (they're handled optimistically)
+				// For current user's inserts, only skip if approval_status is not needed
+				// (i.e., if it's null/undefined and not pending)
+				// This ensures we process real-time events that have approval_status: "pending"
+				// which might be missing from the optimistic update
 				if (newParticipant.user_id === user?.id) {
-					return;
+					// Process if approval_status is present (pending, approved, or denied)
+					// This ensures we get the correct approval_status from the database
+					if (newParticipant.approval_status == null) {
+						// No approval needed, skip (optimistic update is sufficient)
+						return;
+					}
+					// approval_status is present, process it to update state
 				}
 
 				// Fetch user profile for the participant

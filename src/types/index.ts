@@ -73,7 +73,15 @@ export type NotificationType =
 	| "event_updated"
 	| "event_cancelled"
 	| "event_reminder"
-	| "rsvp";
+	| "rsvp"
+	| "contributor_approval_request";
+
+export type PublicRoleRestriction =
+	| "guests_only"
+	| "guests_and_contributors_with_approval"
+	| "guests_and_contributors";
+
+export type ApprovalStatus = "pending" | "approved" | "denied";
 
 export interface Notification {
 	id: string;
@@ -106,6 +114,7 @@ export interface Event {
 		address: string;
 	} | null;
 	is_public: boolean;
+	public_role_restriction?: PublicRoleRestriction; // Only relevant for public events
 	created_at: string;
 	updated_at: string;
 	// Joined data
@@ -123,6 +132,7 @@ export interface EventParticipant {
 	rsvp_status: RSVPStatus;
 	invited_at: string;
 	joined_at: string | null;
+	approval_status?: ApprovalStatus | null; // For contributors joining public events
 	created_at: string;
 	updated_at: string;
 	// Joined data

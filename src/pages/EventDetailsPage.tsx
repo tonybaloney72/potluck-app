@@ -16,6 +16,9 @@ import {
 	updateEvent,
 	updateParticipantRole,
 	clearError,
+	joinPublicEvent,
+	approveContributorRequest,
+	denyContributorRequest,
 } from "../store/slices/eventsSlice";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Button } from "../components/common/Button";
@@ -27,7 +30,7 @@ import { ParticipantsSection } from "../components/events/ParticipantsSection";
 import { ContributionsSection } from "../components/events/ContributionsSection";
 import { CommentsSection } from "../components/events/CommentsSection";
 import { canAddContributions, hasManagePermission } from "../utils/events";
-import type { EventRole, RSVPStatus } from "../types";
+import type { EventRole, RSVPStatus, PublicRoleRestriction } from "../types";
 import { SkeletonEventDetails } from "../components/common/Skeleton";
 import {
 	selectEventById,
@@ -56,6 +59,9 @@ export const EventDetailPage = () => {
 		updatingEvent,
 		updatingRole,
 		error,
+		joiningPublicEvent,
+		approvingContributor,
+		denyingContributor,
 	} = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 
@@ -362,6 +368,7 @@ export const EventDetailPage = () => {
 			lng: number;
 			address: string;
 		} | null;
+		public_role_restriction?: PublicRoleRestriction;
 	}) => {
 		if (!eventId) return;
 		await dispatch(updateEvent({ eventId, updates }));
@@ -390,6 +397,21 @@ export const EventDetailPage = () => {
 				role: role as "guest" | "contributor" | "co-host",
 			}),
 		);
+	};
+
+	const handleJoinPublicEvent = async (role: "guest" | "contributor") => {
+		if (!eventId) return;
+		await dispatch(joinPublicEvent({ eventId, role }));
+	};
+
+	const handleApproveContributor = async (participantId: string) => {
+		if (!eventId) return;
+		await dispatch(approveContributorRequest({ eventId, participantId }));
+	};
+
+	const handleDenyContributor = async (participantId: string) => {
+		if (!eventId) return;
+		await dispatch(denyContributorRequest({ eventId, participantId }));
 	};
 
 	const handleMarkComplete = async () => {
@@ -600,6 +622,12 @@ export const EventDetailPage = () => {
 							// via the useEffect that syncs with event.participants
 						}
 					}}
+					onJoinEvent={handleJoinPublicEvent}
+					joiningEvent={joiningPublicEvent}
+					onApproveContributor={handleApproveContributor}
+					onDenyContributor={handleDenyContributor}
+					approvingContributor={approvingContributor}
+					denyingContributor={denyingContributor}
 				/>
 
 				{/* Contributions Section */}

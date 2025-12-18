@@ -14,6 +14,7 @@ import {
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Map } from "../components/common/Map";
 import { FaArrowLeft } from "react-icons/fa";
+import type { PublicRoleRestriction } from "../types";
 
 interface CreateEventFormData {
 	title: string;
@@ -74,6 +75,10 @@ export const CreateEventPage = () => {
 		address: string;
 	} | null>(null);
 
+	// State for public role restriction (only for public events)
+	const [publicRoleRestriction, setPublicRoleRestriction] =
+		useState<PublicRoleRestriction>("guests_only");
+
 	const onSubmit = async (data: CreateEventFormData) => {
 		setLoading(true);
 		setError(null);
@@ -115,6 +120,7 @@ export const CreateEventPage = () => {
 					end_datetime: data.end_datetime || undefined,
 					location: data.location || undefined,
 					is_public: isPublic, // Use query parameter value
+					public_role_restriction: isPublic ? publicRoleRestriction : undefined,
 					invitedParticipants,
 				}),
 			);
@@ -216,6 +222,94 @@ export const CreateEventPage = () => {
 								:	"Select friends to invite and assign their roles"
 							}
 						/>
+
+						{/* Public Role Restriction (only for public events) */}
+						{isPublic && (
+							<div>
+								<label className='block text-sm font-medium text-primary mb-2'>
+									Who can join this event? *
+								</label>
+								<div className='space-y-2'>
+									<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+										<input
+											type='radio'
+											name='publicRoleRestriction'
+											value='guests_only'
+											checked={publicRoleRestriction === "guests_only"}
+											onChange={e =>
+												setPublicRoleRestriction(
+													e.target.value as PublicRoleRestriction,
+												)
+											}
+											className='mt-1'
+										/>
+										<div className='flex-1'>
+											<div className='font-medium text-primary'>
+												Guests only
+											</div>
+											<div className='text-sm text-secondary'>
+												Only guests can join. Perfect for events like movie
+												nights or casual gatherings.
+											</div>
+										</div>
+									</label>
+									<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+										<input
+											type='radio'
+											name='publicRoleRestriction'
+											value='guests_and_contributors_with_approval'
+											checked={
+												publicRoleRestriction ===
+												"guests_and_contributors_with_approval"
+											}
+											onChange={e =>
+												setPublicRoleRestriction(
+													e.target.value as PublicRoleRestriction,
+												)
+											}
+											className='mt-1'
+										/>
+										<div className='flex-1'>
+											<div className='font-medium text-primary'>
+												Guests and Contributors (with approval)
+											</div>
+											<div className='text-sm text-secondary'>
+												Anyone can join as a guest. Contributors need your
+												approval before they can add items.
+											</div>
+										</div>
+									</label>
+									<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+										<input
+											type='radio'
+											name='publicRoleRestriction'
+											value='guests_and_contributors'
+											checked={
+												publicRoleRestriction === "guests_and_contributors"
+											}
+											onChange={e =>
+												setPublicRoleRestriction(
+													e.target.value as PublicRoleRestriction,
+												)
+											}
+											className='mt-1'
+										/>
+										<div className='flex-1'>
+											<div className='font-medium text-primary'>
+												Guests and Contributors
+											</div>
+											<div className='text-sm text-secondary'>
+												Anyone can join as a guest or contributor. Perfect for
+												block party potlucks and community events.
+											</div>
+										</div>
+									</label>
+								</div>
+								<p className='text-xs text-tertiary mt-2'>
+									You can change this setting later when editing your event.
+								</p>
+							</div>
+						)}
 
 						<div>
 							<Map

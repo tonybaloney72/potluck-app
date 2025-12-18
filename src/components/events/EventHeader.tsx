@@ -20,7 +20,12 @@ import {
 	FaTimes,
 	FaExternalLinkAlt,
 } from "react-icons/fa";
-import type { Event, EventParticipant, RSVPStatus } from "../../types";
+import type {
+	Event,
+	EventParticipant,
+	RSVPStatus,
+	PublicRoleRestriction,
+} from "../../types";
 
 const locationSchema = z
 	.object({
@@ -38,6 +43,13 @@ const eventUpdateSchema = z
 		event_datetime: z.string().min(1, "Date and time is required"),
 		end_datetime: z.string().nullable().optional(),
 		location: locationSchema,
+		public_role_restriction: z
+			.enum([
+				"guests_only",
+				"guests_and_contributors_with_approval",
+				"guests_and_contributors",
+			])
+			.optional(),
 	})
 	.refine(
 		data => {
@@ -74,6 +86,7 @@ interface EventHeaderProps {
 			lng: number;
 			address: string;
 		} | null;
+		public_role_restriction?: PublicRoleRestriction;
 	}) => Promise<void>;
 	updatingEvent: boolean;
 	isEditing: boolean;
@@ -102,6 +115,7 @@ export const EventHeader = ({
 			event_datetime: event.event_datetime,
 			end_datetime: event.end_datetime || null,
 			location: event.location || null,
+			public_role_restriction: event.public_role_restriction || "guests_only",
 		},
 	});
 
@@ -116,6 +130,7 @@ export const EventHeader = ({
 				event_datetime: event.event_datetime,
 				end_datetime: event.end_datetime || null,
 				location: event.location || null,
+				public_role_restriction: event.public_role_restriction || "guests_only",
 			});
 		}
 	}, [
@@ -127,6 +142,7 @@ export const EventHeader = ({
 		event.event_datetime,
 		event.end_datetime,
 		event.location,
+		event.public_role_restriction,
 	]);
 
 	const handleCancel = () => {
@@ -143,6 +159,8 @@ export const EventHeader = ({
 				event_datetime: data.event_datetime,
 				end_datetime: data.end_datetime || null,
 				location: data.location || null,
+				public_role_restriction:
+					event.is_public ? data.public_role_restriction : undefined,
 			});
 		} catch (error) {
 			console.error("Failed to update event:", error);
@@ -276,6 +294,74 @@ export const EventHeader = ({
 						}}
 						selectedLocation={eventUpdateForm.watch("location")}
 					/>
+
+					{/* Public Role Restriction (only for public events) */}
+					{event.is_public && (
+						<div>
+							<label className='block text-sm font-medium text-primary mb-2'>
+								Who can join this event? *
+							</label>
+							<div className='space-y-2'>
+								<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+									<input
+										type='radio'
+										{...eventUpdateForm.register("public_role_restriction")}
+										value='guests_only'
+										className='mt-1'
+									/>
+									<div className='flex-1'>
+										<div className='font-medium text-primary'>Guests only</div>
+										<div className='text-sm text-secondary'>
+											Only guests can join. Perfect for events like movie nights
+											or casual gatherings.
+										</div>
+									</div>
+								</label>
+								<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+									<input
+										type='radio'
+										{...eventUpdateForm.register("public_role_restriction")}
+										value='guests_and_contributors_with_approval'
+										className='mt-1'
+									/>
+									<div className='flex-1'>
+										<div className='font-medium text-primary'>
+											Guests and Contributors (with approval)
+										</div>
+										<div className='text-sm text-secondary'>
+											Anyone can join as a guest. Contributors need your
+											approval before they can add items.
+										</div>
+									</div>
+								</label>
+								<label className='flex items-center gap-3 p-3 border border-border rounded-md cursor-pointer hover:bg-tertiary transition-colors'>
+									<input
+										type='radio'
+										{...eventUpdateForm.register("public_role_restriction")}
+										value='guests_and_contributors'
+										className='mt-1'
+									/>
+									<div className='flex-1'>
+										<div className='font-medium text-primary'>
+											Guests and Contributors
+										</div>
+										<div className='text-sm text-secondary'>
+											Anyone can join as a guest or contributor. Perfect for
+											block party potlucks and community events.
+										</div>
+									</div>
+								</label>
+							</div>
+							{eventUpdateForm.formState.errors.public_role_restriction && (
+								<p className='text-sm text-red-500 mt-1'>
+									{
+										eventUpdateForm.formState.errors.public_role_restriction
+											.message
+									}
+								</p>
+							)}
+						</div>
+					)}
 				</div>
 			:	event.location && (
 					<div className='space-y-4'>

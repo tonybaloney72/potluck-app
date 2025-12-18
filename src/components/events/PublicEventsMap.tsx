@@ -117,7 +117,7 @@ export const PublicEventsMap = ({ radiusMiles = 25 }: PublicEventsMapProps) => {
 					return;
 				} catch (error) {
 					// Browser location failed, continue to profile location
-					console.log("Browser location not available:", error);
+					console.error("Browser location not available:", error);
 				}
 
 				// 3. Fall back to profile location

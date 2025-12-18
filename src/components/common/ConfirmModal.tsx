@@ -38,8 +38,7 @@ export const ConfirmModal = ({
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					onClick={onClose}
-					aria-hidden='true'>
+					onClick={onClose}>
 					<motion.div
 						className='fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none'
 						initial={{ opacity: 0, y: 40, scale: 0.96 }}
