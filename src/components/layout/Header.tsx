@@ -25,6 +25,7 @@ import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { Button } from "../common/Button";
 import { Avatar } from "../common/Avatar";
 import { isGuestUser } from "../../utils/auth";
+import { EventTypeSelectionModal } from "../common/EventTypeSelectionModal";
 
 // Navigation items configuration
 const navItems = [
@@ -144,6 +145,7 @@ export const Header = () => {
 	const navigate = useNavigate();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [isEventTypeModalOpen, setIsEventTypeModalOpen] = useState(false);
 	const [resettingData, setResettingData] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -172,7 +174,7 @@ export const Header = () => {
 
 	const handleCreateEvent = () => {
 		setIsMobileMenuOpen(false);
-		navigate("/create-event");
+		setIsEventTypeModalOpen(true);
 	};
 
 	const handleResetGuestData = async () => {
@@ -251,20 +253,22 @@ export const Header = () => {
 					<div className='w-full px-4 md:px-8'>
 						<div className='max-w-7xl mx-auto'>
 							<div className='flex justify-between items-center h-16'>
-								<Link
-									to='/'
-									className='text-xl font-bold text-primary flex items-center'
-									aria-label='Potluck - Home'>
-									Potluck{" "}
-									<LuCookingPot
-										className='w-6 h-6 inline-block ml-2'
-										aria-hidden='true'
-									/>
-								</Link>
+								<div className='flex items-center gap-4 md:gap-8'>
+									<Link
+										to='/'
+										className='text-xl font-bold text-primary flex items-center'
+										aria-label='Potluck - Home'>
+										Potluck{" "}
+										<LuCookingPot
+											className='w-6 h-6 inline-block ml-2'
+											aria-hidden='true'
+										/>
+									</Link>
+									<NewEventButton onClick={handleCreateEvent} />
+								</div>
 
 								{/* Desktop Navigation */}
 								<div className='hidden md:flex items-center gap-4'>
-									<NewEventButton onClick={handleCreateEvent} />
 									{navItems.map(item => {
 										const Icon = item.icon;
 										return (
@@ -508,6 +512,12 @@ export const Header = () => {
 					</>
 				)}
 			</AnimatePresence>
+
+			{/* Event Type Selection Modal */}
+			<EventTypeSelectionModal
+				isOpen={isEventTypeModalOpen}
+				onClose={() => setIsEventTypeModalOpen(false)}
+			/>
 		</>
 	);
 };

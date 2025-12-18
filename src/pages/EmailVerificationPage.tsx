@@ -28,7 +28,7 @@ export const EmailVerificationPage = () => {
 				<h1 className='text-3xl font-bold text-center text-primary'>
 					Email Verification
 				</h1>
-				<p className='text-center text-sm text-gray-600'>
+				<p className='text-center text-sm text-secondary'>
 					Please check your email for a verification link from Supabase.
 				</p>
 			</div>

@@ -696,3 +696,11 @@ a:focus-visible {
 	.geoapify-close-button {
 	display: flex !important;
 }
+
+.leaflet-popup {
+	border-radius: 0.375rem;
+}
+
+.leaflet-popup-content-wrapper {
+	background-color: var(--bg-secondary) !important;
+}

@@ -214,14 +214,32 @@ export const selectEventById = createSelector(
 );
 
 // Get all upcoming events (future events only, sorted by date)
+// Only includes events where the user is a participant (hosted, attending, or invited)
 export const selectUpcomingEvents = createSelector(
-	[selectAllEvents],
-	allEvents => {
+	[selectEventsById, selectCurrentUserId],
+	(eventsById, userId) => {
+		if (!userId) return [];
+
 		const now = new Date();
-		return allEvents.filter(event => {
-			const eventDate = new Date(event.event_datetime);
-			return eventDate > now;
-		});
+		return Object.values(eventsById)
+			.filter(event => {
+				// Must be a future event
+				const eventDate = new Date(event.event_datetime);
+				if (eventDate <= now) return false;
+
+				// Must be a participant (hosted, attending, or invited)
+				const category = categorizeEvent(event, userId);
+				return (
+					category === "hosted" ||
+					category === "attending" ||
+					category === "invited"
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(a.event_datetime).getTime() -
+					new Date(b.event_datetime).getTime(),
+			);
 	},
 );
 

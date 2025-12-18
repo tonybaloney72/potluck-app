@@ -89,12 +89,9 @@ export const DateTime = ({
 								.toISOString();
 							field.onChange(combined);
 						} else {
-							// For optional fields, don't auto-set time - user must explicitly select it
-							// For required fields, default to 12:00 PM if no time selected
-							if (optional) {
-								// Don't set a value yet - wait for user to select time
-								return;
-							}
+							// For optional fields, use a default time (12:00 PM) so the date selection is visible
+							// User can still change the time after selecting the date
+							// For required fields, also default to 12:00 PM if no time selected
 							const combined = dayjs(date)
 								.hour(12)
 								.minute(0)
@@ -123,12 +120,9 @@ export const DateTime = ({
 								.millisecond(0)
 								.toISOString();
 							field.onChange(combined);
-						} else if (optional) {
-							// For optional fields without a date, don't set anything yet
-							// User needs to select date first
-							return;
 						} else {
-							// If no date and not optional, use today's date (required fields)
+							// If no date, use today's date (for both optional and required fields)
+							// This allows users to select time first if they want
 							const today = dayjs();
 							const combined = today
 								.hour(

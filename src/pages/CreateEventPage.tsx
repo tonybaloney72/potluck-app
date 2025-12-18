@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAppDispatch } from "../store/hooks";
 import { createEvent } from "../store/slices/eventsSlice";
 import { Button } from "../components/common/Button";
@@ -26,12 +26,13 @@ interface CreateEventFormData {
 		lng: number;
 		address: string;
 	} | null;
-	is_public: boolean;
 }
 
 export const CreateEventPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
+	const [searchParams] = useSearchParams();
+	const isPublic = searchParams.get("public") === "true";
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
@@ -55,11 +56,14 @@ export const CreateEventPage = () => {
 		formState: { errors },
 	} = useForm<CreateEventFormData>({
 		defaultValues: {
-			is_public: false,
 			event_datetime: getDefaultDateTime(),
 			end_datetime: null,
 		},
+		mode: "onBlur",
 	});
+
+	// Watch location for validation (required for public events)
+	const location = watch("location");
 
 	// Watch event_datetime for validation
 	const eventDateTime = watch("event_datetime");
@@ -75,6 +79,13 @@ export const CreateEventPage = () => {
 		setError(null);
 
 		try {
+			// Validate location is required for public events
+			if (isPublic && (!data.location || !selectedLocation)) {
+				setError("Location is required for public events");
+				setLoading(false);
+				return;
+			}
+
 			// Convert selectedFriends to invitedParticipants format with roles
 			const invitedParticipants =
 				selectedFriends.length > 0 ?
@@ -103,7 +114,7 @@ export const CreateEventPage = () => {
 					event_datetime: data.event_datetime,
 					end_datetime: data.end_datetime || undefined,
 					location: data.location || undefined,
-					is_public: data.is_public,
+					is_public: isPublic, // Use query parameter value
 					invitedParticipants,
 				}),
 			);
@@ -138,10 +149,12 @@ export const CreateEventPage = () => {
 				{/* Page Header */}
 				<div className='bg-primary rounded-lg shadow-md p-6 mb-6'>
 					<h1 className='text-3xl font-bold text-primary mb-2'>
-						Create New Event
+						{isPublic ? "Create Public Event" : "Create New Event"}
 					</h1>
 					<p className='text-secondary'>
-						Fill out the form below to create your event
+						{isPublic ?
+							"Create an event that others can discover and join. Location is required for public events."
+						:	"Fill out the form below to create your event"}
 					</p>
 				</div>
 
@@ -197,20 +210,37 @@ export const CreateEventPage = () => {
 						<FriendSelector
 							selectedFriends={selectedFriends}
 							onSelectionChange={setSelectedFriends}
-							helperText='Select friends to invite and assign their roles'
+							helperText={
+								isPublic ?
+									"Optionally invite friends. Others can still discover and join your event."
+								:	"Select friends to invite and assign their roles"
+							}
 						/>
 
-						<Map
-							label='Location'
-							onLocationSelect={location => {
-								setSelectedLocation(location);
-								setValue("location", location, {
-									shouldValidate: true,
-									shouldDirty: true,
-								});
-							}}
-							selectedLocation={selectedLocation}
-						/>
+						<div>
+							<Map
+								label={isPublic ? "Location *" : "Location"}
+								onLocationSelect={location => {
+									setSelectedLocation(location);
+									setValue("location", location, {
+										shouldValidate: true,
+										shouldDirty: true,
+									});
+								}}
+								selectedLocation={selectedLocation}
+							/>
+							{isPublic && !location && (
+								<p className='text-sm text-red-500 mt-1'>
+									Location is required for public events
+								</p>
+							)}
+							{isPublic && location && (
+								<p className='text-sm text-secondary mt-1'>
+									Location is set. Others will be able to discover your event
+									based on this location.
+								</p>
+							)}
+						</div>
 
 						{error && (
 							<ErrorDisplay message={error} variant='inline' className='mb-4' />
@@ -225,7 +255,7 @@ export const CreateEventPage = () => {
 								Cancel
 							</Button>
 							<Button type='submit' loading={loading}>
-								Create Event
+								{isPublic ? "Create Public Event" : "Create Event"}
 							</Button>
 						</div>
 					</form>

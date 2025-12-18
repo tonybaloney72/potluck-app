@@ -15,6 +15,7 @@ import type {
 import { requireAuth } from "../../utils/auth";
 import { getEventHostId } from "../../utils/events";
 import { getOperationErrorMessage } from "../../utils/errors";
+import { calculateDistance } from "../../utils/location";
 
 interface EventsState {
 	// ✅ Normalized structure - single source of truth
@@ -100,6 +101,64 @@ export const fetchUserEvents = createAsyncThunk(
 		if (eventsError) throw eventsError;
 
 		return events as Event[];
+	},
+);
+
+// Fetch nearby public events
+export const fetchNearbyPublicEvents = createAsyncThunk(
+	"events/fetchNearbyPublicEvents",
+	async (params: {
+		lat: number;
+		lng: number;
+		radiusMiles?: number; // Default 25 miles
+	}) => {
+		await requireAuth(); // User must be logged in
+
+		const radiusMiles = params.radiusMiles || 25;
+		const now = new Date().toISOString();
+
+		// Fetch all active public events with locations that are in the future
+		const { data: events, error: eventsError } = await supabase
+			.from("events")
+			.select(
+				`
+				*,
+				creator:profiles!events_created_by_fkey(id, name, avatar_url)
+			`,
+			)
+			.eq("is_public", true)
+			.eq("status", "active")
+			.not("location", "is", null)
+			.gte("event_datetime", now) // Only future events
+			.order("event_datetime", { ascending: true });
+
+		if (eventsError) throw eventsError;
+
+		// Filter events by distance on client side
+		// Note: For better performance with many events, consider using PostGIS on the server
+		const nearbyEvents = (events || [])
+			.filter(event => {
+				if (!event.location) return false;
+				const distance = calculateDistance(
+					params.lat,
+					params.lng,
+					event.location.lat,
+					event.location.lng,
+				);
+				return distance <= radiusMiles;
+			})
+			.map(event => ({
+				...event,
+				distance: calculateDistance(
+					params.lat,
+					params.lng,
+					event.location.lat,
+					event.location.lng,
+				),
+			}))
+			.sort((a, b) => a.distance - b.distance); // Sort by distance
+
+		return nearbyEvents as (Event & { distance: number })[];
 	},
 );
 

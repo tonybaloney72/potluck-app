@@ -9,6 +9,7 @@ import {
 import { Button } from "../components/common/Button";
 import { SkeletonEventCard } from "../components/common/Skeleton";
 import { motion } from "motion/react";
+import { PublicEventsMap } from "../components/events/PublicEventsMap";
 
 export const HomePage = () => {
 	const navigate = useNavigate();
@@ -182,18 +183,13 @@ export const HomePage = () => {
 						</h2>
 						<Button
 							variant='secondary'
-							onClick={() => navigate("/browse")}
+							onClick={() => navigate("/discover")}
 							className='w-full sm:w-auto min-h-[44px]'
 							disabled>
 							View More...
 						</Button>
 					</div>
-					<div className='bg-primary rounded-lg p-6 md:p-8 text-center'>
-						<p className='text-tertiary'>
-							Local event discovery coming soon! Browse public events in your
-							area.
-						</p>
-					</div>
+					<PublicEventsMap radiusMiles={25} />
 				</section>
 			</div>
 		</main>

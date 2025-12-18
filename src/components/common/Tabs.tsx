@@ -62,7 +62,7 @@ export const Tabs = ({
 								onClick={() => onTabChange(tab.id)}
 								className={`
 									relative px-4 md:px-6 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base
-									transition-colors duration-200 whitespace-nowrap
+									transition-colors duration-200 whitespace-nowrap cursor-pointer
 									min-h-[44px] flex items-center justify-center gap-2
 									${
 										isActive ? "text-accent" : (

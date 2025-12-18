@@ -13,6 +13,7 @@ export const Pagination = ({
 	onPageChange,
 	totalItems,
 }: PaginationProps) => {
+	if (totalPages === 0 || totalItems === 0) return null;
 	return (
 		<div className='flex flex-col items-center gap-2 w-full px-4 md:px-8 py-4 md:py-8 min-w-0'>
 			<span>Showing {totalItems} events</span>
