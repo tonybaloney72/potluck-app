@@ -184,8 +184,7 @@ export const HomePage = () => {
 						<Button
 							variant='secondary'
 							onClick={() => navigate("/discover")}
-							className='w-full sm:w-auto min-h-[44px]'
-							disabled>
+							className='w-full sm:w-auto min-h-[44px]'>
 							View More...
 						</Button>
 					</div>

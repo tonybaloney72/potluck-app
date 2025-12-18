@@ -9,6 +9,7 @@ import { fetchNearbyPublicEvents } from "../../store/slices/eventsSlice";
 import {
 	getBrowserLocation,
 	getStoredBrowserLocation,
+	checkGeolocationPermission,
 } from "../../utils/location";
 import { Button } from "../common/Button";
 import { Skeleton } from "../common/Skeleton";
@@ -101,6 +102,26 @@ export const PublicEventsMap = ({ radiusMiles = 25 }: PublicEventsMapProps) => {
 			setLocationError(null);
 
 			try {
+				// Check geolocation permission first
+				const permission = await checkGeolocationPermission();
+
+				// If permission is denied, skip localStorage and browser, use profile only
+				if (permission === "denied") {
+					if (profile?.location) {
+						setUserLocation({
+							lat: profile.location.lat,
+							lng: profile.location.lng,
+							address: profile.location.address,
+						});
+						setLoadingLocation(false);
+						return;
+					}
+					setLocationError("No location available");
+					setLoadingLocation(false);
+					return;
+				}
+
+				// Permission is granted or prompt - try localStorage and browser
 				// 1. Try stored browser location first (if recent)
 				const storedLocation = getStoredBrowserLocation();
 				if (storedLocation) {

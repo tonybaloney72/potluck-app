@@ -60,6 +60,30 @@ export const getBrowserLocation = (): Promise<LocationData> => {
 };
 
 /**
+ * Check geolocation permission status
+ * Returns: 'granted' | 'denied' | 'prompt' | null (if API not available)
+ */
+export const checkGeolocationPermission = async (): Promise<
+	"granted" | "denied" | "prompt" | null
+> => {
+	// Check if Permissions API is available
+	if (!navigator.permissions) {
+		return null; // API not available, can't check
+	}
+
+	try {
+		const permissionStatus = await navigator.permissions.query({
+			name: "geolocation" as PermissionName,
+		});
+		return permissionStatus.state as "granted" | "denied" | "prompt";
+	} catch (error) {
+		// Permissions API might not support geolocation query in some browsers
+		console.error("Failed to check geolocation permission:", error);
+		return null;
+	}
+};
+
+/**
  * Get stored browser location from localStorage if it's recent
  */
 export const getStoredBrowserLocation = (): LocationData | null => {

@@ -10,6 +10,7 @@ import { HomePage } from "../pages/HomePage";
 import { MyEventsPage } from "../pages/MyEventsPage";
 import { EventDetailPage } from "../pages/EventDetailsPage";
 import { CreateEventPage } from "../pages/CreateEventPage";
+import { DiscoverPage } from "../pages/DiscoverPage";
 import { ForgotPassword } from "../pages/ForgotPassword";
 import { PasswordReset } from "../pages/PasswordReset";
 import { EmailVerificationPage } from "../pages/EmailVerificationPage";
@@ -123,6 +124,18 @@ export function AppRoutes() {
 						<ProtectedRoute>
 							<PageTransition>
 								<CreateEventPage />
+							</PageTransition>
+						</ProtectedRoute>
+					</Layout>
+				}
+			/>
+			<Route
+				path='/discover'
+				element={
+					<Layout>
+						<ProtectedRoute>
+							<PageTransition>
+								<DiscoverPage />
 							</PageTransition>
 						</ProtectedRoute>
 					</Layout>
