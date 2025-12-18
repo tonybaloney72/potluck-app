@@ -10,7 +10,7 @@ import {
 import { Button } from "../components/common/Button";
 import { Skeleton } from "../components/common/Skeleton";
 import { EmptyState } from "../components/common/EmptyState";
-import { FaMapMarkerAlt, FaSearch } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import type { Event } from "../types";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
@@ -83,8 +83,8 @@ export const DiscoverPage = () => {
 
 	const [userLocation, setUserLocation] = useState<LocationData | null>(null);
 	const [loadingLocation, setLoadingLocation] = useState(true);
-	const [locationError, setLocationError] = useState<string | null>(null);
-	const [requestingLocation, setRequestingLocation] = useState(false);
+	const [_locationError, setLocationError] = useState<string | null>(null);
+	// const [_requestingLocation, setRequestingLocation] = useState(false);
 	const [publicEvents, setPublicEvents] = useState<EventWithDistance[]>([]);
 	const [loadingEvents, setLoadingEvents] = useState(false);
 	const [selectedRadius, setSelectedRadius] = useState(25);
@@ -193,31 +193,31 @@ export const DiscoverPage = () => {
 	}, [userLocation, loadingLocation, dispatch, selectedRadius]);
 
 	// Handle manual location request
-	const handleRequestLocation = async () => {
-		setRequestingLocation(true);
-		setLocationError(null);
+	// const handleRequestLocation = async () => {
+	// 	setRequestingLocation(true);
+	// 	setLocationError(null);
 
-		try {
-			const browserLocation = await getBrowserLocation();
-			setUserLocation(browserLocation);
-		} catch (error) {
-			if (error instanceof GeolocationPositionError) {
-				if (error.code === error.PERMISSION_DENIED) {
-					setLocationError(
-						"Location permission denied. Please enable location access in your browser settings.",
-					);
-				} else if (error.code === error.POSITION_UNAVAILABLE) {
-					setLocationError("Location information is unavailable.");
-				} else {
-					setLocationError("Location request timed out.");
-				}
-			} else {
-				setLocationError("Failed to get your location.");
-			}
-		} finally {
-			setRequestingLocation(false);
-		}
-	};
+	// 	try {
+	// 		const browserLocation = await getBrowserLocation();
+	// 		setUserLocation(browserLocation);
+	// 	} catch (error) {
+	// 		if (error instanceof GeolocationPositionError) {
+	// 			if (error.code === error.PERMISSION_DENIED) {
+	// 				setLocationError(
+	// 					"Location permission denied. Please enable location access in your browser settings.",
+	// 				);
+	// 			} else if (error.code === error.POSITION_UNAVAILABLE) {
+	// 				setLocationError("Location information is unavailable.");
+	// 			} else {
+	// 				setLocationError("Location request timed out.");
+	// 			}
+	// 		} else {
+	// 			setLocationError("Failed to get your location.");
+	// 		}
+	// 	} finally {
+	// 		setRequestingLocation(false);
+	// 	}
+	// };
 
 	// Handle location selection from address search
 	const handleLocationSelect = (location: LocationData) => {
@@ -228,7 +228,8 @@ export const DiscoverPage = () => {
 
 	// Initialize Geoapify autocomplete for address search
 	useEffect(() => {
-		if (!autocompleteContainerRef.current) return;
+		// Only initialize when not loading location (container should be rendered)
+		if (loadingLocation || !autocompleteContainerRef.current) return;
 
 		// Prevent multiple initializations
 		if (
@@ -267,8 +268,7 @@ export const DiscoverPage = () => {
 					autocompleteContainerRef.current,
 					apiKey,
 					{
-						placeholder:
-							userLocation?.address || "Search for an address or city...",
+						placeholder: "Search for an address or city...",
 						debounceDelay: 300,
 						filter: {
 							countrycode: ["us"],
@@ -329,7 +329,7 @@ export const DiscoverPage = () => {
 			}
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [userLocation]);
+	}, [loadingLocation]);
 
 	// Update autocomplete input value when location changes
 	useEffect(() => {
@@ -380,10 +380,10 @@ export const DiscoverPage = () => {
 	}, [userLocation]);
 
 	// Calculate zoom level based on selected radius
-	const mapZoom = useMemo(
-		() => getZoomForRadius(selectedRadius),
-		[selectedRadius],
-	);
+	const mapZoom = useMemo(() => {
+		if (!userLocation) return 4;
+		return getZoomForRadius(selectedRadius);
+	}, [userLocation, selectedRadius]);
 
 	return (
 		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
@@ -406,35 +406,8 @@ export const DiscoverPage = () => {
 					</div>
 				)}
 
-				{/* No location available */}
-				{!loadingLocation && !userLocation && (
-					<div className='bg-primary rounded-lg p-6 md:p-8 mb-4 text-center'>
-						<p className='text-tertiary mb-4'>
-							{locationError ||
-								"Location is required to show nearby events. Please share your location or add it to your profile."}
-						</p>
-						<div className='flex flex-col sm:flex-row gap-3 justify-center'>
-							<Button
-								onClick={handleRequestLocation}
-								loading={requestingLocation}
-								variant='secondary'
-								className='flex items-center'>
-								<FaMapMarkerAlt className='w-4 h-4 mr-2' />
-								Share Location
-							</Button>
-							{profile && (
-								<Button
-									variant='secondary'
-									onClick={() => navigate("/profile")}>
-									Add Location to Profile
-								</Button>
-							)}
-						</div>
-					</div>
-				)}
-
 				{/* Map with Events */}
-				{userLocation && !loadingLocation && (
+				{!loadingLocation && (
 					<div className='bg-primary rounded-lg shadow-md overflow-hidden mb-4'>
 						{/* Radius selector and Address Search */}
 						<div className='p-4 border-b border-border flex flex-col sm:flex-row items-start sm:items-center gap-4'>
@@ -483,8 +456,8 @@ export const DiscoverPage = () => {
 									No public events found nearby.
 								</p>
 								<p className='text-sm text-secondary'>
-									Try expanding your search radius or create your own public
-									event!
+									Try expanding your search radius, sharing your location,
+									adding it to your profile, or create your own public event!
 								</p>
 							</div>
 						)}
