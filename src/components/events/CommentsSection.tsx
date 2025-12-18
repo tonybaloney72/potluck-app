@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { addComment, deleteComment } from "../../store/slices/eventsSlice";
+import { selectEventById } from "../../store/selectors/eventsSelectors";
 import { AnimatedSection } from "../common/AnimatedSection";
 import { EmptyState } from "../common/EmptyState";
 import { DeleteButton } from "../common/DeleteButton";
+import { ConfirmModal } from "../common/ConfirmModal";
 import { Button } from "../common/Button";
 import { Skeleton } from "../common/Skeleton";
-import type { Event, EventParticipant } from "../../types";
 import { canDeleteItem } from "../../utils/events";
 import { FaComment } from "react-icons/fa";
 import { Avatar } from "../common/Avatar";
@@ -18,26 +22,35 @@ const commentSchema = z.object({
 
 type CommentFormData = z.infer<typeof commentSchema>;
 
-interface CommentsSectionProps {
-	event: Event;
-	currentUserParticipant: EventParticipant | undefined;
-	currentUserId: string | undefined;
-	onAddComment: (data: CommentFormData) => void;
-	onDeleteComment: (commentId: string) => void;
-	addingComment: boolean;
-	deletingComment: string | null;
-}
+interface CommentsSectionProps {}
 
-export const CommentsSection = ({
-	event,
-	currentUserParticipant,
-	currentUserId,
-	onAddComment,
-	onDeleteComment,
-	addingComment,
-	deletingComment,
-}: CommentsSectionProps) => {
+export const CommentsSection = ({}: CommentsSectionProps) => {
+	const { eventId } = useParams<{ eventId: string }>();
+	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+
+	// Get event from Redux store
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+
+	// Get current user ID
+	const currentUserId = useAppSelector(state => state.auth.user?.id);
+
+	// Get loading states
+	const addingComment = useAppSelector(state => state.events.addingComment);
+	const deletingComment = useAppSelector(state => state.events.deletingComment);
+
+	// Compute current user participant
+	const currentUserParticipant = event?.participants?.find(
+		p => p.user_id === currentUserId,
+	);
+
+	// Early return if no event
+	if (!event) {
+		return null;
+	}
+
 	const commentForm = useForm<CommentFormData>({
 		resolver: zodResolver(commentSchema),
 		defaultValues: {
@@ -45,9 +58,22 @@ export const CommentsSection = ({
 		},
 	});
 
-	const handleSubmit = (data: CommentFormData) => {
-		onAddComment(data);
+	const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
+
+	const handleSubmit = async (data: CommentFormData) => {
+		if (!eventId) return;
+		await dispatch(addComment({ eventId, content: data.content }));
 		commentForm.reset();
+	};
+
+	const handleDeleteComment = (commentId: string) => {
+		setDeleteCommentId(commentId);
+	};
+
+	const handleConfirmDelete = async () => {
+		if (!deleteCommentId) return;
+		await dispatch(deleteComment(deleteCommentId));
+		setDeleteCommentId(null);
 	};
 
 	return (
@@ -168,7 +194,7 @@ export const CommentsSection = ({
 									{canDelete && (
 										<DeleteButton
 											variant='text'
-											onDelete={() => onDeleteComment(comment.id)}
+											onDelete={() => handleDeleteComment(comment.id)}
 											isDeleting={deletingComment === comment.id}
 											label={`Delete comment by ${
 												comment.user?.name || "user"
@@ -188,6 +214,19 @@ export const CommentsSection = ({
 					message='Be the first to comment on this event!'
 				/>
 			}
+
+			{/* Delete Comment Confirmation Modal */}
+			{deleteCommentId && (
+				<ConfirmModal
+					isOpen={!!deleteCommentId}
+					onClose={() => setDeleteCommentId(null)}
+					onConfirm={handleConfirmDelete}
+					title='Delete Comment'
+					message='Are you sure you want to delete this comment? This action cannot be undone.'
+					confirmText='Delete'
+					confirmVariant='secondary'
+				/>
+			)}
 		</AnimatedSection>
 	);
 };

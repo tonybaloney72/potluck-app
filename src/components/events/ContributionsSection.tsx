@@ -1,15 +1,22 @@
 import { useState } from "react";
+import { useParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+	addContribution,
+	deleteContribution,
+} from "../../store/slices/eventsSlice";
+import { selectEventById } from "../../store/selectors/eventsSelectors";
 import { motion, AnimatePresence } from "motion/react";
 import { AnimatedSection } from "../common/AnimatedSection";
 import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
 import { DeleteButton } from "../common/DeleteButton";
+import { ConfirmModal } from "../common/ConfirmModal";
 import { Button } from "../common/Button";
 import { Skeleton } from "../common/Skeleton";
-import type { Event, EventParticipant } from "../../types";
 import { canAddContributions, canDeleteItem } from "../../utils/events";
 import { FaGift } from "react-icons/fa";
 
@@ -21,26 +28,42 @@ const contributionSchema = z.object({
 
 type ContributionFormData = z.infer<typeof contributionSchema>;
 
-interface ContributionsSectionProps {
-	event: Event;
-	currentUserParticipant: EventParticipant | undefined;
-	currentUserId: string | undefined;
-	onAddContribution: (data: ContributionFormData) => void;
-	onDeleteContribution: (contributionId: string) => void;
-	addingContribution: boolean;
-	deletingContribution: string | null;
-}
+interface ContributionsSectionProps {}
 
-export const ContributionsSection = ({
-	event,
-	currentUserParticipant,
-	currentUserId,
-	onAddContribution,
-	onDeleteContribution,
-	addingContribution,
-	deletingContribution,
-}: ContributionsSectionProps) => {
+export const ContributionsSection = ({}: ContributionsSectionProps) => {
+	const { eventId } = useParams<{ eventId: string }>();
+	const dispatch = useAppDispatch();
+
+	// Get event from Redux store
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+
+	// Get current user ID
+	const currentUserId = useAppSelector(state => state.auth.user?.id);
+
+	// Get loading states
+	const addingContribution = useAppSelector(
+		state => state.events.addingContribution,
+	);
+	const deletingContribution = useAppSelector(
+		state => state.events.deletingContribution,
+	);
+
+	// Compute current user participant
+	const currentUserParticipant = event?.participants?.find(
+		p => p.user_id === currentUserId,
+	);
+
+	// Early return if no event
+	if (!event) {
+		return null;
+	}
+
 	const [showForm, setShowForm] = useState(false);
+	const [deleteContributionId, setDeleteContributionId] = useState<
+		string | null
+	>(null);
 
 	const contributionForm = useForm<ContributionFormData>({
 		resolver: zodResolver(contributionSchema),
@@ -63,10 +86,34 @@ export const ContributionsSection = ({
 			</motion.button>
 		:	undefined;
 
-	const handleSubmit = (data: ContributionFormData) => {
-		onAddContribution(data);
+	const handleSubmit = async (data: ContributionFormData) => {
+		if (!eventId || !currentUserParticipant) return;
+
+		// Check if user can add contributions
+		if (!canAddContributions(currentUserParticipant.role)) {
+			return;
+		}
+
+		await dispatch(
+			addContribution({
+				eventId,
+				itemName: data.itemName,
+				quantity: data.quantity || undefined,
+				description: data.description || undefined,
+			}),
+		);
 		contributionForm.reset();
 		setShowForm(false);
+	};
+
+	const handleDeleteContribution = (contributionId: string) => {
+		setDeleteContributionId(contributionId);
+	};
+
+	const handleConfirmDelete = async () => {
+		if (!deleteContributionId) return;
+		await dispatch(deleteContribution(deleteContributionId));
+		setDeleteContributionId(null);
 	};
 
 	const formInputClassName =
@@ -189,7 +236,7 @@ export const ContributionsSection = ({
 									<div className='absolute top-2 right-2'>
 										<DeleteButton
 											variant='text'
-											onDelete={() => onDeleteContribution(contribution.id)}
+											onDelete={() => handleDeleteContribution(contribution.id)}
 											isDeleting={deletingContribution === contribution.id}
 											label={`Delete contribution: ${contribution.item_name}`}
 										/>
@@ -228,6 +275,19 @@ export const ContributionsSection = ({
 					message='Be the first to add a contribution to this event!'
 				/>
 			}
+
+			{/* Delete Contribution Confirmation Modal */}
+			{deleteContributionId && (
+				<ConfirmModal
+					isOpen={!!deleteContributionId}
+					onClose={() => setDeleteContributionId(null)}
+					onConfirm={handleConfirmDelete}
+					title='Delete Contribution'
+					message='Are you sure you want to delete this contribution? This action cannot be undone.'
+					confirmText='Delete'
+					confirmVariant='secondary'
+				/>
+			)}
 		</AnimatedSection>
 	);
 };

@@ -5,20 +5,9 @@ import { FaArrowLeft, FaEdit, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
 import {
 	fetchEventById,
 	checkEventUpdated,
-	updateRSVP,
-	addComment,
-	deleteComment,
-	addContribution,
-	deleteContribution,
-	addParticipant,
-	removeParticipant,
 	deleteEvent,
 	updateEvent,
-	updateParticipantRole,
 	clearError,
-	joinPublicEvent,
-	approveContributorRequest,
-	denyContributorRequest,
 } from "../store/slices/eventsSlice";
 import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { Button } from "../components/common/Button";
@@ -29,8 +18,7 @@ import { EventHeader } from "../components/events/EventHeader";
 import { ParticipantsSection } from "../components/events/ParticipantsSection";
 import { ContributionsSection } from "../components/events/ContributionsSection";
 import { CommentsSection } from "../components/events/CommentsSection";
-import { canAddContributions, hasManagePermission } from "../utils/events";
-import type { EventRole, RSVPStatus, PublicRoleRestriction } from "../types";
+import { hasManagePermission } from "../utils/events";
 import { SkeletonEventDetails } from "../components/common/Skeleton";
 import {
 	selectEventById,
@@ -38,31 +26,13 @@ import {
 } from "../store/selectors/eventsSelectors";
 
 // Confirmation modal type - consolidated state
-type ConfirmationModal =
-	| { type: "deleteEvent" }
-	| { type: "deleteComment"; commentId: string }
-	| { type: "deleteContribution"; contributionId: string }
-	| { type: "removeParticipant"; userId: string; userName: string }
-	| null;
+type ConfirmationModal = { type: "deleteEvent" } | null;
 
 export const EventDetailPage = () => {
 	const { eventId } = useParams<{ eventId: string }>();
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const {
-		updatingRSVP,
-		addingComment,
-		addingContribution,
-		addingParticipant,
-		deletingComment,
-		deletingContribution,
-		updatingEvent,
-		updatingRole,
-		error,
-		joiningPublicEvent,
-		approvingContributor,
-		denyingContributor,
-	} = useAppSelector(state => state.events);
+	const { updatingEvent, error } = useAppSelector(state => state.events);
 	const { user } = useAppSelector(state => state.auth);
 
 	// Consolidated confirmation modal state
@@ -187,79 +157,15 @@ export const EventDetailPage = () => {
 		p => p.user_id === user?.id,
 	);
 
-	const formatDateTime = (datetimeString: string) => {
-		const date = new Date(datetimeString);
-		const dateStr = date.toLocaleDateString("en-US", {
-			weekday: "long",
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-		});
-		const timeStr = date.toLocaleTimeString("en-US", {
-			hour: "numeric",
-			minute: "2-digit",
-			hour12: true,
-		});
-		return { date: dateStr, time: timeStr };
-	};
-
-	const handleRSVP = async (status: RSVPStatus) => {
-		if (eventId) {
-			await dispatch(updateRSVP({ eventId, rsvpStatus: status }));
-			// No need to refetch - state is updated optimistically
-		}
-	};
+	// Compute permissions
+	const isEventCreator = event.created_by === user?.id;
+	const canEdit =
+		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
 	// Unified delete handler - sets confirmation modal
-	const handleDelete = (
-		type:
-			| "deleteEvent"
-			| "deleteComment"
-			| "deleteContribution"
-			| "removeParticipant",
-		data?: {
-			commentId?: string;
-			contributionId?: string;
-			userId?: string;
-			userName?: string;
-		},
-	) => {
-		switch (type) {
-			case "deleteEvent":
-				setConfirmationModal({ type: "deleteEvent" });
-				break;
-			case "deleteComment":
-				if (data?.commentId) {
-					setConfirmationModal({
-						type: "deleteComment",
-						commentId: data.commentId,
-					});
-				}
-				break;
-			case "deleteContribution":
-				if (data?.contributionId) {
-					setConfirmationModal({
-						type: "deleteContribution",
-						contributionId: data.contributionId,
-					});
-				}
-				break;
-			case "removeParticipant":
-				if (data?.userId && data?.userName) {
-					// Prevent removing hosts
-					const participantToRemove = event?.participants?.find(
-						p => p.user_id === data.userId,
-					);
-					if (participantToRemove?.role === "host") {
-						return; // Don't allow removing the host
-					}
-					setConfirmationModal({
-						type: "removeParticipant",
-						userId: data.userId,
-						userName: data.userName,
-					});
-				}
-				break;
+	const handleDelete = (type: "deleteEvent") => {
+		if (type === "deleteEvent") {
+			setConfirmationModal({ type: "deleteEvent" });
 		}
 	};
 
@@ -267,158 +173,23 @@ export const EventDetailPage = () => {
 	const handleConfirmDelete = async () => {
 		if (!confirmationModal || !eventId) return;
 
-		switch (confirmationModal.type) {
-			case "deleteEvent": {
-				const result = await dispatch(deleteEvent(eventId));
-				if (deleteEvent.fulfilled.match(result)) {
-					navigate("/");
-				}
-				break;
-			}
-			case "deleteComment":
-				await dispatch(deleteComment(confirmationModal.commentId));
-				break;
-			case "deleteContribution":
-				await dispatch(deleteContribution(confirmationModal.contributionId));
-				break;
-			case "removeParticipant": {
-				if (!event) return;
-				// Prevent removing hosts
-				const participantToRemove = event.participants?.find(
-					p => p.user_id === confirmationModal.userId,
-				);
-				if (participantToRemove?.role === "host") {
-					return; // Don't allow removing the host
-				}
-				await dispatch(
-					removeParticipant({ eventId, userId: confirmationModal.userId }),
-				);
-				break;
+		if (confirmationModal.type === "deleteEvent") {
+			const result = await dispatch(deleteEvent(eventId));
+			if (deleteEvent.fulfilled.match(result)) {
+				navigate("/");
 			}
 		}
 		setConfirmationModal(null);
 		// No need to refetch - state is updated optimistically
 	};
 
-	// Unified add handler
-	const handleAdd = async (
-		type: "comment" | "contribution" | "participant",
-		data:
-			| { content: string }
-			| { itemName: string; quantity?: string; description?: string }
-			| { friendId: string; role: EventRole },
-	) => {
-		if (!eventId) return;
-
-		switch (type) {
-			case "comment": {
-				const commentData = data as { content: string };
-				await dispatch(addComment({ eventId, content: commentData.content }));
-				break;
-			}
-			case "contribution": {
-				const contributionData = data as {
-					itemName: string;
-					quantity?: string;
-					description?: string;
-				};
-				if (
-					currentUserParticipant &&
-					canAddContributions(currentUserParticipant.role)
-				) {
-					await dispatch(
-						addContribution({
-							eventId,
-							itemName: contributionData.itemName,
-							quantity: contributionData.quantity || undefined,
-							description: contributionData.description || undefined,
-						}),
-					);
-				}
-				break;
-			}
-			case "participant": {
-				const participantData = data as {
-					friendId: string;
-					role?: "guest" | "contributor" | "co-host";
-				};
-				if (!addingParticipant) {
-					await dispatch(
-						addParticipant({
-							eventId,
-							userId: participantData.friendId,
-							role: participantData.role || "guest",
-						}),
-					);
-				}
-				break;
-			}
-		}
-	};
-
-	const handleUpdateEvent = async (updates: {
-		title?: string;
-		theme?: string | null;
-		description?: string | null;
-		event_datetime?: string;
-		end_datetime?: string | null;
-		status?: "active" | "completed" | "cancelled";
-		location?: {
-			lat: number;
-			lng: number;
-			address: string;
-		} | null;
-		public_role_restriction?: PublicRoleRestriction;
-	}) => {
-		if (!eventId) return;
-		await dispatch(updateEvent({ eventId, updates }));
-	};
-
-	const handleUpdateParticipantRole = async (
-		participantId: string,
-		userId: string,
-		role: EventRole,
-	) => {
-		if (!eventId) return;
-
-		// Find the participant to check their current role
-		if (!event) return;
-		const participant = event.participants?.find(p => p.id === participantId);
-
-		// Prevent changing to/from "host" role - hosts cannot be modified
-		if (!participant || participant.role === "host" || role === "host") {
-			return;
-		}
-
-		await dispatch(
-			updateParticipantRole({
-				eventId,
-				userId,
-				role: role as "guest" | "contributor" | "co-host",
-			}),
-		);
-	};
-
-	const handleJoinPublicEvent = async (role: "guest" | "contributor") => {
-		if (!eventId) return;
-		await dispatch(joinPublicEvent({ eventId, role }));
-	};
-
-	const handleApproveContributor = async (participantId: string) => {
-		if (!eventId) return;
-		await dispatch(approveContributorRequest({ eventId, participantId }));
-	};
-
-	const handleDenyContributor = async (participantId: string) => {
-		if (!eventId) return;
-		await dispatch(denyContributorRequest({ eventId, participantId }));
-	};
-
 	const handleMarkComplete = async () => {
 		try {
-			await handleUpdateEvent({
-				status: "completed",
-			});
+			if (eventId) {
+				await dispatch(
+					updateEvent({ eventId, updates: { status: "completed" } }),
+				);
+			}
 			setIsEditing(false);
 		} catch (error) {
 			console.error("Failed to update event:", error);
@@ -427,9 +198,11 @@ export const EventDetailPage = () => {
 
 	const handleCancelEvent = async () => {
 		try {
-			await handleUpdateEvent({
-				status: "cancelled",
-			});
+			if (eventId) {
+				await dispatch(
+					updateEvent({ eventId, updates: { status: "cancelled" } }),
+				);
+			}
 			setIsEditing(false);
 		} catch (error) {
 			console.error("Failed to cancel event:", error);
@@ -438,17 +211,13 @@ export const EventDetailPage = () => {
 
 	const handleRestoreEvent = async () => {
 		try {
-			await handleUpdateEvent({
-				status: "active",
-			});
+			if (eventId) {
+				await dispatch(updateEvent({ eventId, updates: { status: "active" } }));
+			}
 		} catch (error) {
 			console.error("Failed to restore event:", error);
 		}
 	};
-
-	const isEventCreator = event.created_by === user?.id;
-	const canEdit =
-		isEventCreator || hasManagePermission(currentUserParticipant?.role);
 
 	// Check if event has started or ended (for Mark as Complete visibility)
 	const canMarkComplete = (() => {
@@ -582,79 +351,19 @@ export const EventDetailPage = () => {
 				</div>
 
 				{/* Event Header */}
-				<EventHeader
-					event={event}
-					currentUserParticipant={currentUserParticipant}
-					onRSVPChange={handleRSVP}
-					updatingRSVP={updatingRSVP}
-					formatDateTime={formatDateTime}
-					canEdit={canEdit}
-					onUpdateEvent={handleUpdateEvent}
-					updatingEvent={updatingEvent}
-					isEditing={isEditing}
-					setIsEditing={setIsEditing}
-				/>
+				<EventHeader isEditing={isEditing} setIsEditing={setIsEditing} />
 
 				{/* Participants Section */}
 				<ParticipantsSection
-					event={event}
-					currentUserParticipant={currentUserParticipant}
-					currentUserId={user?.id}
-					onRemoveParticipant={(userId, userName) =>
-						handleDelete("removeParticipant", { userId, userName })
-					}
-					onUpdateParticipantRole={handleUpdateParticipantRole}
-					updatingRole={updatingRole}
 					selectedFriends={selectedFriends}
 					onSelectionChange={setSelectedFriends}
-					onFriendAdded={async (friendId, role) => {
-						// Immediately dispatch addParticipant when a friend is added
-						if (eventId && !addingParticipant) {
-							await dispatch(
-								addParticipant({
-									eventId,
-									userId: friendId,
-									role: role || "guest",
-								}),
-							);
-							// Friend will appear in ParticipantsSection via real-time update
-							// They'll be automatically filtered out from selectedFriends
-							// via the useEffect that syncs with event.participants
-						}
-					}}
-					onJoinEvent={handleJoinPublicEvent}
-					joiningEvent={joiningPublicEvent}
-					onApproveContributor={handleApproveContributor}
-					onDenyContributor={handleDenyContributor}
-					approvingContributor={approvingContributor}
-					denyingContributor={denyingContributor}
 				/>
 
 				{/* Contributions Section */}
-				<ContributionsSection
-					event={event}
-					currentUserParticipant={currentUserParticipant}
-					currentUserId={user?.id}
-					onAddContribution={data => handleAdd("contribution", data)}
-					onDeleteContribution={contributionId =>
-						handleDelete("deleteContribution", { contributionId })
-					}
-					addingContribution={addingContribution}
-					deletingContribution={deletingContribution}
-				/>
+				<ContributionsSection />
 
 				{/* Comments Section */}
-				<CommentsSection
-					event={event}
-					currentUserParticipant={currentUserParticipant}
-					currentUserId={user?.id}
-					onAddComment={data => handleAdd("comment", data)}
-					onDeleteComment={commentId =>
-						handleDelete("deleteComment", { commentId })
-					}
-					addingComment={addingComment}
-					deletingComment={deletingComment}
-				/>
+				<CommentsSection />
 
 				{/* Consolidated Confirmation Modal */}
 				{confirmationModal && (
@@ -662,29 +371,9 @@ export const EventDetailPage = () => {
 						isOpen={!!confirmationModal}
 						onClose={() => setConfirmationModal(null)}
 						onConfirm={handleConfirmDelete}
-						title={
-							confirmationModal.type === "deleteEvent" ? "Delete Event"
-							: confirmationModal.type === "deleteComment" ?
-								"Delete Comment"
-							: confirmationModal.type === "deleteContribution" ?
-								"Delete Contribution"
-							:	"Remove Attendee"
-						}
-						message={
-							confirmationModal.type === "deleteEvent" ?
-								"Are you sure you want to delete this event? This action cannot be undone."
-							: confirmationModal.type === "deleteComment" ?
-								"Are you sure you want to delete this comment? This action cannot be undone."
-							: confirmationModal.type === "deleteContribution" ?
-								"Are you sure you want to delete this contribution? This action cannot be undone."
-							:	`Are you sure you want to remove ${confirmationModal.userName} from this event? This action cannot be undone.`
-
-						}
-						confirmText={
-							confirmationModal.type === "removeParticipant" ?
-								"Remove"
-							:	"Delete"
-						}
+						title='Delete Event'
+						message='Are you sure you want to delete this event? This action cannot be undone.'
+						confirmText='Delete'
 						confirmVariant='secondary'
 					/>
 				)}

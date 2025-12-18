@@ -1,8 +1,18 @@
 import { useState, useEffect, useRef, memo } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+	removeParticipant,
+	updateParticipantRole,
+	approveContributorRequest,
+	denyContributorRequest,
+} from "../../store/slices/eventsSlice";
+import { selectEventById } from "../../store/selectors/eventsSelectors";
+import { hasManagePermission } from "../../utils/events";
 import type { EventParticipant, EventRole } from "../../types";
 import { motion, AnimatePresence } from "motion/react";
 import { DeleteButton } from "../common/DeleteButton";
+import { ConfirmModal } from "../common/ConfirmModal";
 import { Avatar } from "../common/Avatar";
 import { RoleSelector } from "./RoleSelector";
 import { FriendCard } from "../friends/FriendCard";
@@ -11,34 +21,38 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 
 interface ParticipantCardProps {
 	participant: EventParticipant;
-	currentUserId: string | undefined;
-	canManage: boolean;
-	onRemoveParticipant: (userId: string, userName: string) => void;
-	onUpdateParticipantRole: (
-		participantId: string,
-		userId: string,
-		role: EventRole,
-	) => void;
-	updatingRole?: string | null;
-	onApproveContributor?: (participantId: string) => Promise<void>;
-	onDenyContributor?: (participantId: string) => Promise<void>;
-	approvingContributor?: string | null;
-	denyingContributor?: string | null;
 }
 
-const ParticipantCardComponent = ({
-	participant,
-	currentUserId,
-	canManage,
-	onRemoveParticipant,
-	onUpdateParticipantRole,
-	updatingRole,
-	onApproveContributor,
-	onDenyContributor,
-	approvingContributor,
-	denyingContributor,
-}: ParticipantCardProps) => {
+const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
+	const { eventId } = useParams<{ eventId: string }>();
+	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+
+	// Get event from Redux store
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+
+	// Get current user ID
+	const currentUserId = useAppSelector(state => state.auth.user?.id);
+
+	// Get loading states
+	const updatingRole = useAppSelector(state => state.events.updatingRole);
+	const approvingContributor = useAppSelector(
+		state => state.events.approvingContributor,
+	);
+	const denyingContributor = useAppSelector(
+		state => state.events.denyingContributor,
+	);
+
+	// Compute current user participant
+	const currentUserParticipant = event?.participants?.find(
+		p => p.user_id === currentUserId,
+	);
+
+	// Compute canManage
+	const canManage = hasManagePermission(currentUserParticipant?.role);
+
 	const [isFriendOpen, setIsFriendOpen] = useState(false);
 	const [openAbove, setOpenAbove] = useState(false);
 	const friendCardRef = useRef<HTMLDivElement>(null);
@@ -55,11 +69,68 @@ const ParticipantCardComponent = ({
 	// Can only remove participants if user has manage permission, it's not the current user, and the participant is not a host
 	const canRemoveParticipant = canManage && isNotCurrentUser && !isHost;
 	// Can approve/deny if user has manage permission and participant is pending contributor
-	const canApproveDeny =
-		canManage &&
-		isPendingContributor &&
-		onApproveContributor &&
-		onDenyContributor;
+	const canApproveDeny = canManage && isPendingContributor;
+
+	const [showRemoveModal, setShowRemoveModal] = useState(false);
+
+	const handleRemoveClick = () => {
+		// Prevent removing hosts
+		if (participant.role === "host") {
+			return;
+		}
+		setShowRemoveModal(true);
+	};
+
+	const handleConfirmRemove = async () => {
+		if (!eventId || participant.role === "host") return;
+		await dispatch(
+			removeParticipant({
+				eventId,
+				userId: participant.user_id,
+			}),
+		);
+		setShowRemoveModal(false);
+	};
+
+	// Handle update participant role
+	const handleUpdateParticipantRole = async (
+		participantId: string,
+		userId: string,
+		role: EventRole,
+	) => {
+		if (!eventId) return;
+		// Find the participant to check their current role
+		const participantToUpdate = event?.participants?.find(
+			p => p.id === participantId,
+		);
+		// Prevent changing to/from "host" role - hosts cannot be modified
+		if (
+			!participantToUpdate ||
+			participantToUpdate.role === "host" ||
+			role === "host"
+		) {
+			return;
+		}
+		await dispatch(
+			updateParticipantRole({
+				eventId,
+				userId,
+				role: role as "guest" | "contributor" | "co-host",
+			}),
+		);
+	};
+
+	// Handle approve contributor
+	const handleApproveContributor = async (participantId: string) => {
+		if (!eventId) return;
+		await dispatch(approveContributorRequest({ eventId, participantId }));
+	};
+
+	// Handle deny contributor
+	const handleDenyContributor = async (participantId: string) => {
+		if (!eventId) return;
+		await dispatch(denyContributorRequest({ eventId, participantId }));
+	};
 
 	useEffect(() => {
 		if (!isFriendOpen) return;
@@ -127,12 +198,7 @@ const ParticipantCardComponent = ({
 					<div className='absolute top-2 right-2'>
 						<DeleteButton
 							variant='icon'
-							onDelete={() =>
-								onRemoveParticipant(
-									participant.user_id,
-									participant.user?.name || "Unknown",
-								)
-							}
+							onDelete={handleRemoveClick}
 							label={`Remove attendee ${participant.user?.name || "Unknown"}`}
 						/>
 					</div>
@@ -190,7 +256,7 @@ const ParticipantCardComponent = ({
 									<RoleSelector
 										value={participant.role}
 										onChange={role => {
-											onUpdateParticipantRole(
+											handleUpdateParticipantRole(
 												participant.id,
 												participant.user_id,
 												role,
@@ -209,7 +275,7 @@ const ParticipantCardComponent = ({
 								<div className='flex gap-2 mt-2'>
 									<Button
 										variant='primary'
-										onClick={() => onApproveContributor(participant.id)}
+										onClick={() => handleApproveContributor(participant.id)}
 										loading={approvingContributor === participant.id}
 										disabled={
 											approvingContributor === participant.id ||
@@ -221,7 +287,7 @@ const ParticipantCardComponent = ({
 									</Button>
 									<Button
 										variant='secondary'
-										onClick={() => onDenyContributor(participant.id)}
+										onClick={() => handleDenyContributor(participant.id)}
 										loading={denyingContributor === participant.id}
 										disabled={
 											approvingContributor === participant.id ||
@@ -256,6 +322,19 @@ const ParticipantCardComponent = ({
 					</motion.div>
 				)}
 			</AnimatePresence>
+
+			{/* Remove Participant Confirmation Modal */}
+			{showRemoveModal && (
+				<ConfirmModal
+					isOpen={showRemoveModal}
+					onClose={() => setShowRemoveModal(false)}
+					onConfirm={handleConfirmRemove}
+					title='Remove Attendee'
+					message={`Are you sure you want to remove ${participant.user?.name || "this attendee"} from this event? This action cannot be undone.`}
+					confirmText='Remove'
+					confirmVariant='secondary'
+				/>
+			)}
 		</article>
 	);
 };
@@ -264,18 +343,13 @@ const ParticipantCardComponent = ({
 export const ParticipantCard = memo(
 	ParticipantCardComponent,
 	(prevProps, nextProps) => {
-		// Custom comparison function - only re-render if these props change
+		// Custom comparison function - only re-render if participant data changes
 		return (
 			prevProps.participant.id === nextProps.participant.id &&
 			prevProps.participant.role === nextProps.participant.role &&
 			prevProps.participant.approval_status ===
 				nextProps.participant.approval_status &&
-			prevProps.participant.rsvp_status === nextProps.participant.rsvp_status &&
-			prevProps.currentUserId === nextProps.currentUserId &&
-			prevProps.canManage === nextProps.canManage &&
-			prevProps.updatingRole === nextProps.updatingRole &&
-			prevProps.approvingContributor === nextProps.approvingContributor &&
-			prevProps.denyingContributor === nextProps.denyingContributor
+			prevProps.participant.rsvp_status === nextProps.participant.rsvp_status
 		);
 	},
 );

@@ -1,9 +1,16 @@
 import { useState } from "react";
+import { useParams } from "react-router";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+	addParticipant,
+	joinPublicEvent,
+} from "../../store/slices/eventsSlice";
+import { selectEventById } from "../../store/selectors/eventsSelectors";
 import { AnimatedSection } from "../common/AnimatedSection";
 import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
 import { FriendSelector, type SelectedFriend } from "../common/FriendSelector";
-import type { Event, EventParticipant, EventRole } from "../../types";
+import type { EventRole } from "../../types";
 import { hasManagePermission } from "../../utils/events";
 import { FaUsers } from "react-icons/fa";
 import { ParticipantCard } from "./ParticipantCard";
@@ -11,50 +18,47 @@ import { Button } from "../common/Button";
 import { JoinEventModal } from "./JoinEventModal";
 
 interface ParticipantsSectionProps {
-	event: Event;
-	currentUserParticipant: EventParticipant | undefined;
-	currentUserId: string | undefined;
-	onRemoveParticipant: (userId: string, userName: string) => void;
-	onUpdateParticipantRole: (
-		participantId: string,
-		userId: string,
-		role: EventRole,
-	) => void;
-	updatingRole?: string | null;
 	selectedFriends: SelectedFriend[];
 	onSelectionChange: (friends: SelectedFriend[]) => void;
-	onFriendAdded?: (friendId: string, role: EventRole) => void;
-	onJoinEvent?: (role: "guest" | "contributor") => Promise<void>;
-	joiningEvent?: boolean;
-	onApproveContributor?: (participantId: string) => Promise<void>;
-	onDenyContributor?: (participantId: string) => Promise<void>;
-	approvingContributor?: string | null;
-	denyingContributor?: string | null;
 }
 
 export const ParticipantsSection = ({
-	event,
-	currentUserParticipant,
-	currentUserId,
-	onRemoveParticipant,
-	onUpdateParticipantRole,
-	updatingRole,
 	selectedFriends,
 	onSelectionChange,
-	onFriendAdded,
-	onJoinEvent,
-	joiningEvent = false,
-	onApproveContributor,
-	onDenyContributor,
-	approvingContributor,
-	denyingContributor,
 }: ParticipantsSectionProps) => {
+	const { eventId } = useParams<{ eventId: string }>();
+	const dispatch = useAppDispatch();
+
+	// Get event from Redux store
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+
+	// Get current user ID
+	const currentUserId = useAppSelector(state => state.auth.user?.id);
+
+	// Get loading states
+	const joiningEvent = useAppSelector(state => state.events.joiningPublicEvent);
+	const addingParticipant = useAppSelector(
+		state => state.events.addingParticipant,
+	);
+
+	// Compute current user participant
+	const currentUserParticipant = event?.participants?.find(
+		p => p.user_id === currentUserId,
+	);
+
+	// Early return if no event
+	if (!event) {
+		return null;
+	}
+
 	const canManage = hasManagePermission(currentUserParticipant?.role);
 	const [showJoinModal, setShowJoinModal] = useState(false);
 
 	// Check if user can join this public event
 	const canJoinPublicEvent =
-		event.is_public && !currentUserParticipant && currentUserId && onJoinEvent;
+		event.is_public && !currentUserParticipant && currentUserId;
 
 	// Determine available roles based on event restrictions
 	const getAvailableRoles = (): ("guest" | "contributor")[] => {
@@ -62,6 +66,25 @@ export const ParticipantsSection = ({
 		const restriction = event.public_role_restriction || "guests_only";
 		if (restriction === "guests_only") return ["guest"];
 		return ["guest", "contributor"];
+	};
+
+	// Handle friend added
+	const handleFriendAdded = async (friendId: string, role: EventRole) => {
+		if (eventId && !addingParticipant) {
+			await dispatch(
+				addParticipant({
+					eventId,
+					userId: friendId,
+					role: role || "guest",
+				}),
+			);
+		}
+	};
+
+	// Handle join public event
+	const handleJoinPublicEvent = async (role: "guest" | "contributor") => {
+		if (!eventId) return;
+		await dispatch(joinPublicEvent({ eventId, role }));
 	};
 
 	return (
@@ -82,10 +105,8 @@ export const ParticipantsSection = ({
 							isOpen={showJoinModal}
 							onClose={() => setShowJoinModal(false)}
 							onJoin={async role => {
-								if (onJoinEvent) {
-									await onJoinEvent(role);
-									setShowJoinModal(false);
-								}
+								await handleJoinPublicEvent(role);
+								setShowJoinModal(false);
 							}}
 							availableRoles={getAvailableRoles()}
 							eventTitle={event.title}
@@ -101,7 +122,7 @@ export const ParticipantsSection = ({
 					<FriendSelector
 						selectedFriends={selectedFriends}
 						onSelectionChange={onSelectionChange}
-						onFriendAdded={onFriendAdded}
+						onFriendAdded={handleFriendAdded}
 						excludeIds={event.participants?.map(p => p.user_id) || []}
 						hideSelectedChips={true}
 					/>
@@ -113,18 +134,7 @@ export const ParticipantsSection = ({
 					{event.participants.map(participant => {
 						return (
 							<article key={participant.id}>
-								<ParticipantCard
-									participant={participant}
-									currentUserId={currentUserId}
-									canManage={canManage}
-									onRemoveParticipant={onRemoveParticipant}
-									onUpdateParticipantRole={onUpdateParticipantRole}
-									updatingRole={updatingRole}
-									onApproveContributor={onApproveContributor}
-									onDenyContributor={onDenyContributor}
-									approvingContributor={approvingContributor}
-									denyingContributor={denyingContributor}
-								/>
+								<ParticipantCard participant={participant} />
 							</article>
 						);
 					})}

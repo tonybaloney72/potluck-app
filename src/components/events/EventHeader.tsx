@@ -1,7 +1,11 @@
 import { useEffect } from "react";
+import { useParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { updateEvent } from "../../store/slices/eventsSlice";
+import { selectEventById } from "../../store/selectors/eventsSelectors";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
 import { Textarea } from "../common/Textarea";
@@ -20,12 +24,7 @@ import {
 	FaTimes,
 	FaExternalLinkAlt,
 } from "react-icons/fa";
-import type {
-	Event,
-	EventParticipant,
-	RSVPStatus,
-	PublicRoleRestriction,
-} from "../../types";
+import type { PublicRoleRestriction } from "../../types";
 
 const locationSchema = z
 	.object({
@@ -68,13 +67,56 @@ const eventUpdateSchema = z
 type EventUpdateFormData = z.infer<typeof eventUpdateSchema>;
 
 interface EventHeaderProps {
-	event: Event;
-	currentUserParticipant: EventParticipant | undefined;
-	onRSVPChange: (status: RSVPStatus) => void;
-	updatingRSVP: RSVPStatus | null;
-	formatDateTime: (datetimeString: string) => { date: string; time: string };
-	canEdit: boolean;
-	onUpdateEvent: (updates: {
+	isEditing: boolean;
+	setIsEditing: (isEditing: boolean) => void;
+}
+
+// Utility function to format datetime
+const formatDateTime = (datetimeString: string) => {
+	const date = new Date(datetimeString);
+	const dateStr = date.toLocaleDateString("en-US", {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
+	const timeStr = date.toLocaleTimeString("en-US", {
+		hour: "numeric",
+		minute: "2-digit",
+		hour12: true,
+	});
+	return { date: dateStr, time: timeStr };
+};
+
+export const EventHeader = ({ isEditing, setIsEditing }: EventHeaderProps) => {
+	const { eventId } = useParams<{ eventId: string }>();
+	const dispatch = useAppDispatch();
+
+	// Get event from Redux store
+	const event = useAppSelector(state =>
+		eventId ? selectEventById(state, eventId) : null,
+	);
+
+	// Get current user ID
+	const currentUserId = useAppSelector(state => state.auth.user?.id);
+
+	// Get loading states
+	const updatingEvent = useAppSelector(state => state.events.updatingEvent);
+
+	// Compute current user participant
+	const currentUserParticipant = event?.participants?.find(
+		p => p.user_id === currentUserId,
+	);
+
+	// Early return if no event
+	if (!event) {
+		return null;
+	}
+
+	const eventDateTime = formatDateTime(event.event_datetime);
+
+	// Handle event update
+	const handleUpdateEvent = async (updates: {
 		title?: string;
 		theme?: string | null;
 		description?: string | null;
@@ -87,24 +129,10 @@ interface EventHeaderProps {
 			address: string;
 		} | null;
 		public_role_restriction?: PublicRoleRestriction;
-	}) => Promise<void>;
-	updatingEvent: boolean;
-	isEditing: boolean;
-	setIsEditing: (isEditing: boolean) => void;
-}
-
-export const EventHeader = ({
-	event,
-	currentUserParticipant,
-	onRSVPChange,
-	updatingRSVP,
-	formatDateTime,
-	onUpdateEvent,
-	updatingEvent,
-	isEditing,
-	setIsEditing,
-}: EventHeaderProps) => {
-	const eventDateTime = formatDateTime(event.event_datetime);
+	}) => {
+		if (!eventId) return;
+		await dispatch(updateEvent({ eventId, updates }));
+	};
 
 	const eventUpdateForm = useForm<EventUpdateFormData>({
 		resolver: zodResolver(eventUpdateSchema),
@@ -152,7 +180,7 @@ export const EventHeader = ({
 
 	const handleSubmit = async (data: EventUpdateFormData) => {
 		try {
-			await onUpdateEvent({
+			await handleUpdateEvent({
 				title: data.title,
 				theme: data.theme || null,
 				description: data.description || null,
@@ -418,11 +446,7 @@ export const EventHeader = ({
 								{currentUserParticipant.rsvp_status}
 							</span>
 						</p>
-						<RSVPButtonGroup
-							currentStatus={currentUserParticipant.rsvp_status}
-							onRSVPChange={onRSVPChange}
-							updatingRSVP={updatingRSVP}
-						/>
+						<RSVPButtonGroup />
 					</div>
 					<div className='flex flex-col'>
 						<p className='text-sm font-medium text-primary mb-2'>
