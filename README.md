@@ -13,7 +13,9 @@ Potluck App is a modern web application designed to simplify the organization of
 - ✅ **User Authentication** - Secure sign up, login, and session management via Supabase
   - ✅ **Account Deactivation** - Users can deactivate their accounts while preserving data
   - ✅ **Account Reactivation** - Deactivated users can reactivate their accounts by logging in
+  - ✅ **Account Deletion** - Users can permanently delete their accounts with automatic cleanup after 30 days
   - ✅ **Inactive User Handling** - Inactive users are hidden from searches and cannot send/receive messages
+  - ✅ **Guest Account** - Pre-configured guest account with dummy data for testing without creating accounts
 - ✅ **User Profiles** - Customizable profiles with avatars, names, and interactive location selection
   - ✅ **Interactive Location Map** - Select location using map interface with address search
   - ✅ **Location Storage** - Locations stored as JSONB with coordinates (lat, lng) and formatted address
@@ -28,6 +30,8 @@ Potluck App is a modern web application designed to simplify the organization of
 - ✅ **Navigation Enhancements** - Smooth page transitions, scroll position management, back buttons, and deep linking with login redirect
 - ✅ **Friends System** - Connect with other users, send and accept friend requests, manage friendships
   - ✅ **Real-time Updates** - Instant synchronization of friend requests, acceptances, and removals
+  - ✅ **Mutual Friends** - View mutual friends between you and other users
+  - ✅ **Social Metadata** - Friend count and mutual friend information displayed on profiles and friend cards
 - ✅ **Messaging** - Direct messaging between friends with conversation-based architecture
   - ✅ **Real-time Messaging** - Instant message delivery and conversation updates
   - ✅ **Smart Notifications** - Message notifications that suppress when actively viewing a conversation
@@ -44,6 +48,11 @@ Potluck App is a modern web application designed to simplify the organization of
   - ✅ **Calendar Integration** - Add events to Google Calendar or download for Apple Calendar
   - ✅ **Event Filtering** - Filter events by status (upcoming, past, all) and search by title
   - ✅ **Event Pagination** - Paginated event lists for better performance with large event collections
+  - ✅ **Public Events** - Events can be marked as public, making them discoverable to all users
+  - ✅ **Event Discovery** - Discover public events via interactive map and location-based search
+  - ✅ **Join Request System** - Users can request to join public events with role selection (guest or contributor)
+  - ✅ **Join Request Management** - Hosts can approve or deny join requests based on event settings and conditions
+  - ✅ **Pending Requests Page** - Centralized page for managing incoming and outgoing join requests
 - ✅ **RSVP System** - Attendees can RSVP with status (going, maybe, not going, pending)
   - ✅ **Real-time RSVP Updates** - See RSVP status changes instantly across all viewers
   - ✅ **Contribution Tracking** - Coordinate who's bringing what to events
@@ -230,14 +239,21 @@ This project is currently in active development.
 - **Account Deactivation**: Users can deactivate their accounts from the profile settings page
   - **Data Preservation**: All user data (events, messages, friendships) is preserved for reactivation
   - **Automatic Sign Out**: Users are automatically signed out after deactivation
+  - **Temporary Status**: Accounts remain deactivated until user chooses to reactivate
 - **Account Reactivation**: Deactivated users can reactivate by logging in
   - **Reactivation Flow**: Login redirects inactive users to a reactivation page
   - **Full Access Restoration**: Reactivation restores all account functionality immediately
+- **Account Deletion**: Users can permanently delete their accounts
+  - **30-Day Grace Period**: Deleted accounts are marked for deletion and scheduled for cleanup after 30 days
+  - **Data Cleanup**: Automatic deletion of user data after grace period via scheduled cron job
+  - **Irreversible Action**: Account deletion is permanent and cannot be undone after grace period
+  - **Immediate Restrictions**: Deleted accounts are immediately restricted from all app features
 - **Inactive User Restrictions**:
   - **Hidden from Searches**: Inactive users don't appear in friend searches
   - **Message Restrictions**: Cannot send or receive messages
   - **Friend Request Restrictions**: Cannot send or receive friend requests
   - **Conversation Handling**: Existing conversations with inactive users are visible but un-interactable
+  - **Event Restrictions**: Cannot create or join new events
 
 ### Profile & Social Features
 
@@ -276,11 +292,70 @@ This project is currently in active development.
   - **Reverse Geocoding**: Convert map clicks (coordinates) to formatted addresses
   - **Fallback Handling**: Graceful fallback to coordinate display if geocoding fails
 
+### Public Events & Discovery
+
+- **Public Event System**: Events can be marked as public during creation or editing
+  - **Public Visibility**: Public events are visible to all authenticated users, not just friends
+  - **Discovery Access**: Public events appear in discovery features and can be found by anyone
+  - **Private by Default**: Events are private by default, requiring explicit opt-in for public visibility
+
+- **Event Discovery Page** (`/discover`): Comprehensive discovery interface for finding public events
+  - **Interactive Map View**: Visual map display showing all nearby public events with markers
+  - **Location-Based Search**: Search for events by location with address autocomplete
+  - **Radius Filtering**: Adjustable search radius (5, 10, 25, 50, or 100 miles)
+  - **Distance Calculation**: Events display distance from your current location
+  - **Event List View**: Scrollable list of nearby events with pagination (load more functionality)
+  - **Map Popups**: Click event markers to see event details and navigate to full event page
+  - **Location Priority**: Uses browser location, stored location, or profile location in priority order
+
+- **Join Request Workflow**: Users can request to join public events they discover
+  - **Role Selection**: Choose to join as a guest (view-only) or contributor (can add contributions)
+  - **Request Submission**: Submit join requests with optional contribution details
+  - **Approval Required**: Contributor requests require host approval; guest requests may auto-approve
+  - **Request Status**: Track pending requests in dedicated Pending Requests page
+  - **Host Notifications**: Hosts receive notifications when users request to join their events
+
+- **Join Request Management**: Hosts control who can join their public events
+  - **Approval/Denial**: Hosts can approve or deny join requests based on event capacity and settings
+  - **Conditional Approval**: Approval logic considers event capacity, existing participants, and user relationships
+  - **Request Rescinding**: Users can cancel their own pending join requests
+  - **Real-time Updates**: Request status updates instantly across all viewers
+
+### Guest Account & Testing
+
+- **Guest Account System**: Pre-configured account for testing without creating new accounts
+  - **Guest Login**: Use `guest@potluck-app.com` with configured password for instant access
+  - **Dummy Data**: Comprehensive test data including friends, events, messages, and notifications
+  - **Auto-Reset**: Guest data can be reset to provide fresh testing scenarios
+  - **Realistic Experience**: Full app functionality with pre-populated social connections and events
+
+- **Dummy Data Features**:
+  - **8 Dummy Friends**: Pre-created friend accounts with various relationship statuses
+  - **Multiple Events**: Mix of hosted events, attending events, and pending RSVPs
+  - **Conversations**: Pre-populated message threads with multiple messages
+  - **Notifications**: Sample notifications covering all notification types
+  - **Event Participation**: Events include participants, contributions, and comments
+
+### Social Features & Metadata
+
+- **Mutual Friends**: Enhanced social discovery through mutual connections
+  - **Mutual Friend Calculation**: Automatically calculates shared friends between users
+  - **Profile Display**: Mutual friend count and list displayed on user profiles
+  - **Friend Card Integration**: Mutual friends shown on friend cards in friends list
+  - **Expandable Lists**: Click to expand and view full list of mutual friends
+  - **Social Context**: Helps users understand their connection to others in the network
+
+- **Social Metadata**: Rich profile information for better social context
+  - **Friend Count**: Total number of friends displayed on profiles
+  - **Mutual Friend Count**: Number of shared friends with the current user
+  - **Profile Statistics**: Additional metadata to help users make social decisions
+
 ## Future Plans
 
 - Support for additional event types beyond potlucks
-- Social features (event discovery, public events)
+- Enhanced event discovery filters (by date, event type, host)
 - Integration with calendar applications
+- Event sharing and social media integration
 
 ## Contributing
 

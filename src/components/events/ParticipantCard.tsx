@@ -4,8 +4,6 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
 	removeParticipant,
 	updateParticipantRole,
-	approveContributorRequest,
-	denyContributorRequest,
 } from "../../store/slices/eventsSlice";
 import { selectEventById } from "../../store/selectors/eventsSelectors";
 import { hasManagePermission } from "../../utils/events";
@@ -16,8 +14,6 @@ import { ConfirmModal } from "../common/ConfirmModal";
 import { Avatar } from "../common/Avatar";
 import { RoleSelector } from "./RoleSelector";
 import { FriendCard } from "../friends/FriendCard";
-import { Button } from "../common/Button";
-import { FaCheck, FaTimes } from "react-icons/fa";
 
 interface ParticipantCardProps {
 	participant: EventParticipant;
@@ -38,12 +34,6 @@ const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
 
 	// Get loading states
 	const updatingRole = useAppSelector(state => state.events.updatingRole);
-	const approvingContributor = useAppSelector(
-		state => state.events.approvingContributor,
-	);
-	const denyingContributor = useAppSelector(
-		state => state.events.denyingContributor,
-	);
 
 	// Compute current user participant
 	const currentUserParticipant = event?.participants?.find(
@@ -59,17 +49,12 @@ const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
 	const friendCardContentRef = useRef<HTMLDivElement>(null);
 	const isNotCurrentUser = participant.user_id !== currentUserId;
 	const isHost = participant.role === "host";
-	const isPendingContributor =
-		participant.role === "contributor" &&
-		participant.approval_status === "pending";
 
 	// Can only modify roles if user has manage permission, it's not the current user, and the participant is not a host
-	const canModifyRole =
-		canManage && isNotCurrentUser && !isHost && !isPendingContributor;
+	const canModifyRole = canManage && isNotCurrentUser && !isHost;
 	// Can only remove participants if user has manage permission, it's not the current user, and the participant is not a host
 	const canRemoveParticipant = canManage && isNotCurrentUser && !isHost;
 	// Can approve/deny if user has manage permission and participant is pending contributor
-	const canApproveDeny = canManage && isPendingContributor;
 
 	const [showRemoveModal, setShowRemoveModal] = useState(false);
 
@@ -118,18 +103,6 @@ const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
 				role: role as "guest" | "contributor" | "co-host",
 			}),
 		);
-	};
-
-	// Handle approve contributor
-	const handleApproveContributor = async (participantId: string) => {
-		if (!eventId) return;
-		await dispatch(approveContributorRequest({ eventId, participantId }));
-	};
-
-	// Handle deny contributor
-	const handleDenyContributor = async (participantId: string) => {
-		if (!eventId) return;
-		await dispatch(denyContributorRequest({ eventId, participantId }));
 	};
 
 	useEffect(() => {
@@ -243,16 +216,7 @@ const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
 						{/* Mobile: Stack role and RSVP vertically */}
 						<div className='flex flex-col gap-1 sm:gap-2'>
 							<div className='flex items-center gap-2'>
-								{isPendingContributor ?
-									<div className='flex items-center gap-2'>
-										<span className='text-xs text-orange-500 font-medium'>
-											Pending Approval
-										</span>
-										<span className='text-xs text-tertiary capitalize'>
-											{participant.role}
-										</span>
-									</div>
-								: canModifyRole ?
+								{canModifyRole ?
 									<RoleSelector
 										value={participant.role}
 										onChange={role => {
@@ -270,35 +234,6 @@ const ParticipantCardComponent = ({ participant }: ParticipantCardProps) => {
 									</p>
 								}
 							</div>
-							{/* Approve/Deny buttons for pending contributors */}
-							{canApproveDeny && (
-								<div className='flex gap-2 mt-2'>
-									<Button
-										variant='primary'
-										onClick={() => handleApproveContributor(participant.id)}
-										loading={approvingContributor === participant.id}
-										disabled={
-											approvingContributor === participant.id ||
-											denyingContributor === participant.id
-										}
-										className='flex items-center gap-1 text-xs px-2 py-1 min-h-[32px]'>
-										<FaCheck className='w-3 h-3' />
-										Approve
-									</Button>
-									<Button
-										variant='secondary'
-										onClick={() => handleDenyContributor(participant.id)}
-										loading={denyingContributor === participant.id}
-										disabled={
-											approvingContributor === participant.id ||
-											denyingContributor === participant.id
-										}
-										className='flex items-center gap-1 text-xs px-2 py-1 min-h-[32px]'>
-										<FaTimes className='w-3 h-3' />
-										Deny
-									</Button>
-								</div>
-							)}
 						</div>
 					</div>
 				</div>
@@ -347,8 +282,6 @@ export const ParticipantCard = memo(
 		return (
 			prevProps.participant.id === nextProps.participant.id &&
 			prevProps.participant.role === nextProps.participant.role &&
-			prevProps.participant.approval_status ===
-				nextProps.participant.approval_status &&
 			prevProps.participant.rsvp_status === nextProps.participant.rsvp_status
 		);
 	},

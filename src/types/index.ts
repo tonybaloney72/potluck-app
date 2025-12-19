@@ -162,3 +162,17 @@ export interface EventComment {
 	// Joined data
 	user?: Profile;
 }
+
+export interface PendingContributionRequest {
+	id: string;
+	event_id: string;
+	user_id: string;
+	item_name: string;
+	quantity: string | null;
+	description: string | null;
+	created_at: string;
+	updated_at: string;
+	// Joined data
+	user?: Profile;
+	event?: Event;
+}

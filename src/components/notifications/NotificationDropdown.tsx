@@ -96,6 +96,10 @@ export const NotificationDropdown = () => {
 			// Navigate to event for other event-related notifications
 			dispatch(markNotificationAsRead(notification.id));
 			navigate(`/events/${notification.related_id}`);
+		} else if (notification.type === "contributor_approval_request") {
+			navigate("/pending-requests");
+			// Optionally mark as read
+			dispatch(markNotificationAsRead(notification.id));
 		}
 		setIsOpen(false);
 	};

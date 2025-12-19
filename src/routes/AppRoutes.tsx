@@ -17,6 +17,7 @@ import { EmailVerificationPage } from "../pages/EmailVerificationPage";
 import { ReactivateAccountPage } from "../pages/ReactivateAccountPage";
 import { ViewProfilePage } from "../pages/ViewProfilePage";
 import { PageTransition } from "../components/common/PageTransition";
+import { PendingRequestsPage } from "../pages/PendingRequestsPage";
 
 export function AppRoutes() {
 	return (
@@ -187,6 +188,16 @@ export function AppRoutes() {
 					<PageTransition>
 						<ReactivateAccountPage />
 					</PageTransition>
+				}
+			/>
+			<Route
+				path='/pending-requests'
+				element={
+					<ProtectedRoute>
+						<Layout>
+							<PendingRequestsPage />
+						</Layout>
+					</ProtectedRoute>
 				}
 			/>
 

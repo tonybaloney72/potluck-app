@@ -624,9 +624,15 @@ export const joinPublicEvent = createAsyncThunk(
 	async ({
 		eventId,
 		role,
+		contribution,
 	}: {
 		eventId: string;
 		role: "guest" | "contributor";
+		contribution?: {
+			itemName: string;
+			quantity?: string;
+			description?: string;
+		};
 	}) => {
 		const user = await requireAuth();
 
@@ -650,19 +656,59 @@ export const joinPublicEvent = createAsyncThunk(
 			role === "contributor" &&
 			event.public_role_restriction === "guests_and_contributors_with_approval";
 
+		if (role === "contributor" && !contribution) {
+			throw new Error("Contribution details are required for contributors");
+		}
+
+		if (needsApproval && contribution) {
+			// Create pending contribution request
+			const { data: pendingRequest, error: pendingError } = await supabase
+				.from("pending_contribution_requests")
+				.insert({
+					event_id: eventId,
+					user_id: user.id,
+					item_name: contribution.itemName,
+					quantity: contribution.quantity || null,
+					description: contribution.description || null,
+				})
+				.select()
+				.single();
+
+			if (pendingError) throw pendingError;
+
+			// Notification will be created automatically by database trigger
+			// (see PENDING_CONTRIBUTION_REQUEST_NOTIFICATION.sql)
+
+			// Fetch full pending request data to add to Redux state
+			const { data: fullRequest } = await supabase
+				.from("pending_contribution_requests")
+				.select(
+					`
+					*,
+					user:profiles!pending_contribution_requests_user_id_fkey(id, name, avatar_url),
+					event:events!pending_contribution_requests_event_id_fkey(id, title, event_datetime, created_by)
+				`,
+				)
+				.eq("id", pendingRequest.id)
+				.single();
+
+			return {
+				eventId,
+				pending: true,
+				pendingRequestId: pendingRequest.id,
+				pendingRequest: fullRequest,
+			};
+		}
+
 		const participantData: any = {
 			event_id: eventId,
 			user_id: user.id,
 			role: role,
-			rsvp_status: "going", // User is actively joining, so they're going
-			invited_at: null, // Manual join, not invited
-			approval_status: needsApproval ? "pending" : null,
+			rsvp_status: "going",
+			invited_at: null,
+			approval_status: null,
+			joined_at: new Date().toISOString(),
 		};
-
-		// If no approval needed, set joined_at immediately
-		if (!needsApproval) {
-			participantData.joined_at = new Date().toISOString();
-		}
 
 		const { data: participant, error } = await supabase
 			.from("event_participants")
@@ -677,72 +723,24 @@ export const joinPublicEvent = createAsyncThunk(
 
 		if (error) throw error;
 
-		// Notifications are handled by database triggers/functions
-		// The notify_host_on_public_join() function creates:
-		// - RSVP notification for host when someone joins
-		// - Contributor approval request notification if approval is needed
+		if (role === "contributor" && contribution) {
+			const { error: contributionError } = await supabase
+				.from("contributions")
+				.insert({
+					event_id: eventId,
+					user_id: user.id,
+					item_name: contribution.itemName,
+					quantity: contribution.quantity || null,
+					description: contribution.description || null,
+				});
+
+			if (contributionError) {
+				console.error("Failed to add contribution:", contributionError);
+				// Don't throw - participant was added successfully
+			}
+		}
 
 		return { eventId, participant: participant as EventParticipant };
-	},
-);
-
-// Approve a contributor request
-export const approveContributorRequest = createAsyncThunk(
-	"events/approveContributorRequest",
-	async ({
-		eventId,
-		participantId,
-	}: {
-		eventId: string;
-		participantId: string;
-	}) => {
-		await requireAuth();
-
-		const { data: participant, error } = await supabase
-			.from("event_participants")
-			.update({
-				approval_status: "approved",
-				joined_at: new Date().toISOString(),
-			})
-			.eq("id", participantId)
-			.eq("event_id", eventId)
-			.select(
-				`
-				*,
-				user:profiles!event_participants_user_id_fkey(id, name, avatar_url)
-			`,
-			)
-			.single();
-
-		if (error) throw error;
-
-		return { eventId, participant: participant as EventParticipant };
-	},
-);
-
-// Deny a contributor request
-export const denyContributorRequest = createAsyncThunk(
-	"events/denyContributorRequest",
-	async ({
-		eventId,
-		participantId,
-	}: {
-		eventId: string;
-		participantId: string;
-	}) => {
-		await requireAuth();
-
-		// Delete the participant record (denied requests are removed)
-		// Notification is handled by database trigger (notify_user_on_contributor_denial)
-		const { error } = await supabase
-			.from("event_participants")
-			.delete()
-			.eq("id", participantId)
-			.eq("event_id", eventId);
-
-		if (error) throw error;
-
-		return { eventId, participantId };
 	},
 );
 
@@ -1361,72 +1359,32 @@ const eventsSlice = createSlice({
 			})
 			.addCase(joinPublicEvent.fulfilled, (state, action) => {
 				state.joiningPublicEvent = false;
-				const { eventId, participant } = action.payload;
+				const { eventId } = action.payload;
 
-				// ✅ Update in eventsById only
-				if (state.eventsById[eventId]?.participants) {
-					const index = state.eventsById[eventId].participants!.findIndex(
-						p => p.id === participant.id || p.user_id === participant.user_id,
-					);
-					if (index !== -1) {
-						// Update existing participant - preserve all fields including approval_status
-						state.eventsById[eventId].participants![index] = participant;
-					} else {
-						// Add new participant
-						state.eventsById[eventId].participants!.push(participant);
+				// Only update participants if this was an immediate join (not a pending request)
+				// Pending requests don't have a participant yet - they'll be added when approved
+				if ("participant" in action.payload && action.payload.participant) {
+					const participant = action.payload.participant;
+
+					// ✅ Update in eventsById only
+					if (state.eventsById[eventId]?.participants) {
+						const index = state.eventsById[eventId].participants!.findIndex(
+							p => p.id === participant.id || p.user_id === participant.user_id,
+						);
+						if (index !== -1) {
+							// Update existing participant - preserve all fields including approval_status
+							state.eventsById[eventId].participants![index] = participant;
+						} else {
+							// Add new participant
+							state.eventsById[eventId].participants!.push(participant);
+						}
 					}
 				}
+				// If it's a pending request, do nothing - participant will be added when approved
 			})
 			.addCase(joinPublicEvent.rejected, (state, action) => {
 				state.joiningPublicEvent = false;
 				state.error = action.error.message || "Failed to join event";
-			});
-
-		// Approve contributor request
-		builder
-			.addCase(approveContributorRequest.pending, (state, action) => {
-				state.approvingContributor = action.meta.arg.participantId;
-				state.error = null;
-			})
-			.addCase(approveContributorRequest.fulfilled, (state, action) => {
-				state.approvingContributor = null;
-				const { eventId, participant } = action.payload;
-
-				// ✅ Update in eventsById only
-				if (state.eventsById[eventId]?.participants) {
-					const index = state.eventsById[eventId].participants!.findIndex(
-						p => p.id === participant.id,
-					);
-					if (index !== -1) {
-						state.eventsById[eventId].participants![index] = participant;
-					}
-				}
-			})
-			.addCase(approveContributorRequest.rejected, (state, action) => {
-				state.approvingContributor = null;
-				state.error = action.error.message || "Failed to approve request";
-			});
-
-		// Deny contributor request
-		builder
-			.addCase(denyContributorRequest.pending, (state, action) => {
-				state.denyingContributor = action.meta.arg.participantId;
-				state.error = null;
-			})
-			.addCase(denyContributorRequest.fulfilled, (state, action) => {
-				state.denyingContributor = null;
-				const { eventId, participantId } = action.payload;
-
-				// ✅ Remove from eventsById
-				if (state.eventsById[eventId]?.participants) {
-					state.eventsById[eventId].participants = state.eventsById[
-						eventId
-					].participants!.filter(p => p.id !== participantId);
-				}
-			})
-			.addCase(denyContributorRequest.rejected, (state, action) => {
-				state.denyingContributor = null;
-				state.error = action.error.message || "Failed to deny request";
 			});
 
 		// Update RSVP

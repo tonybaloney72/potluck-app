@@ -8,6 +8,7 @@ import { useFriendshipsRealtime } from "./hooks/useFriendshipsRealtime";
 import { useEventsRealtime } from "./hooks/useEventsRealtime";
 import { useMessagesRealtime } from "./hooks/useMessagesRealtime";
 import { useConversationsRealtime } from "./hooks/useConversationsRealtime";
+import { usePendingRequestsRealtime } from "./hooks/usePendingRequestsRealtime";
 
 function App() {
 	useAuth();
@@ -17,6 +18,7 @@ function App() {
 	useEventsRealtime();
 	useMessagesRealtime();
 	useConversationsRealtime();
+	usePendingRequestsRealtime();
 
 	return (
 		<ThemeProvider>

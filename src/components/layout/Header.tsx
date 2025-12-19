@@ -16,6 +16,7 @@ import {
 	FaPlus,
 	FaExternalLinkAlt,
 	FaSync,
+	FaUserPlus,
 } from "react-icons/fa";
 import { LuCookingPot } from "react-icons/lu";
 import type { IconType } from "react-icons";
@@ -46,6 +47,12 @@ const navItems = [
 		icon: FaEnvelope,
 		label: "Messages",
 		ariaLabel: "Messages",
+	},
+	{
+		to: "/pending-requests",
+		icon: FaUserPlus,
+		label: "Pending Requests",
+		ariaLabel: "Pending Requests",
 	},
 ] as const;
 

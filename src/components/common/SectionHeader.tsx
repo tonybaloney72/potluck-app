@@ -12,7 +12,7 @@ export const SectionHeader = ({
 	actionButton,
 }: SectionHeaderProps) => {
 	return (
-		<div className='flex justify-between items-center mb-4'>
+		<div className='flex justify-between items-center'>
 			<h2 className='text-2xl font-semibold text-primary'>
 				{title}
 				{count !== undefined && ` (${count})`}

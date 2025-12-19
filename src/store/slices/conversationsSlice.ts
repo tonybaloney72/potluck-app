@@ -167,8 +167,102 @@ export const getOrCreateConversation = createAsyncThunk(
 			);
 		});
 
+		// If not friends, check if they share an event or have pending requests
 		if (!isFriend) {
-			throw new Error("You can only message your friends");
+			// Check 1: Do they share events as participants?
+			const { data: userEvents, error: userEventsError } = await supabase
+				.from("event_participants")
+				.select("event_id")
+				.eq("user_id", user.id);
+
+			if (userEventsError) throw userEventsError;
+
+			const userEventIds = userEvents?.map(e => e.event_id) || [];
+			let sharesEventAsParticipant = false;
+
+			if (userEventIds.length > 0) {
+				// Check if other user is also a participant in any of those events
+				const { data: otherUserEvents, error: otherUserEventsError } =
+					await supabase
+						.from("event_participants")
+						.select("event_id")
+						.eq("user_id", otherUserId)
+						.in("event_id", userEventIds)
+						.limit(1);
+
+				if (otherUserEventsError) throw otherUserEventsError;
+				sharesEventAsParticipant =
+					otherUserEvents && otherUserEvents.length > 0;
+			}
+
+			// Check 2: Does current user have pending request to event hosted by other user?
+			const { data: otherUserHostedEvents, error: hostedEventsError } =
+				await supabase
+					.from("event_participants")
+					.select("event_id")
+					.eq("user_id", otherUserId)
+					.in("role", ["host", "co-host"]);
+
+			if (hostedEventsError) throw hostedEventsError;
+
+			const otherUserHostedEventIds =
+				otherUserHostedEvents?.map(e => e.event_id) || [];
+
+			let hasPendingRequestToOtherUser = false;
+			if (otherUserHostedEventIds.length > 0) {
+				const { data: pendingRequestsToOtherUser, error: pendingError } =
+					await supabase
+						.from("pending_contribution_requests")
+						.select("event_id")
+						.eq("user_id", user.id)
+						.in("event_id", otherUserHostedEventIds)
+						.limit(1);
+
+				if (pendingError) throw pendingError;
+				hasPendingRequestToOtherUser =
+					pendingRequestsToOtherUser && pendingRequestsToOtherUser.length > 0;
+			}
+
+			// Check 3: Does other user have pending request to event hosted by current user?
+			const { data: currentUserHostedEvents, error: currentHostedEventsError } =
+				await supabase
+					.from("event_participants")
+					.select("event_id")
+					.eq("user_id", user.id)
+					.in("role", ["host", "co-host"]);
+
+			if (currentHostedEventsError) throw currentHostedEventsError;
+
+			const currentUserHostedEventIds =
+				currentUserHostedEvents?.map(e => e.event_id) || [];
+
+			let otherUserHasPendingRequestToMe = false;
+			if (currentUserHostedEventIds.length > 0) {
+				const { data: pendingRequestsFromOtherUser, error: pendingError2 } =
+					await supabase
+						.from("pending_contribution_requests")
+						.select("event_id")
+						.eq("user_id", otherUserId)
+						.in("event_id", currentUserHostedEventIds)
+						.limit(1);
+
+				if (pendingError2) throw pendingError2;
+				otherUserHasPendingRequestToMe =
+					pendingRequestsFromOtherUser &&
+					pendingRequestsFromOtherUser.length > 0;
+			}
+
+			// Allow messaging if any of these conditions are true
+			const canMessage =
+				sharesEventAsParticipant ||
+				hasPendingRequestToOtherUser ||
+				otherUserHasPendingRequestToMe;
+
+			if (!canMessage) {
+				throw new Error(
+					"You can only message your friends or users in your events",
+				);
+			}
 		}
 
 		// Check if the other user is active

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
@@ -6,6 +6,11 @@ import {
 	joinPublicEvent,
 } from "../../store/slices/eventsSlice";
 import { selectEventById } from "../../store/selectors/eventsSelectors";
+import {
+	selectHasPendingRequestForEvent,
+	addPendingRequestRealtime,
+	fetchUserPendingRequests,
+} from "../../store/slices/pendingRequestsSlice";
 import { AnimatedSection } from "../common/AnimatedSection";
 import { SectionHeader } from "../common/SectionHeader";
 import { EmptyState } from "../common/EmptyState";
@@ -56,9 +61,23 @@ export const ParticipantsSection = ({
 	const canManage = hasManagePermission(currentUserParticipant?.role);
 	const [showJoinModal, setShowJoinModal] = useState(false);
 
+	// Fetch user's own pending requests when component mounts
+	useEffect(() => {
+		if (currentUserId) {
+			dispatch(fetchUserPendingRequests());
+		}
+	}, [dispatch, currentUserId]);
+
+	// Check if user has a pending request for this event
+	const hasPendingRequest = useAppSelector(state =>
+		eventId && currentUserId ?
+			selectHasPendingRequestForEvent(state, eventId, currentUserId)
+		:	false,
+	);
+
 	// Check if user can join this public event
 	const canJoinPublicEvent =
-		event.is_public && !currentUserParticipant && currentUserId;
+		event.is_public && !currentUserParticipant && !hasPendingRequest;
 
 	// Determine available roles based on event restrictions
 	const getAvailableRoles = (): ("guest" | "contributor")[] => {
@@ -82,16 +101,35 @@ export const ParticipantsSection = ({
 	};
 
 	// Handle join public event
-	const handleJoinPublicEvent = async (role: "guest" | "contributor") => {
+	const handleJoinPublicEvent = async (
+		role: "guest" | "contributor",
+		contribution?: {
+			itemName: string;
+			quantity?: string;
+			description?: string;
+		},
+	) => {
 		if (!eventId) return;
-		await dispatch(joinPublicEvent({ eventId, role }));
+		try {
+			const result = await dispatch(
+				joinPublicEvent({ eventId, role, contribution }),
+			).unwrap();
+
+			// If a pending request was created, add it to the pending requests state
+			if (result.pending && result.pendingRequest) {
+				dispatch(addPendingRequestRealtime(result.pendingRequest));
+			}
+		} catch (error) {
+			console.error("Failed to join event:", error);
+			// Error is already stored in Redux state, but we log it here for debugging
+		}
 	};
 
 	return (
 		<AnimatedSection
 			delay={0.15}
 			className='bg-primary rounded-lg shadow-md p-4 md:p-6 mb-6'>
-			<div className='flex flex-col md:flex-row justify-between items-start md:items-center'>
+			<div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-4'>
 				<SectionHeader
 					title='Attendees'
 					count={event.participants?.length || 0}
@@ -104,8 +142,8 @@ export const ParticipantsSection = ({
 						<JoinEventModal
 							isOpen={showJoinModal}
 							onClose={() => setShowJoinModal(false)}
-							onJoin={async role => {
-								await handleJoinPublicEvent(role);
+							onJoin={async (role, contribution) => {
+								await handleJoinPublicEvent(role, contribution);
 								setShowJoinModal(false);
 							}}
 							availableRoles={getAvailableRoles()}
@@ -114,6 +152,7 @@ export const ParticipantsSection = ({
 						/>
 					</div>
 				)}
+				{hasPendingRequest && <p>You have a pending request for this event.</p>}
 			</div>
 
 			{/* Friend Selector (only for users with manage permissions) */}

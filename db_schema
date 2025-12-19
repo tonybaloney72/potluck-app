@@ -46,6 +46,7 @@ CREATE TABLE public.event_participants (
   joined_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  approval_status text CHECK (approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'denied'::text])),
   CONSTRAINT event_participants_pkey PRIMARY KEY (id),
   CONSTRAINT event_participants_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id),
   CONSTRAINT event_participants_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
@@ -63,6 +64,7 @@ CREATE TABLE public.events (
   event_datetime timestamp with time zone,
   end_datetime timestamp with time zone,
   status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text])),
+  public_role_restriction text DEFAULT 'guests_only'::text CHECK (public_role_restriction = ANY (ARRAY['guests_only'::text, 'guests_and_contributors_with_approval'::text, 'guests_and_contributors'::text])),
   CONSTRAINT events_pkey PRIMARY KEY (id),
   CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
 );
@@ -91,7 +93,7 @@ CREATE TABLE public.messages (
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  type text NOT NULL CHECK (type = ANY (ARRAY['friend_request'::text, 'friend_request_accepted'::text, 'message'::text, 'event_invitation'::text, 'event_updated'::text, 'event_cancelled'::text, 'event_reminder'::text, 'rsvp'::text])),
+  type text NOT NULL CHECK (type = ANY (ARRAY['friend_request'::text, 'friend_request_accepted'::text, 'message'::text, 'event_invitation'::text, 'event_updated'::text, 'event_cancelled'::text, 'event_reminder'::text, 'rsvp'::text, 'contributor_approval_request'::text])),
   title text NOT NULL,
   message text NOT NULL,
   related_id uuid,
@@ -99,6 +101,19 @@ CREATE TABLE public.notifications (
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT notifications_pkey PRIMARY KEY (id),
   CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.pending_contribution_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  event_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  item_name text NOT NULL,
+  quantity text,
+  description text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT pending_contribution_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT pending_contribution_requests_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id),
+  CONSTRAINT pending_contribution_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,

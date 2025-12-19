@@ -6,6 +6,7 @@ import usersReducer from "./slices/usersSlice";
 import conversationsReducer from "./slices/conversationsSlice";
 import notificationsReducer from "./slices/notificationsSlice";
 import eventsReducer from "./slices/eventsSlice";
+import pendingRequestsReducer from "./slices/pendingRequestsSlice";
 
 const appReducer = combineReducers({
 	auth: authReducer,
@@ -15,6 +16,7 @@ const appReducer = combineReducers({
 	conversations: conversationsReducer,
 	notifications: notificationsReducer,
 	events: eventsReducer,
+	pendingRequests: pendingRequestsReducer,
 });
 
 const rootReducer = (
