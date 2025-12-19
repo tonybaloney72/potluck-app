@@ -8,6 +8,7 @@ import { ErrorDisplay } from "../components/common/ErrorDisplay";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect } from "react";
 import { GUEST_EMAIL } from "../utils/auth";
+import { LuCookingPot } from "react-icons/lu";
 
 interface LoginFormData {
 	email: string;
@@ -87,11 +88,19 @@ export const LoginPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
-					<h1 className='text-3xl font-bold text-center text-primary'>
-						Potluck
-					</h1>
-					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4 w-full'>
+					className='md:max-w-md w-full px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
+					<div className='flex gap-4 items-center justify-center mb-4'>
+						<h1 className='text-3xl font-bold text-center text-primary'>
+							Potluck
+						</h1>
+						<LuCookingPot
+							className='w-10 h-10 inline-block'
+							aria-hidden='true'
+						/>
+					</div>
+					<form
+						onSubmit={handleSubmit(onSubmit)}
+						className='space-y-4 w-full mb-4'>
 						{error && (
 							<ErrorDisplay message={error} variant='inline' className='mb-4' />
 						)}
@@ -123,23 +132,19 @@ export const LoginPage = () => {
 							Sign In
 						</Button>
 					</form>
-					<div className='text-center'>
-						<button
-							type='button'
-							onClick={handleGuestLogin}
-							className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer'>
-							Sign in as Guest
-						</button>
-					</div>
-					<div className='text-center'>
-						<button
-							type='button'
-							onClick={() => navigate("/forgot-password")}
-							className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer'>
-							Forgot Password?
-						</button>
-					</div>
-					<p className='text-center text-sm text-secondary'>
+					<button
+						type='button'
+						onClick={handleGuestLogin}
+						className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer w-full'>
+						Sign in as Guest
+					</button>
+					<button
+						type='button'
+						onClick={() => navigate("/forgot-password")}
+						className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer w-full'>
+						Forgot Password?
+					</button>
+					<p className='text-center text-sm text-secondary mt-4'>
 						Don't have an account?{" "}
 						<Link
 							to='/register'

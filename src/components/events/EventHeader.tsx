@@ -457,7 +457,7 @@ export const EventHeader = ({ isEditing, setIsEditing }: EventHeaderProps) => {
 								href={generateGoogleCalendarUrl(event)}
 								target='_blank'
 								rel='noopener noreferrer'
-								className='flex items-center gap-2 px-3 py-2 bg-accent-secondary hover:bg-accent hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 min-h-[44px]'>
+								className='flex items-center gap-2 px-3 py-2 bg-accent hover:bg-accent-secondary hover:shadow-md active:scale-[0.98] text-white rounded-md text-sm transition-all duration-200 min-h-[44px]'>
 								<FaGoogle className='w-4 h-4' />
 								<span className='block'>Google</span>
 							</a>

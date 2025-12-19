@@ -69,7 +69,10 @@ export const HomePage = () => {
 	const isInitialLoading = loading && Object.keys(eventsById).length === 0;
 
 	return (
-		<main id='main-content' className='bg-secondary p-4 md:p-8' role='main'>
+		<main
+			id='main-content'
+			className='bg-secondary p-4 md:p-8 h-full'
+			role='main'>
 			<div className='max-w-7xl mx-auto'>
 				{/* Upcoming Events Section */}
 				<section
@@ -83,7 +86,7 @@ export const HomePage = () => {
 						</h2>
 						{upcomingEvents.length > 0 && (
 							<Button
-								variant='secondary'
+								variant='primary'
 								onClick={() => navigate("/events")}
 								className='w-full sm:w-auto min-h-[44px]'>
 								View More...
@@ -182,7 +185,7 @@ export const HomePage = () => {
 							Nearby Events
 						</h2>
 						<Button
-							variant='secondary'
+							variant='primary'
 							onClick={() => navigate("/discover")}
 							className='w-full sm:w-auto min-h-[44px]'>
 							View More...

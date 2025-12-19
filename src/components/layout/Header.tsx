@@ -58,7 +58,7 @@ const navItems = [
 
 // Desktop navigation link styles
 const desktopNavLinkClass =
-	"text-primary hover:text-accent hover:bg-tertiary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center";
+	"text-primary hover:text-accent-secondary rounded-md transition-all duration-200 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center";
 
 // Mobile navigation link styles
 const mobileNavLinkClass =
@@ -218,12 +218,16 @@ export const Header = () => {
 		};
 
 		if (isDropdownOpen || isMobileMenuOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-		}
+			// Use a small delay to avoid immediate closure when opening
+			const timeoutId = setTimeout(() => {
+				document.addEventListener("click", handleClickOutside);
+			}, 0);
 
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
+			return () => {
+				clearTimeout(timeoutId);
+				document.removeEventListener("click", handleClickOutside);
+			};
+		}
 	}, [isDropdownOpen, isMobileMenuOpen]);
 
 	// Prevent body scroll when mobile menu is open
@@ -291,7 +295,7 @@ export const Header = () => {
 										);
 									})}
 									<NotificationDropdown />
-									<div className='relative'>
+									<div className='relative' ref={dropdownRef}>
 										{profile ?
 											<Avatar
 												user={profile}
@@ -308,6 +312,7 @@ export const Header = () => {
 													animate={{ opacity: 1, y: 0, scale: 1 }}
 													exit={{ opacity: 0, y: -10, scale: 0.95 }}
 													transition={{ duration: 0.2, ease: "easeOut" }}
+													onClick={e => e.stopPropagation()}
 													role='menu'
 													aria-label='User menu'
 													className='absolute right-0 mt-2 w-48 bg-secondary border border-border rounded-md shadow-lg z-50'>

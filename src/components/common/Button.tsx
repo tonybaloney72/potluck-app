@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	variant?: "primary" | "secondary" | "toggle";
+	variant?: "primary" | "secondary" | "tertiary" | "toggle";
 	loading?: boolean;
 	loadingText?: string;
 	active?: boolean;
@@ -29,6 +29,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 				"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50",
 			secondary:
 				"bg-tertiary text-primary hover:bg-primary hover:shadow-md disabled:bg-tertiary disabled:opacity-50",
+			tertiary:
+				"bg-primary text-primary hover:bg-secondary hover:shadow-md disabled:bg-primary disabled:opacity-50",
 			toggle:
 				active ?
 					"bg-accent text-bg-secondary hover:bg-accent-secondary hover:shadow-md disabled:bg-accent-tertiary disabled:opacity-50"

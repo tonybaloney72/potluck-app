@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-[data-theme="light"] {
+/* [data-theme="light"] {
 	--bg-primary: #f3f4f6;
 	--bg-secondary: #ffffff;
 	--bg-tertiary: #e5e7eb;
@@ -14,9 +14,35 @@
 	--accent-secondary: #2563eb;
 	--accent-tertiary: #60a5fa;
 	--border: #e5e7eb;
+} */
+
+[data-theme="light"] {
+	--bg-primary: #c5dce0; /* Your teal */
+	--bg-secondary: #fefbf6; /* Your warm cream */
+	--bg-tertiary: #8cb9bd; /* Lighter teal for hover/subtle backgrounds */
+	--text-primary: #111827; /* Dark for readability */
+	--text-secondary: #1f2937; /* Medium gray for secondary text */
+	--text-tertiary: #374151; /* Light gray for tertiary text */
+	--accent: #b67352; /* Your terracotta */
+	--accent-secondary: #ecb159; /* Your gold */
+	--accent-tertiary: #d9b08c; /* Peachy brown for lighter accents */
+	--border: #c5dce0; /* Match bg-tertiary for consistency */
 }
 
 [data-theme="dark"] {
+	--bg-primary: #2d4a4f; /* Dark teal - inverse of light teal */
+	--bg-secondary: #1a1f24; /* Very dark with warm undertone - inverse of cream */
+	--bg-tertiary: #1e3a3f; /* Darkest teal - for depth */
+	--text-primary: #fefbf6; /* Light cream - inverse of dark text */
+	--text-secondary: #e5e7eb; /* Light gray - good contrast on dark teal */
+	--text-tertiary: #d1d5db; /* Medium light gray */
+	--accent: #b67352; /* Lighter terracotta - pops on dark */
+	--accent-secondary: #e8c4a0; /* Lighter peach - softer accent */
+	--accent-tertiary: #f4c97a; /* Brighter gold - more visible on dark */
+	--border: #3a5a5f; /* Medium dark teal - subtle borders */
+}
+
+/* [data-theme="dark"] {
 	--bg-primary: #1f2937;
 	--bg-secondary: #111827;
 	--bg-tertiary: #374151;
@@ -27,10 +53,11 @@
 	--accent-secondary: #3b82f6;
 	--accent-tertiary: #93c5fd;
 	--border: #374151;
-}
+} */
 
 html {
-	@apply bg-gray-50 text-gray-900;
+	background-color: var(--bg-secondary);
+	color: var(--text-primary);
 	transition:
 		background-color 0.3s ease,
 		color 0.3s ease;
@@ -46,13 +73,6 @@ body {
 #root {
 	height: 100%;
 	overflow: hidden;
-}
-
-html[data-theme="dark"] {
-	@apply bg-gray-900 text-gray-50;
-	transition:
-		background-color 0.3s ease,
-		color 0.3s ease;
 }
 
 /* Background utilities */

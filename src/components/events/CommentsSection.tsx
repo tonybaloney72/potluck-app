@@ -96,7 +96,7 @@ export const CommentsSection = ({}: CommentsSectionProps) => {
 						id='comment-content'
 						{...commentForm.register("content")}
 						placeholder='Add a comment...'
-						className='w-full px-4 py-2 bg-primary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
+						className='w-full px-4 py-2 bg-secondary border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent mb-2'
 						rows={3}
 						autoComplete='off'
 						aria-required='true'

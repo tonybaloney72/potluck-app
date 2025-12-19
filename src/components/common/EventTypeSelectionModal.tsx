@@ -45,7 +45,7 @@ export const EventTypeSelectionModal = ({
 							animate={{ opacity: 1, scale: 1, y: 0 }}
 							exit={{ opacity: 0, scale: 0.95, y: 20 }}
 							transition={{ duration: 0.2, ease: "easeOut" }}
-							className='bg-primary rounded-lg shadow-xl max-w-md w-full p-6'
+							className='bg-secondary rounded-lg shadow-xl max-w-md w-full p-6'
 							role='dialog'
 							aria-modal='true'
 							aria-labelledby='event-type-modal-title'
@@ -80,7 +80,7 @@ export const EventTypeSelectionModal = ({
 									whileHover={{ scale: 1.02 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={handlePrivateEvent}
-									className='w-full p-6 bg-secondary border-2 border-border rounded-lg hover:border-accent transition-all text-left group'
+									className='w-full p-6 bg-secondary border-2 border-accent rounded-lg hover:border-accent-secondary hover:bg-primary cursor-pointer transition-all text-left group'
 									type='button'
 									aria-label='Create private event'>
 									<div className='flex items-start gap-4'>
@@ -104,7 +104,7 @@ export const EventTypeSelectionModal = ({
 									whileHover={{ scale: 1.02 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={handlePublicEvent}
-									className='w-full p-6 bg-secondary border-2 border-border rounded-lg hover:border-accent transition-all text-left group'
+									className='w-full p-6 bg-secondary border-2 border-accent rounded-lg hover:border-accent-secondary hover:bg-primary cursor-pointer transition-all text-left group'
 									type='button'
 									aria-label='Create public event'>
 									<div className='flex items-start gap-4'>
@@ -129,7 +129,7 @@ export const EventTypeSelectionModal = ({
 								<Button
 									ref={initialFocusRef}
 									type='button'
-									variant='secondary'
+									variant='primary'
 									onClick={onClose}>
 									Cancel
 								</Button>
