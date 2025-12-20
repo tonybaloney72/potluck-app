@@ -88,7 +88,7 @@ export const LoginPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='md:max-w-md w-full px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
+					className='md:max-w-md w-full md:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
 					<div className='flex gap-2 md:gap-4 items-center justify-center mb-4'>
 						<h1 className='text-xl md:text-3xl font-bold text-center text-primary'>
 							Potluck
