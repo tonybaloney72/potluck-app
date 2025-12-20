@@ -70,16 +70,16 @@ export const ForgotPassword = () => {
 	};
 
 	return (
-		<div className='h-screen flex items-center justify-center bg-primary'>
+		<div className='flex h-full items-center justify-center bg-primary px-2'>
 			<AnimatePresence mode='wait'>
-				{isSent ? (
+				{isSent ?
 					<motion.div
 						key='success'
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -20 }}
 						transition={{ duration: 0.3 }}
-						className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
+						className='md:max-w-md w-full sm:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-4 justify-center items-center'>
 						<div className='text-center space-y-4'>
 							<div className='w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4'>
 								<span className='text-green-500 text-3xl'>✓</span>
@@ -107,14 +107,13 @@ export const ForgotPassword = () => {
 							</div>
 						</div>
 					</motion.div>
-				) : (
-					<motion.div
+				:	<motion.div
 						key='form'
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -20 }}
 						transition={{ duration: 0.3 }}
-						className='md:max-w-md w-full space-y-4 md:space-y-8 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col justify-center items-center md:block'>
+						className='md:max-w-md w-full sm:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-4 justify-center items-center'>
 						<h2 className='text-3xl font-bold text-center text-primary'>
 							Reset Password
 						</h2>
@@ -150,7 +149,7 @@ export const ForgotPassword = () => {
 							</div>
 						</form>
 					</motion.div>
-				)}
+				}
 			</AnimatePresence>
 		</div>
 	);

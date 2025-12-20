@@ -31,12 +31,12 @@ export const ReactivateAccountPage = () => {
 	};
 
 	return (
-		<div className='h-screen flex items-center justify-center bg-primary'>
+		<div className='flex h-full items-center justify-center bg-primary px-2'>
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.3 }}
-				className='md:max-w-md w-full space-y-6 px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow'>
+				className='md:max-w-md w-full sm:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-4 justify-center items-center'>
 				<div className='text-center space-y-4'>
 					<h1 className='text-3xl font-bold text-primary'>
 						Account Deactivated

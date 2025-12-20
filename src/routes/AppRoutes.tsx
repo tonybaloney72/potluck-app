@@ -143,54 +143,6 @@ export function AppRoutes() {
 				}
 			/>
 			<Route
-				path='/login'
-				element={
-					// <PageTransition>
-					<LoginPage />
-					// </PageTransition>
-				}
-			/>
-			<Route
-				path='/register'
-				element={
-					<PageTransition>
-						<RegisterPage />
-					</PageTransition>
-				}
-			/>
-			<Route
-				path='/forgot-password'
-				element={
-					<PageTransition>
-						<ForgotPassword />
-					</PageTransition>
-				}
-			/>
-			<Route
-				path='/reset-password'
-				element={
-					<PageTransition>
-						<PasswordReset />
-					</PageTransition>
-				}
-			/>
-			<Route
-				path='/email-verification'
-				element={
-					<PageTransition>
-						<EmailVerificationPage />
-					</PageTransition>
-				}
-			/>
-			<Route
-				path='/reactivate'
-				element={
-					<PageTransition>
-						<ReactivateAccountPage />
-					</PageTransition>
-				}
-			/>
-			<Route
 				path='/pending-requests'
 				element={
 					<ProtectedRoute>
@@ -200,6 +152,12 @@ export function AppRoutes() {
 					</ProtectedRoute>
 				}
 			/>
+			<Route path='/login' element={<LoginPage />} />
+			<Route path='/register' element={<RegisterPage />} />
+			<Route path='/forgot-password' element={<ForgotPassword />} />
+			<Route path='/reset-password' element={<PasswordReset />} />
+			<Route path='/email-verification' element={<EmailVerificationPage />} />
+			<Route path='/reactivate' element={<ReactivateAccountPage />} />
 
 			<Route path='*' element={<Navigate to='/' replace />} />
 		</Routes>

@@ -16,15 +16,15 @@ export const EmailVerificationPage = () => {
 	// Don't show page while checking auth status
 	if (initializing) {
 		return (
-			<div className='h-screen flex items-center justify-center bg-primary'>
+			<div className='flex h-full items-center justify-center bg-primary px-2'>
 				<div className='text-lg'>Loading...</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className='h-screen flex items-center justify-center bg-primary'>
-			<div className='max-w-md w-full space-y-8 p-8 bg-secondary border border-border rounded-lg shadow'>
+		<div className='flex h-full items-center justify-center bg-primary px-2'>
+			<div className='md:max-w-md w-full sm:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-4 justify-center items-center'>
 				<h1 className='text-3xl font-bold text-center text-primary'>
 					Email Verification
 				</h1>

@@ -88,8 +88,8 @@ export const LoginPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='md:max-w-md w-full md:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
-					<div className='flex gap-2 md:gap-4 items-center justify-center mb-4'>
+					className='md:max-w-md w-full sm:w-[400px] px-4 md:px-8 py-8 bg-secondary md:border md:border-border md:rounded-lg md:shadow md:h-auto flex flex-col gap-2 md:gap-4 justify-center items-center'>
+					<div className='flex gap-2 md:gap-4 items-center justify-center '>
 						<h1 className='text-xl md:text-3xl font-bold text-center text-primary'>
 							Potluck
 						</h1>
@@ -98,9 +98,7 @@ export const LoginPage = () => {
 							aria-hidden='true'
 						/>
 					</div>
-					<form
-						onSubmit={handleSubmit(onSubmit)}
-						className='space-y-4 w-full mb-4'>
+					<form onSubmit={handleSubmit(onSubmit)} className='space-y-4 w-full '>
 						{error && (
 							<ErrorDisplay message={error} variant='inline' className='mb-4' />
 						)}
@@ -144,7 +142,7 @@ export const LoginPage = () => {
 						className='text-sm text-accent hover:text-accent-secondary hover:underline hover:cursor-pointer w-full'>
 						Forgot Password?
 					</button>
-					<p className='text-center text-sm text-secondary mt-4'>
+					<p className='text-center text-sm text-secondary '>
 						Don't have an account?{" "}
 						<Link
 							to='/register'
