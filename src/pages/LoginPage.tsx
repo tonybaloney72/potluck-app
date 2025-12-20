@@ -49,7 +49,7 @@ export const LoginPage = () => {
 	// Don't show login form while checking auth status
 	if (initializing) {
 		return (
-			<div className='h-screen flex items-center justify-center bg-primary'>
+			<div className='h-full flex items-center justify-center bg-primary'>
 				<div className='text-lg'>Loading...</div>
 			</div>
 		);
@@ -81,20 +81,20 @@ export const LoginPage = () => {
 	};
 
 	return (
-		<div className='h-screen flex items-center justify-center bg-primary'>
+		<div className='flex h-full items-center justify-center bg-primary px-2'>
 			<AnimatePresence>
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -20 }}
 					transition={{ duration: 0.3 }}
-					className='md:max-w-md w-full px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow h-full md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
-					<div className='flex gap-4 items-center justify-center mb-4'>
-						<h1 className='text-3xl font-bold text-center text-primary'>
+					className='md:max-w-md w-full px-4 md:px-8 py-8 bg-secondary border border-border rounded-lg shadow md:h-auto flex flex-col gap-2 md:gap-8 justify-center items-center md:block'>
+					<div className='flex gap-2 md:gap-4 items-center justify-center mb-4'>
+						<h1 className='text-xl md:text-3xl font-bold text-center text-primary'>
 							Potluck
 						</h1>
 						<LuCookingPot
-							className='w-10 h-10 inline-block'
+							className='w-6 h-6 md:w-10 md:h-10 inline-block'
 							aria-hidden='true'
 						/>
 					</div>

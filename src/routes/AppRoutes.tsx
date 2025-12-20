@@ -145,9 +145,9 @@ export function AppRoutes() {
 			<Route
 				path='/login'
 				element={
-					<PageTransition>
-						<LoginPage />
-					</PageTransition>
+					// <PageTransition>
+					<LoginPage />
+					// </PageTransition>
 				}
 			/>
 			<Route
