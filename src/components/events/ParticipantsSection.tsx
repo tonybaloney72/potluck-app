@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
 	addParticipant,
 	joinPublicEvent,
+	removeParticipant,
 } from "../../store/slices/eventsSlice";
 import { selectEventById } from "../../store/selectors/eventsSelectors";
 import {
@@ -33,6 +34,7 @@ export const ParticipantsSection = ({
 }: ParticipantsSectionProps) => {
 	const { eventId } = useParams<{ eventId: string }>();
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	// Get event from Redux store
 	const event = useAppSelector(state =>
@@ -125,6 +127,27 @@ export const ParticipantsSection = ({
 		}
 	};
 
+	const handleLeaveEvent = async () => {
+		if (!eventId || !currentUserId || !currentUserParticipant) return;
+
+		// Prevent hosts from leaving events they created
+		if (event.created_by === currentUserId) {
+			console.error("Hosts cannot leave events they created");
+			return;
+		}
+		try {
+			await dispatch(
+				removeParticipant({
+					eventId,
+					userId: currentUserId,
+				}),
+			);
+			navigate("/");
+		} catch (error) {
+			console.error("Failed to leave event:", error);
+		}
+	};
+
 	return (
 		<AnimatedSection
 			delay={0.15}
@@ -153,6 +176,10 @@ export const ParticipantsSection = ({
 					</div>
 				)}
 				{hasPendingRequest && <p>You have a pending request for this event.</p>}
+				{/* Leave event button (for participants, but not hosts) */}
+				{currentUserParticipant && event.created_by !== currentUserId && (
+					<Button onClick={handleLeaveEvent}>Leave Event</Button>
+				)}
 			</div>
 
 			{/* Friend Selector (only for users with manage permissions) */}

@@ -462,7 +462,7 @@ export const DiscoverPage = () => {
 							</div>
 						)}
 						<div
-							className='map-container rounded-md overflow-hidden px-2 md:px-0'
+							className='map-container rounded-md overflow-hidden pb-2 md:pb-4 px-2 md:px-4'
 							style={{ height: "400px" }}>
 							<MapContainer
 								center={mapCenter}

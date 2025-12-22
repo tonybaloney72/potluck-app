@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
-import { FaExclamationTriangle, FaRedo } from "react-icons/fa";
+import { FaExclamationTriangle, FaHome, FaRedo } from "react-icons/fa";
 import { motion } from "motion/react";
 
 interface ErrorDisplayProps {
 	title?: string;
 	message: string;
 	onRetry?: () => void;
+	onGoHome?: () => void;
 	retryLabel?: string;
+	goHomeLabel?: string;
 	variant?: "inline" | "block" | "fullscreen";
 	icon?: ReactNode;
 	className?: string;
@@ -17,6 +19,8 @@ export const ErrorDisplay = ({
 	title = "Something went wrong",
 	message,
 	onRetry,
+	onGoHome,
+	goHomeLabel = "Go to Home",
 	retryLabel = "Try Again",
 	variant = "block",
 	icon,
@@ -49,15 +53,26 @@ export const ErrorDisplay = ({
 						</div>
 					)}
 					<p className='text-sm'>{message}</p>
-					{onRetry && variant !== "inline" && (
-						<Button
-							variant='primary'
-							onClick={onRetry}
-							className='mt-3 flex items-center gap-2'>
-							<FaRedo className='w-4 h-4' />
-							{retryLabel}
-						</Button>
-					)}
+					<div className='flex flex-col gap-2 md:flex-row items-center justify-center'>
+						{onRetry && variant !== "inline" && (
+							<Button
+								variant='primary'
+								onClick={onRetry}
+								className='mt-3 flex items-center gap-2'>
+								<FaRedo className='w-4 h-4' />
+								{retryLabel}
+							</Button>
+						)}
+						{onGoHome && variant !== "inline" && (
+							<Button
+								variant='secondary'
+								onClick={onGoHome}
+								className='mt-3 flex items-center gap-2'>
+								<FaHome className='w-4 h-4' />
+								{goHomeLabel}
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
 		</motion.div>

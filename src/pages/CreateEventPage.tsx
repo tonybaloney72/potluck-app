@@ -127,7 +127,9 @@ export const CreateEventPage = () => {
 
 			if (createEvent.fulfilled.match(result)) {
 				// Redirect to the newly created event
-				navigate(`/events/${result.payload.id}`);
+				// Use replace: true to replace create-event in history
+				// so back button goes to page before create-event
+				navigate(`/events/${result.payload.id}`, { replace: true });
 			} else {
 				setError(result.error?.message || "Failed to create event");
 			}

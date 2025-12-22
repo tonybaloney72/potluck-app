@@ -144,6 +144,8 @@ export const EventDetailPage = () => {
 								}
 							}}
 							variant='fullscreen'
+							onGoHome={() => navigate("/")}
+							goHomeLabel='Go to Home'
 						/>
 					)}
 				</div>
