@@ -410,7 +410,7 @@ export const DiscoverPage = () => {
 				{!loadingLocation && (
 					<div className='bg-primary rounded-lg shadow-md overflow-hidden mb-4'>
 						{/* Radius selector and Address Search */}
-						<div className='p-4 border-b border-border flex flex-col sm:flex-row items-start sm:items-center gap-4'>
+						<div className='p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4'>
 							{/* Address Search */}
 							<div className='flex-1 flex items-center gap-2 w-full min-w-0'>
 								<label
@@ -462,7 +462,7 @@ export const DiscoverPage = () => {
 							</div>
 						)}
 						<div
-							className='map-container rounded-md overflow-hidden border border-border'
+							className='map-container rounded-md overflow-hidden px-2 md:px-0'
 							style={{ height: "400px" }}>
 							<MapContainer
 								center={mapCenter}

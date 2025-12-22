@@ -177,7 +177,7 @@ export const CreateEventPage = () => {
 						/>
 
 						<Textarea
-							label='Description'
+							label='Description (optional)'
 							{...register("description")}
 							placeholder='Describe your event...'
 							rows={4}

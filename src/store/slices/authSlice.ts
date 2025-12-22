@@ -64,11 +64,8 @@ export const signUp = createAsyncThunk(
 		});
 
 		if (error) throw error;
-		// Return user and session info
-		// If email confirmation is required, session will be null until email is verified
 		return {
 			user: data.user,
-			session: data.session, // Will be null if email confirmation is required
 		};
 	},
 );
@@ -345,19 +342,9 @@ const authSlice = createSlice({
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(signUp.fulfilled, (state, action) => {
+			.addCase(signUp.fulfilled, state => {
 				state.loading = false;
-				// Only set user if a session exists (email is confirmed)
-				// If email confirmation is required, session will be null until verified
-				if (action.payload?.session && action.payload.user) {
-					state.user = {
-						id: action.payload.user.id,
-						email: action.payload.user.email,
-					};
-				} else {
-					// No session = email not confirmed - don't set user, they need to verify first
-					state.user = null;
-				}
+				state.user = null;
 			})
 			.addCase(signUp.rejected, (state, action) => {
 				state.loading = false;

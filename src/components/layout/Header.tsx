@@ -303,7 +303,12 @@ export const Header = () => {
 												className='w-full h-full object-cover'
 												onClick={() => setIsDropdownOpen(!isDropdownOpen)}
 											/>
-										:	<FaUser className='w-5 h-5' aria-hidden='true' />}
+										:	<FaUser
+												className='w-5 h-5'
+												aria-hidden='true'
+												onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+											/>
+										}
 
 										<AnimatePresence>
 											{isDropdownOpen && (

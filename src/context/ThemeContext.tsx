@@ -11,6 +11,8 @@ import type { ThemePreference } from "../types";
 
 type Theme = "light" | "dark";
 
+const THEME_STORAGE_KEY = "potluck-theme-preference";
+
 interface ThemeContextType {
 	theme: Theme;
 	setTheme: (theme: ThemePreference) => void;
@@ -21,41 +23,45 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 	const { profile } = useAppSelector(state => state.auth);
 	const dispatch = useAppDispatch();
-	const [theme, setThemeState] = useState<Theme>("light");
-
-	// Get theme preference from profile or default to 'light'
-	const preference = profile?.theme_preference || "light";
-
-	useEffect(() => {
-		const getSystemTheme = (): Theme => {
-			return window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light";
-		};
-
-		let currentTheme: Theme;
-		if (preference === "system") {
-			currentTheme = getSystemTheme();
-			// Listen for system theme changes
-			const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-			const handleChange = (e: MediaQueryListEvent) => {
-				const newTheme = e.matches ? "dark" : "light";
-				setThemeState(newTheme);
-				document.documentElement.setAttribute("data-theme", newTheme);
-			};
-			mediaQuery.addEventListener("change", handleChange);
-			return () => mediaQuery.removeEventListener("change", handleChange);
-		} else {
-			currentTheme = preference as Theme;
+	const [theme, setThemeState] = useState<Theme>(() => {
+		// Initialize from localStorage or default to 'light'
+		const stored = localStorage.getItem(THEME_STORAGE_KEY);
+		if (stored === "light" || stored === "dark") {
+			return stored;
 		}
+		return "light";
+	});
 
-		setThemeState(currentTheme);
-		document.documentElement.setAttribute("data-theme", currentTheme);
+	// Get theme preference from profile or localStorage fallback
+	const preference =
+		profile?.theme_preference ||
+		(localStorage.getItem(THEME_STORAGE_KEY) as ThemePreference) ||
+		"light";
+
+	// Sync theme when preference changes (from profile update)
+	useEffect(() => {
+		if (preference && (preference === "light" || preference === "dark")) {
+			setThemeState(preference);
+			document.documentElement.setAttribute("data-theme", preference);
+			// Update localStorage to keep it in sync
+			localStorage.setItem(THEME_STORAGE_KEY, preference);
+		}
 	}, [preference]);
 
+	// Apply theme on mount
+	useEffect(() => {
+		document.documentElement.setAttribute("data-theme", theme);
+	}, []);
+
 	const setTheme = async (newTheme: ThemePreference) => {
+		// Optimistic update: apply theme immediately
+		setThemeState(newTheme);
+		document.documentElement.setAttribute("data-theme", newTheme);
+		localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+
+		// Sync to database in background (don't await)
 		if (profile) {
-			await dispatch(updateProfile({ theme_preference: newTheme }));
+			dispatch(updateProfile({ theme_preference: newTheme }));
 		}
 	};
 

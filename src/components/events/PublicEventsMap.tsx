@@ -286,7 +286,7 @@ export const PublicEventsMap = ({ radiusMiles = 25 }: PublicEventsMapProps) => {
 	return (
 		<div className='bg-primary rounded-lg overflow-hidden'>
 			{/* Radius selector */}
-			<div className='p-4 border-b border-border flex items-center justify-between gap-4'>
+			<div className='p-4 flex items-center justify-between gap-4'>
 				<label
 					htmlFor='radius-select'
 					className='text-sm font-medium text-secondary whitespace-nowrap'>
@@ -318,7 +318,7 @@ export const PublicEventsMap = ({ radiusMiles = 25 }: PublicEventsMapProps) => {
 				</div>
 			)}
 			<div
-				className='map-container rounded-md overflow-hidden border border-border'
+				className='map-container rounded-md overflow-hidden px-2 md:px-4'
 				style={{ height: "400px" }}>
 				<MapContainer
 					center={mapCenter}

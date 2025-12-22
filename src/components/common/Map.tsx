@@ -304,7 +304,7 @@ export const Map = ({
 
 			{/* Map Container */}
 			<div
-				className='map-container rounded-md overflow-hidden border border-border'
+				className='map-container rounded-md overflow-hidden px-2 md:px-0'
 				style={{ height }}>
 				<MapContainer
 					center={center}
